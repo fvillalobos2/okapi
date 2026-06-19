@@ -24,6 +24,9 @@ export default function OnboardingPage() {
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
   const [logoUrl, setLogoUrl] = useState('')
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
   const [waNumber, setWaNumber] = useState('')
   const [activePlatforms, setActivePlatforms] = useState<string[]>(['google'])
   const [urls, setUrls] = useState<Record<string, string>>({})
@@ -73,6 +76,18 @@ export default function OnboardingPage() {
     if (!validateStep()) return
     if (step < TOTAL_STEPS - 1) { setStep(s => s + 1); return }
     if (step === TOTAL_STEPS - 1) await handleSave()
+  }
+
+  async function handleLogoUpload(file: File) {
+    setUploadingLogo(true)
+    const ext = file.name.split('.').pop()
+    const path = `${Date.now()}.${ext}`
+    const { error } = await supabase.storage.from('logos').upload(path, file, { upsert: true })
+    if (!error) {
+      const { data } = supabase.storage.from('logos').getPublicUrl(path)
+      setLogoUrl(data.publicUrl)
+    }
+    setUploadingLogo(false)
   }
 
   async function handleSave() {
@@ -151,9 +166,31 @@ export default function OnboardingPage() {
               </div>
 
               <div style={{ marginBottom: 4 }}>
-                <label style={{ fontSize: 13, fontWeight: 600, color: '#333', display: 'block', marginBottom: 6 }}>Logo <span style={{ fontWeight: 400, color: '#999' }}>(opcional — URL de imagen)</span></label>
-                <input value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://..."
-                  style={{ width: '100%', border: '1.5px solid #e0e0e0', borderRadius: 10, padding: '12px 14px', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+                <label style={{ fontSize: 13, fontWeight: 600, color: '#333', display: 'block', marginBottom: 6 }}>Logo <span style={{ fontWeight: 400, color: '#999' }}>(opcional)</span></label>
+                <label style={{
+                  display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px',
+                  border: '1.5px dashed #e0e0e0', borderRadius: 10, cursor: 'pointer',
+                  background: '#fafafa', transition: 'border-color 0.15s',
+                }}>
+                  {logoPreview
+                    ? <img src={logoPreview} alt="preview" style={{ width: 52, height: 52, objectFit: 'contain', borderRadius: 8, border: '1px solid #e0e0e0' }} />
+                    : <div style={{ width: 52, height: 52, borderRadius: 8, background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🖼️</div>
+                  }
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>
+                      {uploadingLogo ? 'Subiendo…' : logoPreview ? 'Cambiar logo' : 'Subir logo'}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>JPG, PNG o WebP · Máx 2MB</div>
+                  </div>
+                  <input type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }}
+                    onChange={e => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      setLogoFile(file)
+                      setLogoPreview(URL.createObjectURL(file))
+                      handleLogoUpload(file)
+                    }} />
+                </label>
               </div>
             </div>
           )}
@@ -220,8 +257,16 @@ export default function OnboardingPage() {
 
               {activePlatforms.includes('google') && (
                 <div style={{ marginBottom: 20 }}>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: '#333', display: 'block', marginBottom: 4 }}>Google — Place ID</label>
-                  <div style={{ fontSize: 12, color: '#999', marginBottom: 6 }}>Buscá tu negocio en <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noopener" style={{ color: '#4285F4' }}>Google Place ID Finder</a> y pegá el ID aquí.</div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#333', display: 'block', marginBottom: 4 }}>
+                    <span style={{ display: 'inline-block', width: 20, height: 20, background: '#4285F4', borderRadius: 4, color: '#fff', fontSize: 10, fontWeight: 700, textAlign: 'center', lineHeight: '20px', marginRight: 6, verticalAlign: 'middle' }}>G</span>
+                    Google — Place ID
+                  </label>
+                  <div style={{ background: '#f0f6ff', border: '1px solid #c5d9f7', borderRadius: 8, padding: '10px 12px', marginBottom: 8, fontSize: 12, color: '#1a4a8a', lineHeight: 1.5 }}>
+                    📍 <strong>¿Cómo obtenerlo?</strong><br />
+                    1. Buscá tu negocio en <a href="https://maps.google.com" target="_blank" rel="noopener" style={{ color: '#4285F4' }}>Google Maps</a><br />
+                    2. Hacé click en tu negocio → copié la URL<br />
+                    3. O usá el <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noopener" style={{ color: '#4285F4' }}>Place ID Finder</a> — buscás tu negocio y copiás el ID que empieza con "ChIJ..."
+                  </div>
                   <input value={urls.google_place_id || ''} onChange={e => setUrls({ ...urls, google_place_id: e.target.value })} placeholder="ChIJR1posFr5oI8RVY-6K9zBgvs"
                     style={{ width: '100%', border: `1.5px solid ${errors.google ? '#C8102E' : '#e0e0e0'}`, borderRadius: 10, padding: '12px 14px', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
                   {errors.google && <div style={{ fontSize: 12, color: '#C8102E', marginTop: 4 }}>{errors.google}</div>}
@@ -229,14 +274,40 @@ export default function OnboardingPage() {
               )}
 
               {[
-                { key: 'tripadvisor', label: 'TripAdvisor', placeholder: 'https://www.tripadvisor.com/Restaurant_Review-...' },
-                { key: 'opentable', label: 'OpenTable', placeholder: 'https://www.opentable.com/...' },
-                { key: 'thefork', label: 'TheFork', placeholder: 'https://www.thefork.com/...' },
-                { key: 'facebook', label: 'Facebook', placeholder: 'https://www.facebook.com/tu-restaurante/reviews' },
-                { key: 'yelp', label: 'Yelp', placeholder: 'https://www.yelp.com/biz/...' },
+                {
+                  key: 'tripadvisor', label: 'TripAdvisor', color: '#34E0A1', textColor: '#1a1a1a', abbr: 'TA',
+                  placeholder: 'https://www.tripadvisor.com/Restaurant_Review-...',
+                  hint: '1. Buscá tu restaurante en TripAdvisor.com\n2. Abrí tu página\n3. Copiá la URL completa del browser',
+                },
+                {
+                  key: 'opentable', label: 'OpenTable', color: '#DA3743', abbr: 'OT',
+                  placeholder: 'https://www.opentable.com/r/tu-restaurante',
+                  hint: '1. Entrá a tu cuenta de OpenTable\n2. Andá a tu perfil público\n3. Copiá la URL de tu página',
+                },
+                {
+                  key: 'thefork', label: 'TheFork', color: '#FF8C00', abbr: 'TF',
+                  placeholder: 'https://www.thefork.com/restaurant/...',
+                  hint: '1. Buscá tu restaurante en TheFork.com\n2. Abrí tu página\n3. Copiá la URL completa',
+                },
+                {
+                  key: 'facebook', label: 'Facebook', color: '#1877F2', abbr: 'f',
+                  placeholder: 'https://www.facebook.com/tu-restaurante/reviews',
+                  hint: '1. Andá a tu página de Facebook\n2. Hacé click en "Reseñas" en el menú lateral\n3. Copiá esa URL',
+                },
+                {
+                  key: 'yelp', label: 'Yelp', color: '#E31837', abbr: 'Y',
+                  placeholder: 'https://www.yelp.com/biz/tu-restaurante',
+                  hint: '1. Buscá tu negocio en Yelp.com\n2. Abrí tu página\n3. Copiá la URL completa',
+                },
               ].filter(f => activePlatforms.includes(f.key)).map(f => (
                 <div key={f.key} style={{ marginBottom: 20 }}>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: '#333', display: 'block', marginBottom: 6 }}>{f.label} — URL</label>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#333', display: 'block', marginBottom: 4 }}>
+                    <span style={{ display: 'inline-block', width: 20, height: 20, background: f.color, borderRadius: 4, color: (f as any).textColor || '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', lineHeight: '20px', marginRight: 6, verticalAlign: 'middle' }}>{f.abbr}</span>
+                    {f.label} — URL
+                  </label>
+                  <div style={{ background: '#f9f9f9', border: '1px solid #e8e8e8', borderRadius: 8, padding: '10px 12px', marginBottom: 8, fontSize: 12, color: '#555', lineHeight: 1.6 }}>
+                    {f.hint.split('\n').map((line, i) => <div key={i}>{line}</div>)}
+                  </div>
                   <input value={urls[`${f.key}_url`] || ''} onChange={e => setUrls({ ...urls, [`${f.key}_url`]: e.target.value })} placeholder={f.placeholder}
                     style={{ width: '100%', border: '1.5px solid #e0e0e0', borderRadius: 10, padding: '12px 14px', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
                 </div>
