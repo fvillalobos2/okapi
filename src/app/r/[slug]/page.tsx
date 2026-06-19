@@ -9,6 +9,7 @@ type Restaurant = {
   name: string
   logo_url: string | null
   wa_number: string | null
+  manager_email: string | null
   google_place_id: string | null
   tripadvisor_url: string | null
   opentable_url: string | null
@@ -87,9 +88,27 @@ export default function ReviewPage() {
     return Object.keys(errs).length === 0
   }
 
+  async function notifyManager(wantsContactVal: boolean) {
+    if (!restaurant?.manager_email) return
+    await fetch('/api/notify-feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        restaurantName: restaurant.name,
+        managerEmail: restaurant.manager_email,
+        stars: formRating || selectedRating,
+        categories: selectedChips,
+        feedback: experience,
+        contactName,
+        wantsContact: wantsContactVal,
+      }),
+    })
+  }
+
   async function handleSubmitWithWA() {
     if (!validate()) return
     await saveScans(null, true)
+    await notifyManager(true)
     const stars = '★'.repeat(formRating) + '☆'.repeat(5 - formRating)
     const msg = [
       `Hola, tengo un comentario sobre *${restaurant?.name}*.`,
@@ -106,6 +125,7 @@ export default function ReviewPage() {
   async function handleSubmitNoContact() {
     if (!validate()) return
     await saveScans(null, false)
+    await notifyManager(false)
     setScreen('thanks')
   }
 
