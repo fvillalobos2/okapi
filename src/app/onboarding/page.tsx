@@ -28,6 +28,7 @@ export default function OnboardingPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [waNumber, setWaNumber] = useState('')
+  const [waEnabled, setWaEnabled] = useState(true)
   const [managerEmail, setManagerEmail] = useState('')
   const [activePlatforms, setActivePlatforms] = useState<string[]>(['google'])
   const [urls, setUrls] = useState<Record<string, string>>({})
@@ -60,8 +61,10 @@ export default function OnboardingPage() {
       if (!slug.trim()) errs.slug = 'La URL es obligatoria.'
     }
     if (step === 2) {
-      if (!waNumber.trim()) errs.waNumber = 'El número de WhatsApp es obligatorio.'
-      else if (!/^\d{8,15}$/.test(waNumber.replace(/\s/g, ''))) errs.waNumber = 'Ingresá solo números con código de país (ej: 50688475571).'
+      if (waEnabled) {
+        if (!waNumber.trim()) errs.waNumber = 'Ingresá el número o desactivá WhatsApp.'
+        else if (!/^\d{8,15}$/.test(waNumber.replace(/\s/g, ''))) errs.waNumber = 'Solo números con código de país (ej: 50688475571).'
+      }
       if (managerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(managerEmail)) errs.managerEmail = 'El email no es válido.'
     }
     if (step === 3 && activePlatforms.length === 0) {
@@ -103,7 +106,8 @@ export default function OnboardingPage() {
       name,
       slug,
       logo_url: logoUrl || null,
-      wa_number: waNumber,
+      wa_number: waEnabled ? waNumber : null,
+      wa_enabled: waEnabled,
       manager_email: managerEmail || null,
       google_place_id: urls.google_place_id || null,
       tripadvisor_url: urls.tripadvisor_url || null,
@@ -205,21 +209,33 @@ export default function OnboardingPage() {
               <p style={{ fontSize: 14, color: '#666', marginBottom: 24, lineHeight: 1.5 }}>Estos datos se usan para recibir alertas y para que los clientes puedan contactarte directamente.</p>
 
               {/* WhatsApp */}
-              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: '16px', marginBottom: 20 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontSize: 18 }}>💬</span>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>WhatsApp — Contacto directo</span>
+              <div style={{ background: waEnabled ? '#f0fdf4' : '#f9f9f9', border: `1px solid ${waEnabled ? '#bbf7d0' : '#e0e0e0'}`, borderRadius: 12, padding: '16px', marginBottom: 20, transition: 'all 0.2s' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 18 }}>💬</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: waEnabled ? '#1a1a1a' : '#999' }}>WhatsApp — Contacto directo</span>
+                  </div>
+                  {/* Toggle */}
+                  <div onClick={() => setWaEnabled(v => !v)} style={{ width: 40, height: 22, borderRadius: 11, background: waEnabled ? '#25D366' : '#ccc', position: 'relative', cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0 }}>
+                    <div style={{ width: 16, height: 16, borderRadius: 8, background: '#fff', position: 'absolute', top: 3, left: waEnabled ? 21 : 3, transition: 'left 0.2s' }} />
+                  </div>
                 </div>
-                <p style={{ fontSize: 12, color: '#555', marginBottom: 12, lineHeight: 1.5 }}>Cuando un cliente elige hablar con el manager, se abre WhatsApp con un mensaje pre-escrito dirigido a este número.</p>
-                <input value={waNumber} onChange={e => setWaNumber(e.target.value.replace(/\D/g, ''))} placeholder="50688475571"
-                  style={{ width: '100%', border: `1.5px solid ${errors.waNumber ? '#C8102E' : '#d1fae5'}`, borderRadius: 8, padding: '11px 14px', fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
-                  onFocus={e => e.target.style.borderColor = '#25D366'}
-                  onBlur={e => e.target.style.borderColor = errors.waNumber ? '#C8102E' : '#d1fae5'}
-                />
-                {errors.waNumber
-                  ? <div style={{ fontSize: 12, color: '#C8102E', marginTop: 4 }}>{errors.waNumber}</div>
-                  : <div style={{ fontSize: 11, color: '#666', marginTop: 4 }}>Con código de país, sin espacios. Ej: 50688475571</div>
-                }
+                <p style={{ fontSize: 12, color: '#555', marginBottom: waEnabled ? 12 : 0, lineHeight: 1.5 }}>
+                  {waEnabled ? 'Los clientes podrán contactar directamente al manager por WhatsApp.' : 'Desactivado — los clientes no verán la opción de contactar al manager.'}
+                </p>
+                {waEnabled && (
+                  <>
+                    <input value={waNumber} onChange={e => setWaNumber(e.target.value.replace(/\D/g, ''))} placeholder="50688475571"
+                      style={{ width: '100%', border: `1.5px solid ${errors.waNumber ? '#C8102E' : '#d1fae5'}`, borderRadius: 8, padding: '11px 14px', fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
+                      onFocus={e => e.target.style.borderColor = '#25D366'}
+                      onBlur={e => e.target.style.borderColor = errors.waNumber ? '#C8102E' : '#d1fae5'}
+                    />
+                    {errors.waNumber
+                      ? <div style={{ fontSize: 12, color: '#C8102E', marginTop: 4 }}>{errors.waNumber}</div>
+                      : <div style={{ fontSize: 11, color: '#666', marginTop: 4 }}>Con código de país, sin espacios. Ej: 50688475571</div>
+                    }
+                  </>
+                )}
               </div>
 
               {/* Email */}
