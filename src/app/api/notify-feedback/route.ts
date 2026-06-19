@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 export async function POST(req: NextRequest) {
+  const resend = new Resend(process.env.RESEND_API_KEY)
   const { restaurantName, managerEmail, stars, categories, feedback, contactName, wantsContact } = await req.json()
 
   if (!managerEmail) return NextResponse.json({ ok: false, error: 'No manager email' }, { status: 400 })
