@@ -70,16 +70,8 @@ export default function DashboardPage() {
           .limit(50)
         setScans(scanData || [])
       } else {
-        // New user — create restaurant
-        const slug = user.email!.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-')
-        const { data: newRest } = await supabase
-          .from('restaurants')
-          .insert({ user_id: user.id, name: 'Mi Restaurante', slug })
-          .select()
-          .single()
-        setRestaurant(newRest)
-        setForm(newRest || {})
-        setTab('config')
+        router.push('/onboarding')
+        return
       }
       setLoading(false)
     }
