@@ -48,7 +48,11 @@ export default function LoginPage() {
     setLoading(true)
 
     if (mode === 'signup') {
-      const { error } = await supabase.auth.signUp({ email, password })
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: 'https://reviews.projectokapi.com/dashboard' },
+      })
       if (error) {
         setError(getErrorMessage(error.message))
       } else {
