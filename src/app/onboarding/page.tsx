@@ -28,6 +28,7 @@ export default function OnboardingPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [waNumber, setWaNumber] = useState('')
+  const [managerEmail, setManagerEmail] = useState('')
   const [activePlatforms, setActivePlatforms] = useState<string[]>(['google'])
   const [urls, setUrls] = useState<Record<string, string>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -61,6 +62,7 @@ export default function OnboardingPage() {
     if (step === 2) {
       if (!waNumber.trim()) errs.waNumber = 'El número de WhatsApp es obligatorio.'
       else if (!/^\d{8,15}$/.test(waNumber.replace(/\s/g, ''))) errs.waNumber = 'Ingresá solo números con código de país (ej: 50688475571).'
+      if (managerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(managerEmail)) errs.managerEmail = 'El email no es válido.'
     }
     if (step === 3 && activePlatforms.length === 0) {
       errs.platforms = 'Seleccioná al menos una plataforma.'
@@ -102,6 +104,7 @@ export default function OnboardingPage() {
       slug,
       logo_url: logoUrl || null,
       wa_number: waNumber,
+      manager_email: managerEmail || null,
       google_place_id: urls.google_place_id || null,
       tripadvisor_url: urls.tripadvisor_url || null,
       opentable_url: urls.opentable_url || null,
@@ -195,28 +198,43 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Step 2: WhatsApp */}
+          {/* Step 2: WhatsApp + Email */}
           {step === 2 && (
             <div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>¿A quién le llegan las alertas?</div>
-              <p style={{ fontSize: 14, color: '#666', marginBottom: 28, lineHeight: 1.5 }}>Cuando un cliente deja feedback negativo, le mandamos un mensaje directo al manager por WhatsApp.</p>
+              <div style={{ fontSize: 22, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>Contacto del manager</div>
+              <p style={{ fontSize: 14, color: '#666', marginBottom: 24, lineHeight: 1.5 }}>Estos datos se usan para recibir alertas y para que los clientes puedan contactarte directamente.</p>
 
-              <div style={{ marginBottom: 8 }}>
-                <label style={{ fontSize: 13, fontWeight: 600, color: '#333', display: 'block', marginBottom: 6 }}>Número de WhatsApp del manager</label>
+              {/* WhatsApp */}
+              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: '16px', marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontSize: 18 }}>💬</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>WhatsApp — Contacto directo</span>
+                </div>
+                <p style={{ fontSize: 12, color: '#555', marginBottom: 12, lineHeight: 1.5 }}>Cuando un cliente elige hablar con el manager, se abre WhatsApp con un mensaje pre-escrito dirigido a este número.</p>
                 <input value={waNumber} onChange={e => setWaNumber(e.target.value.replace(/\D/g, ''))} placeholder="50688475571"
-                  style={{ width: '100%', border: `1.5px solid ${errors.waNumber ? '#C8102E' : '#e0e0e0'}`, borderRadius: 10, padding: '12px 14px', fontSize: 15, outline: 'none', boxSizing: 'border-box' }}
-                  onFocus={e => e.target.style.borderColor = '#C8102E'}
-                  onBlur={e => e.target.style.borderColor = errors.waNumber ? '#C8102E' : '#e0e0e0'}
+                  style={{ width: '100%', border: `1.5px solid ${errors.waNumber ? '#C8102E' : '#d1fae5'}`, borderRadius: 8, padding: '11px 14px', fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
+                  onFocus={e => e.target.style.borderColor = '#25D366'}
+                  onBlur={e => e.target.style.borderColor = errors.waNumber ? '#C8102E' : '#d1fae5'}
                 />
                 {errors.waNumber
                   ? <div style={{ fontSize: 12, color: '#C8102E', marginTop: 4 }}>{errors.waNumber}</div>
-                  : <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>Con código de país, sin espacios ni guiones. Ej: 50688475571</div>
+                  : <div style={{ fontSize: 11, color: '#666', marginTop: 4 }}>Con código de país, sin espacios. Ej: 50688475571</div>
                 }
               </div>
 
-              <div style={{ background: '#f9f9f9', borderRadius: 10, padding: '14px 16px', marginTop: 20, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                <span style={{ fontSize: 20 }}>💬</span>
-                <div style={{ fontSize: 13, color: '#555', lineHeight: 1.5 }}>Cuando un cliente deja 1-3 estrellas, recibís un mensaje en WhatsApp con todos los detalles para actuar rápido.</div>
+              {/* Email */}
+              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 12, padding: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontSize: 18 }}>📧</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>Email — Notificaciones automáticas</span>
+                </div>
+                <p style={{ fontSize: 12, color: '#555', marginBottom: 12, lineHeight: 1.5 }}>Cada vez que llegue un feedback negativo, te mandamos un email automático con los detalles — sin que el cliente tenga que hacer nada.</p>
+                <input type="email" value={managerEmail} onChange={e => setManagerEmail(e.target.value)} placeholder="manager@restaurante.com"
+                  style={{ width: '100%', border: `1.5px solid ${errors.managerEmail ? '#C8102E' : '#bfdbfe'}`, borderRadius: 8, padding: '11px 14px', fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
+                  onFocus={e => e.target.style.borderColor = '#3b82f6'}
+                  onBlur={e => e.target.style.borderColor = errors.managerEmail ? '#C8102E' : '#bfdbfe'}
+                />
+                {errors.managerEmail && <div style={{ fontSize: 12, color: '#C8102E', marginTop: 4 }}>{errors.managerEmail}</div>}
               </div>
             </div>
           )}
