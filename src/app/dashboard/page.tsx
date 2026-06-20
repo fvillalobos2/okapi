@@ -105,9 +105,14 @@ export default function DashboardPage() {
     const ext = file.name.split('.').pop()
     const path = `${Date.now()}.${ext}`
     const { error } = await supabase.storage.from('logos').upload(path, file, { upsert: true })
-    if (!error) {
+    if (!error && restaurant) {
       const { data } = supabase.storage.from('logos').getPublicUrl(path)
-      setForm(f => ({ ...f, logo_url: data.publicUrl }))
+      const newLogoUrl = data.publicUrl
+      setForm(f => ({ ...f, logo_url: newLogoUrl }))
+      await supabase.from('restaurants').update({ logo_url: newLogoUrl }).eq('id', restaurant.id)
+      setRestaurant(r => r ? { ...r, logo_url: newLogoUrl } : r)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
     }
     setUploadingLogo(false)
   }
