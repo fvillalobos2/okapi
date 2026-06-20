@@ -274,20 +274,22 @@ export default function UpgradePage() {
                   <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>La factura se enviará a este correo</div>
                 </div>
 
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Número de tarjeta</label>
-                <input id="tlpy_cc_number" type="tel" placeholder="1234 5678 9012 3456" maxLength={19}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, marginBottom: 14, boxSizing: 'border-box' }} />
+                <div className="payFormTilopay">
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Número de tarjeta</label>
+                  <input id="tlpy_cc_number" type="tel" placeholder="1234 5678 9012 3456" maxLength={19}
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, marginBottom: 14, boxSizing: 'border-box' }} />
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Vencimiento</label>
-                    <input id="tlpy_cc_expiration_date" type="tel" placeholder="MM/AA" maxLength={5}
-                      style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>CVV</label>
-                    <input id="tlpy_cvv" type="tel" placeholder="123" maxLength={4}
-                      style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Vencimiento</label>
+                      <input id="tlpy_cc_expiration_date" type="tel" placeholder="MM/AA" maxLength={5}
+                        style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>CVV</label>
+                      <input id="tlpy_cvv" type="tel" placeholder="123" maxLength={4}
+                        style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                    </div>
                   </div>
                 </div>
               </div>
