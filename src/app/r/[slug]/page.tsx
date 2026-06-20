@@ -333,38 +333,39 @@ export default function ReviewPage() {
             />
             {errors.experience && <div style={{ fontSize: 12, color: '#C8102E', marginBottom: 10 }}>{errors.experience}</div>}
 
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#333', margin: '18px 0 10px' }}>{t.review_wants_contact}</div>
-            <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-              <button onClick={() => setWantsContact(true)} style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: `2px solid ${wantsContact === true ? '#16a34a' : '#e5e7eb'}`, cursor: 'pointer', fontSize: 14, fontWeight: 600, background: wantsContact === true ? '#f0fdf4' : '#fff', color: wantsContact === true ? '#16a34a' : '#555' }}>{t.review_yes}</button>
-              <button onClick={() => setWantsContact(false)} style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: `2px solid ${wantsContact === false ? '#C8102E' : '#e5e7eb'}`, cursor: 'pointer', fontSize: 14, fontWeight: 600, background: wantsContact === false ? '#fef2f2' : '#fff', color: wantsContact === false ? '#C8102E' : '#555' }}>{t.review_no}</button>
-            </div>
-
-            {wantsContact === true && (
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>{t.review_your_name}</div>
-                <input value={contactName} onChange={e => setContactName(e.target.value)} placeholder={t.review_name_placeholder}
-                  style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 10, padding: '11px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#111', boxSizing: 'border-box' }} />
-              </div>
-            )}
-
-            {wantsContact === true && restaurant?.wa_enabled && restaurant?.wa_number && (
-              <button onClick={handleSubmitWithWA} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, width: '100%', padding: 15, background: '#25D366', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
-                {t.review_contact_wa}
-              </button>
-            )}
-            {wantsContact === true && (!restaurant?.wa_enabled || !restaurant?.wa_number) && (
-              <button onClick={handleSubmitNoContact} style={{ width: '100%', padding: 14, background: '#C8102E', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+            {restaurant?.wa_enabled && restaurant?.wa_number ? (
+              <>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#333', margin: '18px 0 10px' }}>{t.review_wants_contact}</div>
+                <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                  <button onClick={() => setWantsContact(true)} style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: `2px solid ${wantsContact === true ? '#16a34a' : '#e5e7eb'}`, cursor: 'pointer', fontSize: 14, fontWeight: 600, background: wantsContact === true ? '#f0fdf4' : '#fff', color: wantsContact === true ? '#16a34a' : '#555' }}>{t.review_yes}</button>
+                  <button onClick={() => setWantsContact(false)} style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: `2px solid ${wantsContact === false ? '#C8102E' : '#e5e7eb'}`, cursor: 'pointer', fontSize: 14, fontWeight: 600, background: wantsContact === false ? '#fef2f2' : '#fff', color: wantsContact === false ? '#C8102E' : '#555' }}>{t.review_no}</button>
+                </div>
+                {wantsContact === true && (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>{t.review_your_name}</div>
+                    <input value={contactName} onChange={e => setContactName(e.target.value)} placeholder={t.review_name_placeholder}
+                      style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 10, padding: '11px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#111', boxSizing: 'border-box' }} />
+                  </div>
+                )}
+                {wantsContact === true && (
+                  <button onClick={handleSubmitWithWA} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, width: '100%', padding: 15, background: '#25D366', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                    {t.review_contact_wa}
+                  </button>
+                )}
+                {wantsContact === false && (
+                  <button onClick={handleSubmitNoContact} style={{ width: '100%', padding: 14, background: '#C8102E', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                    {t.review_submit}
+                  </button>
+                )}
+                {wantsContact === null && (
+                  <button disabled style={{ width: '100%', padding: 14, background: '#f3f4f6', color: '#9ca3af', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: 'not-allowed' }}>
+                    {t.review_select_option}
+                  </button>
+                )}
+              </>
+            ) : (
+              <button onClick={handleSubmitNoContact} style={{ width: '100%', padding: 14, background: '#C8102E', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer', marginTop: 18 }}>
                 {t.review_submit}
-              </button>
-            )}
-            {wantsContact === false && (
-              <button onClick={handleSubmitNoContact} style={{ width: '100%', padding: 14, background: '#C8102E', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
-                {t.review_submit}
-              </button>
-            )}
-            {wantsContact === null && (
-              <button disabled style={{ width: '100%', padding: 14, background: '#f3f4f6', color: '#9ca3af', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: 'not-allowed' }}>
-                {t.review_select_option}
               </button>
             )}
           </div>
