@@ -54,6 +54,8 @@ export default function DashboardPage() {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [googleNotif, setGoogleNotif] = useState<'connected' | 'error' | null>(null)
   const [togglingAutoReply, setTogglingAutoReply] = useState(false)
+  const [googleLocations, setGoogleLocations] = useState<{id: string, name: string, address: string}[]>([])
+  const [loadingLocations, setLoadingLocations] = useState(false)
   const [scans, setScans] = useState<Scan[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'stats' | 'config'>('stats')
@@ -99,9 +101,28 @@ export default function DashboardPage() {
     const g = params.get('google')
     if (g === 'connected' || g === 'error') {
       setGoogleNotif(g as 'connected' | 'error')
-      setTimeout(() => setGoogleNotif(null), 5000)
+      setTimeout(() => setGoogleNotif(null), 6000)
     }
   }, [])
+
+  async function loadGoogleLocations(restId: string) {
+    setLoadingLocations(true)
+    const res = await fetch(`/api/google/locations?restaurantId=${restId}`)
+    const data = await res.json()
+    setGoogleLocations(data.locations ?? [])
+    setLoadingLocations(false)
+  }
+
+  async function selectLocation(locationId: string) {
+    if (!restaurant) return
+    await fetch('/api/google/locations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ restaurantId: restaurant.id, locationId, accountId: locationId }),
+    })
+    setRestaurant({ ...restaurant, google_account_id: locationId, google_location_id: locationId, auto_reply_enabled: true })
+    setGoogleLocations([])
+  }
 
   async function handleAutoReplyToggle() {
     if (!restaurant) return
@@ -458,18 +479,52 @@ export default function DashboardPage() {
 
               {/* Google connection status */}
               {restaurant?.plan === 'business' && (
-                <div style={{ background: restaurant?.google_account_id ? '#f0fdf4' : '#f7f7f8', border: `1px solid ${restaurant?.google_account_id ? '#bbf7d0' : '#e5e7eb'}`, borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: restaurant?.google_account_id ? '#16a34a' : '#d1d5db', flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, color: restaurant?.google_account_id ? '#16a34a' : '#888', fontWeight: 600 }}>
-                      {restaurant?.google_account_id ? 'Google Business conectado' : 'Google Business no conectado'}
-                    </span>
+                <div>
+                  <div style={{ background: restaurant?.google_account_id ? '#f0fdf4' : '#f7f7f8', border: `1px solid ${restaurant?.google_account_id ? '#bbf7d0' : '#e5e7eb'}`, borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: restaurant?.google_account_id ? '#16a34a' : '#d1d5db', flexShrink: 0 }} />
+                      <span style={{ fontSize: 12, color: restaurant?.google_account_id ? '#16a34a' : '#888', fontWeight: 600 }}>
+                        {restaurant?.google_account_id ? 'Perfil de Google Business conectado' : 'Google Business no conectado'}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {restaurant?.google_access_token && !restaurant?.google_account_id && (
+                        <button
+                          onClick={() => loadGoogleLocations(restaurant.id)}
+                          disabled={loadingLocations}
+                          style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', background: 'none', border: '1px solid #16a34a', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          {loadingLocations ? 'Cargando…' : 'Ver mis perfiles'}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => { window.location.href = `/api/google/connect?restaurantId=${restaurant.id}` }}
+                        style={{ fontSize: 11, fontWeight: 700, color: '#4285F4', background: 'none', border: '1px solid #4285F4', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        {restaurant?.google_account_id ? 'Cambiar cuenta' : 'Conectar con Google'}
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => { window.location.href = `/api/google/connect?restaurantId=${restaurant.id}` }}
-                    style={{ fontSize: 11, fontWeight: 700, color: '#4285F4', background: 'none', border: '1px solid #4285F4', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                    {restaurant?.google_account_id ? 'Reconectar' : 'Conectar Google'}
-                  </button>
+
+                  {/* Location picker */}
+                  {googleLocations.length > 0 && (
+                    <div style={{ marginTop: 8, border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
+                      <div style={{ padding: '8px 12px', background: '#f7f7f8', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Seleccioná tu perfil de negocio
+                      </div>
+                      {googleLocations.map(loc => (
+                        <button key={loc.id} onClick={() => selectLocation(loc.id)}
+                          style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderTop: '1px solid #f0f0f0', background: '#fff', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 2, border: 'none' }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{loc.name}</span>
+                          {loc.address && <span style={{ fontSize: 11, color: '#888' }}>{loc.address}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {googleLocations.length === 0 && loadingLocations === false && restaurant?.google_access_token && !restaurant?.google_account_id && (
+                    <div style={{ marginTop: 6, fontSize: 11, color: '#aaa' }}>
+                      Si conectaste Google pero no ves perfiles, asegurate de que tu cuenta tenga un Google Business Profile activo.
+                    </div>
+                  )}
                 </div>
               )}
             </div>

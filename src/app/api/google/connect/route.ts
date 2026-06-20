@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
 
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID!,
-    redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/google/callback`,
+    redirect_uri: `https://reviews.projectokapi.com/api/google/callback`,
     response_type: 'code',
     scope: 'https://www.googleapis.com/auth/business.manage',
     access_type: 'offline',

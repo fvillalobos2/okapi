@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
       code,
       client_id: process.env.GOOGLE_CLIENT_ID!,
       client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-      redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/google/callback`,
+      redirect_uri: `https://reviews.projectokapi.com/api/google/callback`,
       grant_type: 'authorization_code',
     }),
   })
