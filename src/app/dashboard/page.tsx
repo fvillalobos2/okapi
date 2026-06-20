@@ -123,10 +123,6 @@ export default function DashboardPage() {
     setLoadingLocations(true)
     const res = await fetch(`/api/google/locations?restaurantId=${restId}`)
     const data = await res.json()
-    console.log('Google locations response:', JSON.stringify(data))
-    if (data.locations?.length === 0) {
-      alert('No se encontraron perfiles. Respuesta de API: ' + JSON.stringify(data))
-    }
     setGoogleLocations(data.locations ?? [])
     setLoadingLocations(false)
   }
