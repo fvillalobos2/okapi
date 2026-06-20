@@ -9,6 +9,7 @@ type Restaurant = {
   name: string
   logo_url: string | null
   wa_number: string | null
+  wa_enabled: boolean
   manager_email: string | null
   google_place_id: string | null
   tripadvisor_url: string | null
@@ -17,11 +18,17 @@ type Restaurant = {
   facebook_url: string | null
   yelp_url: string | null
   platforms_active: Record<string, boolean>
+  business_type: string | null
 }
 
 type Screen = 'landing' | 'positive' | 'feedback' | 'thanks'
 
-const CATEGORIES = ['Producto', 'Instalación', 'Servicio al Cliente', 'Tiempo de Entrega', 'Cotización', 'Otro']
+const CATEGORIES_BY_TYPE: Record<string, string[]> = {
+  restaurant: ['Comida', 'Servicio', 'Ambiente', 'Tiempo de espera', 'Precio', 'Limpieza', 'Otro'],
+  hotel: ['Habitación', 'Limpieza', 'Servicio', 'Check-in/out', 'Amenidades', 'Ubicación', 'Otro'],
+  bar: ['Bebidas', 'Servicio', 'Ambiente', 'Música', 'Precio', 'Limpieza', 'Otro'],
+  default: ['Servicio', 'Calidad', 'Precio', 'Ambiente', 'Atención', 'Limpieza', 'Otro'],
+}
 
 export default function ReviewPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -35,6 +42,10 @@ export default function ReviewPage() {
   const [experience, setExperience] = useState('')
   const [wantsContact, setWantsContact] = useState<boolean | null>(null)
   const [contactName, setContactName] = useState('')
+
+  const categories = restaurant
+    ? (CATEGORIES_BY_TYPE[restaurant.business_type || 'default'] ?? CATEGORIES_BY_TYPE.default)
+    : CATEGORIES_BY_TYPE.default
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
@@ -257,7 +268,7 @@ export default function ReviewPage() {
             {/* Chips */}
             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Tuve problemas con <span style={{ fontSize: 10, background: '#C8102E', color: '#fff', padding: '1px 5px', borderRadius: 3 }}>Obligatorio</span></div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>
-              {CATEGORIES.map(c => (
+              {categories.map(c => (
                 <div key={c} onClick={() => toggleChip(c)} style={{
                   padding: '7px 14px', borderRadius: 20, cursor: 'pointer', fontSize: 13,
                   border: selectedChips.includes(c) ? '1.5px solid #C8102E' : '1.5px solid #e0e0e0',
@@ -292,9 +303,14 @@ export default function ReviewPage() {
               </div>
             )}
 
-            {wantsContact === true && (
+            {wantsContact === true && restaurant?.wa_enabled && restaurant?.wa_number && (
               <button onClick={handleSubmitWithWA} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, width: '100%', padding: 15, background: '#25D366', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                 Hablar con el Manager por WhatsApp
+              </button>
+            )}
+            {wantsContact === true && (!restaurant?.wa_enabled || !restaurant?.wa_number) && (
+              <button onClick={handleSubmitNoContact} style={{ width: '100%', padding: 13, background: '#C8102E', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                Enviar Opinión
               </button>
             )}
             {wantsContact === false && (

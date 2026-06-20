@@ -22,6 +22,7 @@ export default function OnboardingPage() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
 
+  const [businessType, setBusinessType] = useState('restaurant')
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
   const [logoUrl, setLogoUrl] = useState('')
@@ -129,6 +130,7 @@ export default function OnboardingPage() {
     const payload = {
       name,
       slug,
+      business_type: businessType,
       logo_url: logoUrl || null,
       wa_number: waEnabled ? waNumber : null,
       wa_enabled: waEnabled,
@@ -175,8 +177,24 @@ export default function OnboardingPage() {
           {/* Step 1: Nombre */}
           {step === 1 && (
             <div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>¿Cómo se llama tu restaurante?</div>
-              <p style={{ fontSize: 14, color: '#666', marginBottom: 28, lineHeight: 1.5 }}>Este nombre lo verán tus clientes cuando dejen su opinión.</p>
+              <div style={{ fontSize: 22, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>Cuéntanos sobre tu negocio</div>
+              <p style={{ fontSize: 14, color: '#666', marginBottom: 20, lineHeight: 1.5 }}>Este nombre lo verán tus clientes cuando dejen su opinión.</p>
+
+              <div style={{ marginBottom: 24 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: '#333', display: 'block', marginBottom: 10 }}>Tipo de negocio</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {[
+                    { key: 'restaurant', label: '🍽️ Restaurante' },
+                    { key: 'hotel', label: '🏨 Hotel' },
+                    { key: 'bar', label: '🍹 Bar / Café' },
+                  ].map(t => (
+                    <button key={t.key} type="button" onClick={() => setBusinessType(t.key)}
+                      style={{ flex: 1, padding: '10px 8px', borderRadius: 10, border: `2px solid ${businessType === t.key ? '#C8102E' : '#e0e0e0'}`, background: businessType === t.key ? '#fce4e4' : '#fff', color: businessType === t.key ? '#C8102E' : '#666', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               <div style={{ marginBottom: 20 }}>
                 <label style={{ fontSize: 13, fontWeight: 600, color: '#333', display: 'block', marginBottom: 6 }}>Nombre del restaurante</label>
