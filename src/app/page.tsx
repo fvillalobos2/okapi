@@ -355,9 +355,9 @@ export default function Home() {
           </Reveal>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
             {[
-              { id: 'starter', label: 'Starter', price: '$29', sub: 'por local', dark: false, popular: false, cta: '14 días gratis', features: ['1 local', 'Hasta 200 scans/mes', 'Google + 1 plataforma', 'Email al manager', 'QR descargable'] },
-              { id: 'pro', label: 'Pro', price: '$59', sub: 'por local', dark: true, popular: true, cta: '14 días gratis', features: ['1 local', 'Scans ilimitados', '6 plataformas', 'WhatsApp + Email', 'Dashboard completo', 'Categorías por negocio'] },
-              { id: 'biz', label: 'Business', price: '$129', sub: 'hasta 5 locales', dark: false, popular: false, cta: 'Hablar con ventas', features: ['Hasta 5 locales', 'Scans ilimitados', '6 plataformas', 'WhatsApp + Email', 'Dashboard multi-local', 'Onboarding asistido', 'Soporte prioritario'] },
+              { id: 'starter', label: 'Starter', price: '$29', sub: 'por local', dark: false, popular: false, cta: '14 días gratis', features: ['1 local', 'Hasta 200 opiniones/mes', 'Google + 1 plataforma', 'Email al manager', 'QR descargable'] },
+              { id: 'pro', label: 'Pro', price: '$59', sub: 'por local', dark: true, popular: true, cta: '14 días gratis', features: ['1 local', 'Opiniones ilimitadas', '6 plataformas', 'WhatsApp + Email', 'Dashboard completo', 'Categorías por negocio'] },
+              { id: 'biz', label: 'Business', price: '$129', sub: 'hasta 5 locales', dark: false, popular: false, cta: 'Hablar con ventas', features: ['Hasta 5 locales', 'Opiniones ilimitadas', '6 plataformas', 'WhatsApp + Email', 'Dashboard multi-local', 'Onboarding asistido', 'Soporte prioritario'] },
             ].map((plan, i) => (
               <Reveal key={plan.id} delay={i * 80}>
                 <div style={{ background: plan.dark ? '#0f0f0f' : '#fff', borderRadius: 16, padding: '32px 24px', border: plan.popular ? '2px solid #C8102E' : '1px solid #e5e7eb', position: 'relative', height: '100%', boxSizing: 'border-box', transform: hoveredPlan === plan.id && !plan.popular ? 'translateY(-4px)' : 'none', boxShadow: hoveredPlan === plan.id ? '0 12px 32px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s ease' }}

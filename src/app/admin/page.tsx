@@ -77,7 +77,7 @@ export default function AdminPage() {
     { label: 'Clientes activos', value: stats.byStatus.active, sub: `${stats.byPlan.starter} starter · ${stats.byPlan.pro} pro · ${stats.byPlan.business} business`, color: '#4285F4' },
     { label: 'En trial', value: stats.byStatus.trial, sub: 'período gratuito', color: '#f59e0b' },
     { label: 'Total registros', value: stats.total, sub: `+${stats.newThisMonth} este mes`, color: '#a855f7' },
-    { label: 'Total scans', value: stats.totalScans, sub: `${stats.scansThisMonth} este mes`, color: '#06b6d4' },
+    { label: 'Total opiniones', value: stats.totalScans, sub: `${stats.scansThisMonth} este mes`, color: '#06b6d4' },
     { label: 'Churn este mes', value: stats.churnThisMonth, sub: `${stats.byStatus.canceled} cancelados total`, color: '#C8102E' },
   ]
 
