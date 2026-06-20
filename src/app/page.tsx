@@ -153,6 +153,41 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Stats — digital visibility */}
+      <section style={{ padding: '88px 24px', maxWidth: 960, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 56 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#C8102E', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Por qué importan las reseñas</div>
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, color: '#111', letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: 16 }}>Las reseñas son tu visibilidad digital</h2>
+          <p style={{ fontSize: 16, color: '#666', maxWidth: 520, margin: '0 auto', lineHeight: 1.7 }}>Google usa las reseñas como señal directa de ranking. Más reseñas, mejor rating, mayor visibilidad en Maps y búsqueda local.</p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 48 }}>
+          {[
+            { stat: '64%', desc: 'de los clientes googlea el restaurante antes de visitarlo', source: 'Chowly 2026' },
+            { stat: '91%', desc: 'de los comensales evita restaurantes con menos de 4 estrellas', source: 'Google 2025' },
+            { stat: '126%', desc: 'más tráfico reciben los negocios en el Top 3 de Google Maps', source: 'Malou 2026' },
+            { stat: '30%', desc: 'mejor visibilidad con más de 50 reseñas y 4.5+ estrellas', source: 'BeyondMenu 2026' },
+          ].map(s => (
+            <div key={s.stat} style={{ background: '#fff', border: '1px solid #ebebeb', borderRadius: 16, padding: '28px 20px', textAlign: 'center' }}>
+              <div style={{ fontSize: 44, fontWeight: 900, color: '#C8102E', lineHeight: 1, marginBottom: 12, letterSpacing: '-0.03em' }}>{s.stat}</div>
+              <div style={{ fontSize: 13, color: '#444', lineHeight: 1.55, marginBottom: 10 }}>{s.desc}</div>
+              <div style={{ fontSize: 11, color: '#bbb', fontWeight: 600 }}>{s.source}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ background: 'linear-gradient(135deg, #fef2f2, #fff5f5)', border: '1px solid #fecaca', borderRadius: 16, padding: '28px 32px', display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 40, flexShrink: 0 }}>📉</div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#111', marginBottom: 8 }}>Una sola reseña negativa puede costarte hasta 30 clientes</div>
+            <div style={{ fontSize: 14, color: '#666', lineHeight: 1.6 }}>Los negocios con rating por debajo de 4.0 reciben un <strong>70% menos de clicks</strong> que los que tienen 4.0 o más. Cada décima de punto en tu promedio impacta directamente en cuántos clientes te eligen.</div>
+          </div>
+          <Link href="/login" style={{ padding: '12px 24px', background: '#C8102E', color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
+            Proteger mi rating →
+          </Link>
+        </div>
+      </section>
+
       {/* Problem / Solution */}
       <section style={{ padding: '88px 24px', maxWidth: 1000, margin: '0 auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 32, alignItems: 'center' }}>
