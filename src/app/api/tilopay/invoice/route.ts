@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 
     const { data: rest } = await supabaseAdmin
       .from('restaurants')
-      .select('name, billing_email, plan, manager_email')
+      .select('name, billing_email, billing_name, plan, manager_email')
       .eq('id', restaurantId)
       .single()
 
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
         <tr>
           <td style="padding:0 36px 24px;">
             <div style="font-size:12px;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Facturado a</div>
-            <div style="font-size:15px;font-weight:700;color:#111;">${rest.name}</div>
+            <div style="font-size:15px;font-weight:700;color:#111;">${rest.billing_name || rest.name}</div>
             <div style="font-size:13px;color:#666;margin-top:2px;">${to}</div>
           </td>
         </tr>

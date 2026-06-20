@@ -50,6 +50,7 @@ export default function UpgradePage() {
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [billingEmail, setBillingEmail] = useState('')
+  const [billingName, setBillingName] = useState('')
   const [applePaySupported, setApplePaySupported] = useState(false)
   const [currentPlan, setCurrentPlan] = useState<Plan | null>(null)
   const [subStatus, setSubStatus] = useState<string>('trial')
@@ -74,6 +75,7 @@ export default function UpgradePage() {
         setSubStatus(rest.subscription_status)
         if (rest.plan) setSelectedPlan(rest.plan)
         setBillingEmail(rest.billing_email || user.email || '')
+        setBillingName(rest.name || '')
       }
       setLoading(false)
     }
@@ -151,9 +153,12 @@ export default function UpgradePage() {
     setError('')
     setPaying(true)
 
-    // Save billing email before redirect
-    if (billingEmail && restaurantId) {
-      await supabase.from('restaurants').update({ billing_email: billingEmail }).eq('id', restaurantId)
+    // Save billing info before redirect
+    if (restaurantId) {
+      await supabase.from('restaurants').update({
+        billing_email: billingEmail || undefined,
+        billing_name: billingName || undefined,
+      }).eq('id', restaurantId)
     }
 
     // Re-init with latest name values before paying
@@ -195,8 +200,11 @@ export default function UpgradePage() {
     setError('')
     setPaying(true)
 
-    if (billingEmail) {
-      await supabase.from('restaurants').update({ billing_email: billingEmail }).eq('id', restaurantId)
+    if (restaurantId) {
+      await supabase.from('restaurants').update({
+        billing_email: billingEmail || undefined,
+        billing_name: billingName || undefined,
+      }).eq('id', restaurantId)
     }
 
     // Switch payment method to Apple Pay in the hidden select
@@ -300,6 +308,12 @@ export default function UpgradePage() {
                 <select id="tlpy_payment_method" defaultValue="card:1:1" style={{ display: 'none' }}>
                   <option value="card:1:1">Tarjeta</option>
                 </select>
+
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Nombre de facturación</label>
+                  <input type="text" placeholder="Empresa S.A. o nombre completo" value={billingName} onChange={e => setBillingName(e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                </div>
 
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Email de facturación</label>
