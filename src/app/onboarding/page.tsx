@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 const PLATFORMS = [
   { key: 'google', label: 'Google', color: '#4285F4', abbr: 'G', description: 'La más importante — aparece en búsquedas' },
   { key: 'tripadvisor', label: 'TripAdvisor', color: '#34E0A1', textColor: '#1a1a1a', abbr: 'TA', description: 'Muy usada en LATAM para restaurantes' },
-  { key: 'opentable', label: 'OpenTable', color: '#DA3743', abbr: 'OT', description: 'Reservas + review post-visita' },
+  // { key: 'opentable', label: 'OpenTable', color: '#DA3743', abbr: 'OT', description: 'Reservas + review post-visita' },
   { key: 'thefork', label: 'TheFork', color: '#FF8C00', abbr: 'TF', description: 'Integrado con TripAdvisor' },
   { key: 'facebook', label: 'Facebook', color: '#1877F2', abbr: 'f', description: 'Reviews en tu página de Facebook' },
   { key: 'yelp', label: 'Yelp', color: '#E31837', abbr: 'Y', description: 'Comunidad de reviews' },
@@ -402,11 +402,7 @@ export default function OnboardingPage() {
                   placeholder: 'https://www.tripadvisor.com/Restaurant_Review-...',
                   hint: '1. Buscá tu restaurante en TripAdvisor.com\n2. Abrí tu página\n3. Copiá la URL completa del browser',
                 },
-                {
-                  key: 'opentable', label: 'OpenTable', color: '#DA3743', abbr: 'OT',
-                  placeholder: 'https://www.opentable.com/r/tu-restaurante',
-                  hint: '1. Entrá a tu cuenta de OpenTable\n2. Andá a tu perfil público\n3. Copiá la URL de tu página',
-                },
+                // { key: 'opentable', label: 'OpenTable', ... },
                 {
                   key: 'thefork', label: 'TheFork', color: '#FF8C00', abbr: 'TF',
                   placeholder: 'https://www.thefork.com/restaurant/...',

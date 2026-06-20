@@ -45,7 +45,7 @@ type Scan = {
 const PLATFORMS = [
   { key: 'google', label: 'Google', color: '#4285F4' },
   { key: 'tripadvisor', label: 'TripAdvisor', color: '#00AF87' },
-  { key: 'opentable', label: 'OpenTable', color: '#DA3743' },
+  // { key: 'opentable', label: 'OpenTable', color: '#DA3743' },
   { key: 'thefork', label: 'TheFork', color: '#FF8C00' },
   { key: 'facebook', label: 'Facebook', color: '#1877F2' },
   { key: 'yelp', label: 'Yelp', color: '#E31837' },
@@ -459,7 +459,7 @@ export default function DashboardPage() {
               { label: t.field_slug, key: 'slug', placeholder: 'mi-restaurante' },
               { label: t.field_google, key: 'google_place_id', placeholder: 'https://g.page/r/...' },
               { label: t.field_tripadvisor, key: 'tripadvisor_url', placeholder: 'https://tripadvisor.com/...' },
-              { label: t.field_opentable, key: 'opentable_url', placeholder: 'https://opentable.com/...' },
+              // { label: t.field_opentable, key: 'opentable_url', placeholder: 'https://opentable.com/...' },
               { label: t.field_thefork, key: 'thefork_url', placeholder: 'https://thefork.com/...' },
               { label: t.field_facebook, key: 'facebook_url', placeholder: 'https://facebook.com/...' },
               { label: t.field_yelp, key: 'yelp_url', placeholder: 'https://yelp.com/...' },
@@ -499,7 +499,7 @@ export default function DashboardPage() {
               <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>{t.dash_active_platforms}</div>
               <div style={{ fontSize: 12, color: '#aaa', marginBottom: 12 }}>{t.dash_platforms_hint}</div>
               {(() => {
-                const urlMap: Record<string, string> = { google: 'google_place_id', tripadvisor: 'tripadvisor_url', opentable: 'opentable_url', thefork: 'thefork_url', facebook: 'facebook_url', yelp: 'yelp_url' }
+                const urlMap: Record<string, string> = { google: 'google_place_id', tripadvisor: 'tripadvisor_url', thefork: 'thefork_url', facebook: 'facebook_url', yelp: 'yelp_url' }
                 const withUrl = PLATFORMS.filter(p => (form as any)[urlMap[p.key]])
                 if (withUrl.length === 0) return <div style={{ fontSize: 13, color: '#bbb', padding: '12px 0' }}>{t.dash_add_urls}</div>
                 return (

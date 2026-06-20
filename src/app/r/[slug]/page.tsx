@@ -167,7 +167,7 @@ export default function ReviewPage() {
         return `https://search.google.com/local/writereview?placeid=${g}`
       }
       case 'tripadvisor': return restaurant.tripadvisor_url
-      case 'opentable': return restaurant.opentable_url
+      // case 'opentable': return restaurant.opentable_url
       case 'thefork': return restaurant.thefork_url
       case 'facebook': return restaurant.facebook_url
       case 'yelp': return restaurant.yelp_url
@@ -229,7 +229,7 @@ export default function ReviewPage() {
   const platforms = [
     { key: 'google', label: 'Google', color: '#4285F4', abbr: 'G' },
     { key: 'tripadvisor', label: 'TripAdvisor', color: '#34E0A1', textColor: '#1a1a1a', abbr: 'TA' },
-    { key: 'opentable', label: 'OpenTable', color: '#DA3743', abbr: 'OT' },
+    // { key: 'opentable', label: 'OpenTable', color: '#DA3743', abbr: 'OT' },
     { key: 'thefork', label: 'TheFork', color: '#FF8C00', abbr: 'TF' },
     { key: 'facebook', label: 'Facebook', color: '#1877F2', abbr: 'f' },
     { key: 'yelp', label: 'Yelp', color: '#E31837', abbr: 'Y' },
