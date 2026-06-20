@@ -52,7 +52,11 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  if (!accountsRes.ok) return NextResponse.json({ locations: [], error: 'Could not fetch accounts' })
+  if (!accountsRes.ok) {
+    const errBody = await accountsRes.json().catch(() => ({}))
+    console.error('Accounts API error:', accountsRes.status, JSON.stringify(errBody))
+    return NextResponse.json({ locations: [], error: 'Could not fetch accounts', status: accountsRes.status, detail: errBody })
+  }
 
   const accountsData = await accountsRes.json()
   const accounts = accountsData.accounts ?? []
