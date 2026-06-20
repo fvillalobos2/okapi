@@ -18,7 +18,7 @@ function useScrollReveal() {
 
 const FAQS = [
   { q: '¿Necesito instalar algo?', a: 'No. Okapi funciona 100% en el navegador. Vos accedés desde tu computadora y tus clientes desde el celular al escanear el QR. Sin apps, sin descargas.' },
-  { q: '¿Cómo llega el QR a mis clientes?', a: 'Generamos un código QR listo para imprimir en alta resolución. Lo podés poner en las mesas, el menú, la salida o donde quieras. Al escanearlo con la cámara del celular se abre la página de reseñas.' },
+  { q: '¿Cómo acceden mis clientes a la página de reseñas?', a: 'Hay tres formas: escaneando el código QR que generamos para vos, recibiendo el link directo por email o por WhatsApp. Cualquier canal abre la misma página — sin app, sin registro.' },
   { q: '¿Qué pasa con los clientes insatisfechos?', a: 'Si alguien califica con 1-3 estrellas, lo llevamos a un formulario privado donde puede contar qué pasó. Vos recibís esa información por email y si quiere contacto directo, se abre WhatsApp automáticamente.' },
   { q: '¿Puedo conectar múltiples plataformas?', a: 'Sí. Podés activar hasta 6 plataformas: Google, TripAdvisor, OpenTable, TheFork, Facebook y Yelp. Los clientes satisfechos eligen en cuál dejar su reseña.' },
   { q: '¿Es legal hacer esto?', a: 'Sí. Okapi no altera ni elimina reseñas — simplemente filtra el feedback antes de que llegue a publicarse. Es una práctica común en la industria de hospitalidad.' },
@@ -115,7 +115,7 @@ export default function Home() {
             Más reseñas positivas.<br />Menos críticas públicas.
           </h1>
           <p className="hero-sub" style={{ fontSize: 17, color: '#666', lineHeight: 1.75, marginBottom: 40, maxWidth: 480, margin: '0 auto 40px' }}>
-            Tu cliente escanea un QR, califica su experiencia y vos decidís qué llega a Google. Los contentos van a publicar. Los insatisfechos te hablan a vos.
+            Tu cliente accede vía QR, email o WhatsApp, califica su experiencia y vos decidís qué llega a Google. Los contentos publican una reseña. Los insatisfechos te hablan a vos.
           </p>
           <div className="hero-cta" style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/login" style={{ padding: '13px 30px', background: '#C8102E', color: '#fff', borderRadius: 10, fontSize: 15, fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 20px rgba(200,16,46,0.35)' }}
@@ -233,7 +233,7 @@ export default function Home() {
           </Reveal>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2 }}>
             {[
-              { n: '01', icon: '📱', t: 'Escanea el QR', d: 'En la mesa, el menú o la salida. Sin app, sin descarga.', color: '#4285F4' },
+              { n: '01', icon: '📱', t: 'Accede al link', d: 'Escaneando el QR en la mesa, o recibiendo el link directo por correo o WhatsApp. Sin app, sin descarga.', color: '#4285F4' },
               { n: '02', icon: '⭐', t: 'Califica su visita', d: '4-5★ va a Google. 1-3★ el feedback queda privado para vos.', color: '#f59e0b' },
               { n: '03', icon: '🔔', t: 'Recibís la alerta', d: 'Email al instante con el detalle. WhatsApp si quiere hablar.', color: '#C8102E' },
               { n: '04', icon: '📈', t: 'Tu rating sube', d: 'Más reseñas 5★ publicadas. Menos críticas en internet.', color: '#22c55e' },
