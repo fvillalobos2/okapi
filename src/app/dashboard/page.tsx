@@ -295,9 +295,9 @@ export default function DashboardPage() {
                 style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px', border: `2px dashed ${logoDragging ? '#C8102E' : '#e0e0e0'}`, borderRadius: 12, cursor: 'pointer', background: logoDragging ? '#fff5f5' : '#fafafa', transition: 'all 0.15s' }}>
                 <div style={{ width: 64, height: 64, borderRadius: 10, background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
                   {form.logo_url
-                    ? <img src={form.logo_url} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                    : <span style={{ fontSize: 26 }}>🖼️</span>
-                  }
+                    ? <img src={form.logo_url} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.removeAttribute('style') }} />
+                    : null}
+                  <span style={{ fontSize: 26, display: form.logo_url ? 'none' : 'block' }}>🖼️</span>
                 </div>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>
