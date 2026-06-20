@@ -109,8 +109,7 @@ export default function DashboardPage() {
 
     // Turning ON: if not connected to Google, start OAuth
     if (!isOn && !restaurant.google_account_id) {
-      const { data: { session } } = await supabase.auth.getSession()
-      window.location.href = `/api/google/connect?restaurantId=${restaurant.id}&token=${session?.access_token}`
+      window.location.href = `/api/google/connect?restaurantId=${restaurant.id}`
       return
     }
 

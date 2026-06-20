@@ -8,27 +8,13 @@ const supabaseAdmin = createClient(
 
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code')
-  const state = req.nextUrl.searchParams.get('state') // restaurantId:userToken
+  const restaurantId = req.nextUrl.searchParams.get('state')
   const error = req.nextUrl.searchParams.get('error')
 
-  if (error || !code || !state) {
+  if (error || !code || !restaurantId) {
+    console.error('Google callback error:', { error, code: !!code, restaurantId })
     return NextResponse.redirect(new URL('/dashboard?google=error', req.url))
   }
-
-  const [restaurantId, userToken] = state.split(':').reduce<[string, string]>((acc, part, i, arr) => {
-    if (i === 0) acc[0] = part
-    else if (i === arr.length - 1) acc[1] = part
-    else acc[0] += ':' + part
-    return acc
-  }, ['', ''])
-
-  // Verify user owns this restaurant
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-  const { data: { user } } = await supabase.auth.getUser(userToken)
-  if (!user) return NextResponse.redirect(new URL('/login', req.url))
 
   // Exchange code for tokens
   const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -45,36 +31,48 @@ export async function GET(req: NextRequest) {
 
   const tokens = await tokenRes.json()
   if (!tokens.access_token) {
+    console.error('Token exchange failed:', tokens)
     return NextResponse.redirect(new URL('/dashboard?google=error', req.url))
   }
 
-  // Fetch Google Business accounts to get account_id and location_id
-  const accountsRes = await fetch('https://mybusinessaccountmanagement.googleapis.com/v1/accounts', {
-    headers: { Authorization: `Bearer ${tokens.access_token}` },
-  })
-  const accountsData = await accountsRes.json()
-  const account = accountsData.accounts?.[0]
-  if (!account) return NextResponse.redirect(new URL('/dashboard?google=noaccount', req.url))
+  // Try to fetch Google Business account and location
+  let accountId: string | null = null
+  let locationId: string | null = null
 
-  const accountId = account.name // e.g. "accounts/123456"
+  try {
+    const accountsRes = await fetch('https://mybusinessaccountmanagement.googleapis.com/v1/accounts', {
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
+    })
+    const accountsData = await accountsRes.json()
+    const account = accountsData.accounts?.[0]
+    if (account) {
+      accountId = account.name
 
-  // Get first location
-  const locRes = await fetch(
-    `https://mybusinessbusinessinformation.googleapis.com/v1/${accountId}/locations?readMask=name,title`,
-    { headers: { Authorization: `Bearer ${tokens.access_token}` } }
-  )
-  const locData = await locRes.json()
-  const location = locData.locations?.[0]
-  const locationId = location?.name // e.g. "locations/123456"
+      const locRes = await fetch(
+        `https://mybusinessbusinessinformation.googleapis.com/v1/${accountId}/locations?readMask=name,title`,
+        { headers: { Authorization: `Bearer ${tokens.access_token}` } }
+      )
+      const locData = await locRes.json()
+      locationId = locData.locations?.[0]?.name ?? null
+    }
+  } catch (e) {
+    console.error('Error fetching Business Profile:', e)
+    // Continue anyway — tokens are saved, user can configure later
+  }
 
-  // Save to DB
-  await supabaseAdmin.from('restaurants').update({
+  // Save tokens and enable auto-reply
+  const { error: dbError } = await supabaseAdmin.from('restaurants').update({
     google_access_token: tokens.access_token,
-    google_refresh_token: tokens.refresh_token || null,
+    google_refresh_token: tokens.refresh_token ?? null,
     google_account_id: accountId,
-    google_location_id: locationId || null,
+    google_location_id: locationId,
     auto_reply_enabled: true,
-  }).eq('id', restaurantId).eq('user_id', user.id)
+  }).eq('id', restaurantId)
+
+  if (dbError) {
+    console.error('DB update error:', dbError)
+    return NextResponse.redirect(new URL('/dashboard?google=error', req.url))
+  }
 
   return NextResponse.redirect(new URL('/dashboard?google=connected', req.url))
 }
