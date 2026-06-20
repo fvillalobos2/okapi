@@ -293,7 +293,7 @@ export default function ReviewPage() {
             {errors.experience && <div style={{ fontSize: 12, color: '#C8102E', marginBottom: 10 }}>{errors.experience}</div>}
 
             {/* Contact toggle */}
-            <div style={{ fontSize: 13, fontWeight: 600, margin: '14px 0 10px' }}>¿Quieres que te contactemos?</div>
+            <div style={{ fontSize: 13, fontWeight: 600, margin: '14px 0 10px' }}>¿Querés hablar directamente con el manager?</div>
             <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
               <button onClick={() => setWantsContact(true)} style={{ flex: 1, padding: 10, borderRadius: 8, border: '1.5px solid', cursor: 'pointer', fontSize: 14, fontWeight: 600, borderColor: wantsContact === true ? '#43a047' : '#e0e0e0', background: wantsContact === true ? '#e8f5e9' : '#fff', color: wantsContact === true ? '#2e7d32' : '#333' }}>Sí</button>
               <button onClick={() => setWantsContact(false)} style={{ flex: 1, padding: 10, borderRadius: 8, border: '1.5px solid', cursor: 'pointer', fontSize: 14, fontWeight: 600, borderColor: wantsContact === false ? '#C8102E' : '#e0e0e0', background: wantsContact === false ? '#fce4e4' : '#fff', color: wantsContact === false ? '#a50d26' : '#333' }}>No</button>
