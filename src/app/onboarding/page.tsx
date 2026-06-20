@@ -20,6 +20,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(1)
   const [restaurantId, setRestaurantId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
@@ -142,9 +143,11 @@ export default function OnboardingPage() {
     }
 
     if (restaurantId) {
-      await supabase.from('restaurants').update(payload).eq('id', restaurantId)
+      const { error } = await supabase.from('restaurants').update(payload).eq('id', restaurantId)
+      if (error) { setSaveError(error.message); setSaving(false); return }
     } else {
-      await supabase.from('restaurants').insert({ ...payload, user_id: user.id })
+      const { error } = await supabase.from('restaurants').insert({ ...payload, user_id: user.id })
+      if (error) { setSaveError(error.message); setSaving(false); return }
     }
 
     setSaving(false)
@@ -420,6 +423,12 @@ export default function OnboardingPage() {
                   Ir al Dashboard
                 </button>
               </div>
+            </div>
+          )}
+
+          {saveError && (
+            <div style={{ fontSize: 13, color: '#a50d26', background: '#fce4e4', border: '1px solid #f7c1c1', padding: '10px 14px', borderRadius: 8, marginTop: 16 }}>
+              Error al guardar: {saveError}
             </div>
           )}
 
