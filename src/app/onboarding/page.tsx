@@ -404,8 +404,8 @@ export default function OnboardingPage() {
               <div style={{ fontSize: 22, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>¡Tu página está lista!</div>
               <p style={{ fontSize: 14, color: '#666', lineHeight: 1.5, marginBottom: 28 }}>Tus clientes ya pueden dejar su opinión. Compartí el link o mostrá el QR en las mesas.</p>
 
-              <div style={{ background: '#f5f5f5', borderRadius: 12, padding: '14px 20px', marginBottom: 20, fontFamily: 'monospace', fontSize: 14, color: '#1a1a1a' }}>
-                okapi.app/r/{slug}
+              <div style={{ background: '#f5f5f5', borderRadius: 12, padding: '14px 20px', marginBottom: 20, fontFamily: 'monospace', fontSize: 14, color: '#1a1a1a', wordBreak: 'break-all' }}>
+                reviews.projectokapi.com/r/{slug}
               </div>
 
               <div style={{ display: 'flex', gap: 10, flexDirection: 'column' }}>
