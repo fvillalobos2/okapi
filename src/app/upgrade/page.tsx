@@ -49,6 +49,7 @@ export default function UpgradePage() {
   const [error, setError] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
+  const [billingEmail, setBillingEmail] = useState('')
   const [applePaySupported, setApplePaySupported] = useState(false)
   const [currentPlan, setCurrentPlan] = useState<Plan | null>(null)
   const [subStatus, setSubStatus] = useState<string>('trial')
@@ -63,7 +64,7 @@ export default function UpgradePage() {
 
       const { data: rest } = await supabase
         .from('restaurants')
-        .select('id, plan, subscription_status')
+        .select('id, plan, subscription_status, billing_email, name')
         .eq('user_id', user.id)
         .single()
 
@@ -72,6 +73,7 @@ export default function UpgradePage() {
         setCurrentPlan(rest.plan)
         setSubStatus(rest.subscription_status)
         if (rest.plan) setSelectedPlan(rest.plan)
+        setBillingEmail(rest.billing_email || user.email || '')
       }
       setLoading(false)
     }
@@ -149,6 +151,11 @@ export default function UpgradePage() {
     setError('')
     setPaying(true)
 
+    // Save billing email before redirect
+    if (billingEmail && restaurantId) {
+      await supabase.from('restaurants').update({ billing_email: billingEmail }).eq('id', restaurantId)
+    }
+
     // Re-init with latest name values before paying
     const { data: { session } } = await supabase.auth.getSession()
     const res = await fetch(`/api/tilopay/token?restaurantId=${restaurantId}&plan=${selectedPlan}`, {
@@ -187,6 +194,10 @@ export default function UpgradePage() {
     if (!window.Tilopay || !restaurantId) return
     setError('')
     setPaying(true)
+
+    if (billingEmail) {
+      await supabase.from('restaurants').update({ billing_email: billingEmail }).eq('id', restaurantId)
+    }
 
     // Switch payment method to Apple Pay in the hidden select
     const sel = document.getElementById('tlpy_payment_method') as HTMLSelectElement | null
@@ -289,6 +300,13 @@ export default function UpgradePage() {
                 <select id="tlpy_payment_method" defaultValue="card:1:1" style={{ display: 'none' }}>
                   <option value="card:1:1">Tarjeta</option>
                 </select>
+
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Email de facturación</label>
+                  <input type="email" placeholder="facturacion@empresa.com" value={billingEmail} onChange={e => setBillingEmail(e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                  <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>La factura se enviará a este correo</div>
+                </div>
 
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Número de tarjeta</label>
                 <input id="tlpy_cc_number" type="tel" placeholder="1234 5678 9012 3456" maxLength={19}

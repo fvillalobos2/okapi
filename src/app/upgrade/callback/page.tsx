@@ -73,6 +73,13 @@ function CallbackContent() {
         return
       }
 
+      // Send invoice email (fire and forget — don't block success on it)
+      fetch('/api/tilopay/invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restaurantId, orderNumber }),
+      }).catch(() => {})
+
       setStatus('success')
       setTimeout(() => router.push('/dashboard'), 3000)
     }
