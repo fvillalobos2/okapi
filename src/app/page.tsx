@@ -237,12 +237,9 @@ export default function Home() {
           <Reveal delay={100}>
             <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginBottom: 56 }}>
               {[
-                { name: 'Fermata Kitchen', type: 'Restaurante', icon: '🍽️' },
-                { name: 'Hotel Boutique CR', type: 'Hotel', icon: '🏨' },
-                { name: 'Café Central', type: 'Café', icon: '☕' },
-                { name: 'Grupo Gastronómico', type: 'Cadena', icon: '🍷' },
-                { name: 'Urban Hostel', type: 'Hostel', icon: '🛏️' },
-                { name: 'Rooftop Bar', type: 'Bar', icon: '🍹' },
+                { name: 'Innova Home Center', type: 'Empresa', icon: '🏠' },
+                { name: 'Hotel Fermata', type: 'Hotel', icon: '🏨' },
+                { name: 'Restaurante Fuso', type: 'Restaurante', icon: '🍽️' },
               ].map(c => (
                 <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px', background: '#f7f7f8', borderRadius: 10, border: '1px solid #ebebeb' }}>
                   <span style={{ fontSize: 18 }}>{c.icon}</span>
@@ -258,9 +255,9 @@ export default function Home() {
           {/* Testimonials */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
             {[
-              { quote: 'Desde que usamos Okapi, nuestro promedio en Google subió de 4.1 a 4.6 en menos de dos meses. Los clientes insatisfechos nos contactan directo en vez de publicar.', name: 'Carlos M.', role: 'Dueño · Restaurante', icon: '🍽️' },
-              { quote: 'La diferencia es enorme. Antes no sabíamos qué pensaban los huéspedes hasta que leíamos las reseñas negativas en TripAdvisor. Ahora lo sabemos al instante.', name: 'Ana R.', role: 'Gerente · Hotel Boutique', icon: '🏨' },
-              { quote: 'Súper fácil de configurar. En 10 minutos teníamos el QR impreso en las mesas y el dashboard funcionando. Ya llevamos 80 scans en el primer mes.', name: 'Diego L.', role: 'Manager · Café & Bar', icon: '☕' },
+              { quote: 'Okapi nos permitió entender qué piensan nuestros clientes antes de que lo publiquen. Ahora respondemos al instante y protegemos nuestra reputación online.', name: 'Innova Home Center', role: 'Empresa · Costa Rica', icon: '🏠' },
+              { quote: 'La diferencia es enorme. Antes no sabíamos qué pensaban los huéspedes hasta leer las reseñas negativas. Ahora lo sabemos al instante y actuamos.', name: 'Hotel Fermata', role: 'Hotel · Costa Rica', icon: '🏨' },
+              { quote: 'En pocas semanas mejoramos nuestro promedio en Google. El QR en las mesas funciona perfecto y el manager recibe las alertas de inmediato.', name: 'Restaurante Fuso', role: 'Restaurante · Costa Rica', icon: '🍽️' },
             ].map((t, i) => (
               <Reveal key={i} delay={i * 80}>
                 <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #ebebeb', display: 'flex', flexDirection: 'column', gap: 16, height: '100%', boxSizing: 'border-box', transition: 'all 0.2s' }}
