@@ -33,6 +33,9 @@ export default function OnboardingPage() {
   const [activePlatforms, setActivePlatforms] = useState<string[]>(['google'])
   const [urls, setUrls] = useState<Record<string, string>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [googleInput, setGoogleInput] = useState('')
+  const [resolvingGoogle, setResolvingGoogle] = useState(false)
+  const [googleResolved, setGoogleResolved] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -71,7 +74,7 @@ export default function OnboardingPage() {
       errs.platforms = 'Seleccioná al menos una plataforma.'
     }
     if (step === 4) {
-      if (activePlatforms.includes('google') && !urls.google_place_id?.trim()) errs.google = 'El Google Place ID es obligatorio.'
+      if (activePlatforms.includes('google') && !urls.google_place_id?.trim()) errs.google = 'Pegá el link de Google Maps y presioná "Resolver".'
     }
     setErrors(errs)
     return Object.keys(errs).length === 0
@@ -81,6 +84,26 @@ export default function OnboardingPage() {
     if (!validateStep()) return
     if (step < TOTAL_STEPS - 1) { setStep(s => s + 1); return }
     if (step === TOTAL_STEPS - 1) await handleSave()
+  }
+
+  async function resolveGoogleInput(input: string) {
+    if (!input.trim()) return
+    setResolvingGoogle(true)
+    setGoogleResolved(false)
+    const res = await fetch('/api/resolve-place', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input }),
+    })
+    const data = await res.json()
+    if (data.placeId) {
+      setUrls(u => ({ ...u, google_place_id: data.placeId }))
+      setGoogleResolved(true)
+      setErrors(e => ({ ...e, google: '' }))
+    } else {
+      setErrors(e => ({ ...e, google: 'No se pudo extraer el Place ID. Pegá el ID directamente (empieza con ChIJ...).' }))
+    }
+    setResolvingGoogle(false)
   }
 
   async function handleLogoUpload(file: File) {
@@ -293,16 +316,41 @@ export default function OnboardingPage() {
                 <div style={{ marginBottom: 20 }}>
                   <label style={{ fontSize: 13, fontWeight: 600, color: '#333', display: 'block', marginBottom: 4 }}>
                     <span style={{ display: 'inline-block', width: 20, height: 20, background: '#4285F4', borderRadius: 4, color: '#fff', fontSize: 10, fontWeight: 700, textAlign: 'center', lineHeight: '20px', marginRight: 6, verticalAlign: 'middle' }}>G</span>
-                    Google — Place ID
+                    Google — Buscá tu negocio
                   </label>
                   <div style={{ background: '#f0f6ff', border: '1px solid #c5d9f7', borderRadius: 8, padding: '10px 12px', marginBottom: 8, fontSize: 12, color: '#1a4a8a', lineHeight: 1.5 }}>
-                    📍 <strong>¿Cómo obtenerlo?</strong><br />
-                    1. Buscá tu negocio en <a href="https://maps.google.com" target="_blank" rel="noopener" style={{ color: '#4285F4' }}>Google Maps</a><br />
-                    2. Hacé click en tu negocio → copié la URL<br />
-                    3. O usá el <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noopener" style={{ color: '#4285F4' }}>Place ID Finder</a> — buscás tu negocio y copiás el ID que empieza con "ChIJ..."
+                    📍 Pegá cualquiera de estos:<br />
+                    • Link corto de Maps (maps.app.goo.gl/...)<br />
+                    • URL completa de Google Maps<br />
+                    • Link de reviews de Google<br />
+                    • Place ID directo (ChIJ...)
                   </div>
-                  <input value={urls.google_place_id || ''} onChange={e => setUrls({ ...urls, google_place_id: e.target.value })} placeholder="ChIJR1posFr5oI8RVY-6K9zBgvs"
-                    style={{ width: '100%', border: `1.5px solid ${errors.google ? '#C8102E' : '#e0e0e0'}`, borderRadius: 10, padding: '12px 14px', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+                  <a
+                    href={`https://www.google.com/maps/search/${encodeURIComponent(name || 'mi restaurante')}`}
+                    target="_blank" rel="noopener"
+                    style={{ display: 'inline-block', marginBottom: 10, fontSize: 12, color: '#4285F4', textDecoration: 'none', fontWeight: 600 }}>
+                    🔍 Buscar "{name || 'mi restaurante'}" en Google Maps →
+                  </a>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      value={googleInput}
+                      onChange={e => { setGoogleInput(e.target.value); setGoogleResolved(false) }}
+                      placeholder="https://maps.app.goo.gl/... o ChIJ..."
+                      style={{ flex: 1, border: `1.5px solid ${errors.google ? '#C8102E' : googleResolved ? '#22c55e' : '#e0e0e0'}`, borderRadius: 10, padding: '12px 14px', fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => resolveGoogleInput(googleInput)}
+                      disabled={resolvingGoogle || !googleInput.trim()}
+                      style={{ padding: '12px 16px', background: '#4285F4', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', opacity: resolvingGoogle || !googleInput.trim() ? 0.6 : 1 }}>
+                      {resolvingGoogle ? '…' : 'Resolver'}
+                    </button>
+                  </div>
+                  {googleResolved && (
+                    <div style={{ fontSize: 12, color: '#16a34a', marginTop: 6, background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '8px 12px', borderRadius: 8 }}>
+                      ✅ Place ID encontrado: <strong>{urls.google_place_id}</strong>
+                    </div>
+                  )}
                   {errors.google && <div style={{ fontSize: 12, color: '#C8102E', marginTop: 4 }}>{errors.google}</div>}
                 </div>
               )}
