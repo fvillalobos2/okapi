@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useTranslation, Lang } from '@/lib/i18n'
 
 type Restaurant = {
   id: string
@@ -52,6 +53,7 @@ const PLATFORMS = [
 
 export default function DashboardPage() {
   const router = useRouter()
+  const { t, lang, setLang } = useTranslation()
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [googleNotif, setGoogleNotif] = useState<'connected' | 'error' | null>(null)
   const [autoLoadLocations, setAutoLoadLocations] = useState(false)
@@ -60,7 +62,7 @@ export default function DashboardPage() {
   const [loadingLocations, setLoadingLocations] = useState(false)
   const [scans, setScans] = useState<Scan[]>([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<'stats' | 'config'>('stats')
+  const [activeTab, setTab] = useState<'stats' | 'config'>('stats')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [form, setForm] = useState<Partial<Restaurant>>({})
@@ -140,7 +142,7 @@ export default function DashboardPage() {
 
   async function handleCancelSubscription() {
     if (!restaurant) return
-    if (!confirm('¿Cancelar suscripción? Mantenés acceso hasta el fin del período actual.')) return
+    if (!confirm(t.dash_cancel_confirm)) return
     await supabase.from('restaurants').update({ subscription_status: 'canceled' }).eq('id', restaurant.id)
     setRestaurant({ ...restaurant, subscription_status: 'canceled' })
   }
@@ -178,7 +180,7 @@ export default function DashboardPage() {
   }
 
   async function handleLogoUpload(file: File) {
-    if (file.size > 2 * 1024 * 1024) { alert('El archivo debe ser menor a 2MB'); return }
+    if (file.size > 2 * 1024 * 1024) { alert(t.dash_logo_size_error); return }
     setUploadingLogo(true)
     const ext = file.name.split('.').pop()
     const path = `${Date.now()}.${ext}`
@@ -243,15 +245,24 @@ export default function DashboardPage() {
               {restaurant!.plan}
             </span>
           )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            {(['es', 'en'] as Lang[]).map(l => (
+              <button key={l} onClick={() => setLang(l)} style={{
+                background: lang === l ? '#111' : 'transparent', color: lang === l ? '#fff' : '#aaa',
+                border: 'none', borderRadius: 5, padding: '3px 7px', fontSize: 10,
+                fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase',
+              }}>{l}</button>
+            ))}
+          </div>
           <Link href="/upgrade" style={{ background: status === 'active' ? 'none' : '#C8102E', border: status === 'active' ? '1px solid #e0e0e0' : 'none', borderRadius: 8, padding: '5px 14px', fontSize: 13, cursor: 'pointer', color: status === 'active' ? '#555' : '#fff', textDecoration: 'none', fontWeight: 600 }}>
-            {status === 'active' ? 'Plan' : 'Activar plan'}
+            {status === 'active' ? t.dash_plan_btn_active : t.dash_plan_btn_inactive}
           </Link>
           {status === 'active' && (
             <button onClick={handleCancelSubscription} style={{ background: 'none', border: 'none', fontSize: 12, color: '#bbb', cursor: 'pointer', padding: '5px 4px', textDecoration: 'underline' }}>
-              Cancelar
+              {t.dash_cancel_sub}
             </button>
           )}
-          <button onClick={handleLogout} style={{ background: 'none', border: '1px solid #e0e0e0', borderRadius: 8, padding: '5px 14px', fontSize: 13, cursor: 'pointer', color: '#555' }}>Salir</button>
+          <button onClick={handleLogout} style={{ background: 'none', border: '1px solid #e0e0e0', borderRadius: 8, padding: '5px 14px', fontSize: 13, cursor: 'pointer', color: '#555' }}>{t.logout}</button>
         </div>
       </div>
 
@@ -262,23 +273,23 @@ export default function DashboardPage() {
             <span style={{ fontSize: 16 }}>{isTrialExpired ? '🔒' : isCanceled ? '⚠️' : '⏳'}</span>
             <span style={{ fontSize: 13, color: '#fff', fontWeight: 500 }}>
               {isTrialExpired
-                ? 'Tu período de prueba terminó. Activa un plan para seguir usando el dashboard.'
+                ? t.dash_trial_expired
                 : isCanceled
-                ? `Tu suscripción fue cancelada. Acceso hasta el ${subEnd ? subEnd.toLocaleDateString('es-CR') : '—'}. Reactiva cuando quieras.`
+                ? t.dash_canceled(subEnd ? subEnd.toLocaleDateString(lang === 'en' ? 'en-US' : 'es-CR') : '—')
                 : trialDaysLeft === 1
-                ? 'Queda 1 día de prueba gratuita.'
-                : `Quedan ${trialDaysLeft} días de prueba gratuita.`}
+                ? t.dash_trial_1day
+                : t.dash_trial_days(trialDaysLeft)}
             </span>
           </div>
           <Link href="/upgrade" style={{ background: '#C8102E', color: '#fff', borderRadius: 8, padding: '6px 16px', fontSize: 13, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-            {isCanceled ? 'Reactivar' : 'Ver planes'}
+            {isCanceled ? t.dash_reactivate : t.dash_see_plans}
           </Link>
         </div>
       )}
 
       {googleNotif && (
         <div style={{ background: googleNotif === 'connected' ? '#f0fdf4' : '#fef2f2', borderBottom: `1px solid ${googleNotif === 'connected' ? '#bbf7d0' : '#fecaca'}`, padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: googleNotif === 'connected' ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
-          {googleNotif === 'connected' ? '✓ Google conectado — la respuesta automática está activa.' : '✗ Error al conectar Google. Intentá de nuevo.'}
+          {googleNotif === 'connected' ? (lang === 'en' ? '✓ Google connected — auto-reply is active.' : '✓ Google conectado — la respuesta automática está activa.') : (lang === 'en' ? '✗ Error connecting Google. Try again.' : '✗ Error al conectar Google. Intentá de nuevo.')}
         </div>
       )}
 
@@ -288,16 +299,16 @@ export default function DashboardPage() {
         <div style={{ background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)', borderRadius: 16, padding: '24px', marginBottom: 24, position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: -30, right: -30, width: 140, height: 140, borderRadius: '50%', background: 'rgba(200,16,46,0.15)' }} />
           <div style={{ position: 'absolute', bottom: -20, right: 60, width: 80, height: 80, borderRadius: '50%', background: 'rgba(200,16,46,0.10)' }} />
-          <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>Tu página de reseñas</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>{t.dash_review_page}</div>
           <div style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 4 }}>{restaurant?.name}</div>
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 20, wordBreak: 'break-all' }}>{reviewUrl}</div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <button onClick={copyLink} style={{ padding: '10px 20px', background: copied ? '#16a34a' : '#C8102E', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s' }}>
-              {copied ? '✓ Copiado' : 'Copiar link'}
+              {copied ? t.dash_copied : t.dash_copy_link}
             </button>
             <a href={reviewUrl} target="_blank" rel="noopener"
               style={{ padding: '10px 20px', background: 'rgba(255,255,255,0.12)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
-              Ver página →
+              {t.dash_view_page}
             </a>
           </div>
         </div>
@@ -310,56 +321,56 @@ export default function DashboardPage() {
             style={{ width: 100, height: 100, borderRadius: 8, border: '1px solid #ebebeb', flexShrink: 0 }}
           />
           <div style={{ flex: 1, minWidth: 180 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 4 }}>Código QR</div>
-            <div style={{ fontSize: 13, color: '#777', lineHeight: 1.5, marginBottom: 14 }}>Imprimilo y poné en las mesas, mostrador o menú para que tus clientes dejen su opinión.</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 4 }}>{t.dash_qr_title}</div>
+            <div style={{ fontSize: 13, color: '#777', lineHeight: 1.5, marginBottom: 14 }}>{t.dash_qr_desc}</div>
             <a
               href={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(reviewUrl)}&bgcolor=ffffff&color=1a1a1a&margin=20`}
               download={`qr-${restaurant?.slug}.png`}
               target="_blank"
               rel="noopener"
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', background: '#111', color: '#fff', borderRadius: 10, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
-              ↓ Descargar QR
+              {t.dash_download_qr}
             </a>
           </div>
         </div>
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#ebebeb', borderRadius: 10, padding: 4 }}>
-          {[{ key: 'stats', label: 'Estadísticas' }, { key: 'config', label: 'Configuración' }].map(t => (
-            <button key={t.key} onClick={() => setTab(t.key as any)}
-              style={{ flex: 1, padding: '9px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, background: tab === t.key ? '#fff' : 'transparent', color: tab === t.key ? '#111' : '#777', boxShadow: tab === t.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.15s' }}>
-              {t.label}
+          {[{ key: 'stats', label: t.dash_stats_tab }, { key: 'config', label: t.dash_config_tab }].map(tab => (
+            <button key={tab.key} onClick={() => setTab(tab.key as any)}
+              style={{ flex: 1, padding: '9px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, background: activeTab === tab.key ? '#fff' : 'transparent', color: activeTab === tab.key ? '#111' : '#777', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.15s' }}>
+              {tab.label}
             </button>
           ))}
         </div>
 
         {/* Stats tab */}
-        {tab === 'stats' && (
+        {activeTab === 'stats' && (
           <div>
             {/* KPI cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 20 }}>
               <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb' }}>
                 <div style={{ fontSize: 32, fontWeight: 800, color: '#111', lineHeight: 1 }}>{totalScans}</div>
-                <div style={{ fontSize: 13, color: '#888', marginTop: 6 }}>Total opiniones</div>
+                <div style={{ fontSize: 13, color: '#888', marginTop: 6 }}>{t.dash_total_opinions}</div>
               </div>
               <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb' }}>
                 <div style={{ fontSize: 32, fontWeight: 800, color: '#f59e0b', lineHeight: 1 }}>{avg ? `${avg}★` : '—'}</div>
-                <div style={{ fontSize: 13, color: '#888', marginTop: 6 }}>Promedio</div>
+                <div style={{ fontSize: 13, color: '#888', marginTop: 6 }}>{t.dash_average}</div>
               </div>
               <div style={{ background: '#f0fdf4', borderRadius: 14, padding: '20px', border: '1px solid #bbf7d0' }}>
                 <div style={{ fontSize: 32, fontWeight: 800, color: '#16a34a', lineHeight: 1 }}>{positive}</div>
-                <div style={{ fontSize: 13, color: '#16a34a', marginTop: 6 }}>Positivas (4-5★)</div>
+                <div style={{ fontSize: 13, color: '#16a34a', marginTop: 6 }}>{t.dash_positive}</div>
               </div>
               <div style={{ background: '#fef2f2', borderRadius: 14, padding: '20px', border: '1px solid #fecaca' }}>
                 <div style={{ fontSize: 32, fontWeight: 800, color: '#C8102E', lineHeight: 1 }}>{negative}</div>
-                <div style={{ fontSize: 13, color: '#C8102E', marginTop: 6 }}>Feedback privado</div>
+                <div style={{ fontSize: 13, color: '#C8102E', marginTop: 6 }}>{t.dash_private_feedback}</div>
               </div>
             </div>
 
             {/* Platform clicks */}
             {PLATFORMS.some(p => restaurant?.platforms_active?.[p.key]) && (
               <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb', marginBottom: 20 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#111', marginBottom: 16 }}>Clicks por plataforma</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#111', marginBottom: 16 }}>{t.dash_platform_clicks}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {PLATFORMS.filter(p => restaurant?.platforms_active?.[p.key]).map(p => {
                     const count = scans.filter(s => s.platform_chosen === p.key).length
@@ -382,9 +393,9 @@ export default function DashboardPage() {
 
             {/* Negative feedback */}
             <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb' }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#111', marginBottom: 16 }}>Comentarios recientes</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#111', marginBottom: 16 }}>{t.dash_recent_comments}</div>
               {negativeFeed.length === 0
-                ? <div style={{ fontSize: 14, color: '#aaa', textAlign: 'center', padding: '24px 0' }}>Sin comentarios negativos todavía 🎉</div>
+                ? <div style={{ fontSize: 14, color: '#aaa', textAlign: 'center', padding: '24px 0' }}>{t.dash_no_negative}</div>
                 : negativeFeed.map(s => (
                   <div key={s.id} style={{ borderBottom: '1px solid #f5f5f5', paddingBottom: 14, marginBottom: 14 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -400,7 +411,7 @@ export default function DashboardPage() {
                     )}
                     {s.feedback_text && <div style={{ fontSize: 13, color: '#444', lineHeight: 1.5 }}>{s.feedback_text}</div>}
                     {s.wants_contact && s.contact_name && (
-                      <div style={{ fontSize: 12, color: '#16a34a', marginTop: 6, fontWeight: 600 }}>📞 Quiere contacto: {s.contact_name}</div>
+                      <div style={{ fontSize: 12, color: '#16a34a', marginTop: 6, fontWeight: 600 }}>{t.dash_wants_contact} {s.contact_name}</div>
                     )}
                   </div>
                 ))
@@ -410,12 +421,12 @@ export default function DashboardPage() {
         )}
 
         {/* Config tab */}
-        {tab === 'config' && (
+        {activeTab === 'config' && (
           <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #ebebeb' }}>
 
             {/* Logo upload */}
             <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 10 }}>Logo</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 10 }}>{t.dash_logo}</div>
               <label
                 onDragOver={e => { e.preventDefault(); setLogoDragging(true) }}
                 onDragLeave={() => setLogoDragging(false)}
@@ -429,9 +440,9 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>
-                    {uploadingLogo ? 'Subiendo…' : form.logo_url ? 'Cambiar logo' : 'Subir logo'}
+                    {uploadingLogo ? t.dash_uploading : form.logo_url ? t.dash_change_logo : t.dash_upload_logo}
                   </div>
-                  <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>Arrastrá o hacé click · JPG, PNG, WebP · Máx 2MB</div>
+                  <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{t.dash_logo_hint}</div>
                 </div>
                 <input type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }}
                   onChange={e => { const file = e.target.files?.[0]; if (file) handleLogoUpload(file) }} />
@@ -442,16 +453,16 @@ export default function DashboardPage() {
 
             {/* Fields */}
             {[
-              { label: 'Nombre del negocio', key: 'name', placeholder: 'Ej: Fermata Kitchen' },
-              { label: 'Email del manager (recibe notificaciones)', key: 'manager_email', placeholder: 'manager@turestaurante.com' },
-              { label: 'WhatsApp del manager', key: 'wa_number', placeholder: '50688475571 (con código de país)' },
-              { label: 'Slug (URL de tu página)', key: 'slug', placeholder: 'mi-restaurante' },
-              { label: 'Google — link de reseñas', key: 'google_place_id', placeholder: 'https://g.page/r/...' },
-              { label: 'TripAdvisor URL', key: 'tripadvisor_url', placeholder: 'https://tripadvisor.com/...' },
-              { label: 'OpenTable URL', key: 'opentable_url', placeholder: 'https://opentable.com/...' },
-              { label: 'TheFork URL', key: 'thefork_url', placeholder: 'https://thefork.com/...' },
-              { label: 'Facebook URL', key: 'facebook_url', placeholder: 'https://facebook.com/...' },
-              { label: 'Yelp URL', key: 'yelp_url', placeholder: 'https://yelp.com/...' },
+              { label: t.field_name, key: 'name', placeholder: 'Ej: Fermata Kitchen' },
+              { label: t.field_manager_email, key: 'manager_email', placeholder: 'manager@turestaurante.com' },
+              { label: t.field_wa, key: 'wa_number', placeholder: t.field_wa_placeholder },
+              { label: t.field_slug, key: 'slug', placeholder: 'mi-restaurante' },
+              { label: t.field_google, key: 'google_place_id', placeholder: 'https://g.page/r/...' },
+              { label: t.field_tripadvisor, key: 'tripadvisor_url', placeholder: 'https://tripadvisor.com/...' },
+              { label: t.field_opentable, key: 'opentable_url', placeholder: 'https://opentable.com/...' },
+              { label: t.field_thefork, key: 'thefork_url', placeholder: 'https://thefork.com/...' },
+              { label: t.field_facebook, key: 'facebook_url', placeholder: 'https://facebook.com/...' },
+              { label: t.field_yelp, key: 'yelp_url', placeholder: 'https://yelp.com/...' },
             ].map(f => (
               <div key={f.key} style={{ marginBottom: 16 }}>
                 <label style={{ fontSize: 13, fontWeight: 600, color: '#333', display: 'block', marginBottom: 6 }}>{f.label}</label>
@@ -467,8 +478,8 @@ export default function DashboardPage() {
             {/* WhatsApp toggle */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderTop: '1px solid #f0f0f0', marginTop: 4, marginBottom: 20 }}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>Activar botón de WhatsApp</div>
-                <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>Aparece en la página de reseñas para clientes insatisfechos</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>{t.dash_wa_toggle}</div>
+                <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{t.dash_wa_toggle_desc}</div>
               </div>
               <div onClick={() => setForm({ ...form, wa_enabled: !form.wa_enabled })}
                 style={{ width: 44, height: 24, borderRadius: 12, background: form.wa_enabled ? '#25D366' : '#d1d5db', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
@@ -478,12 +489,12 @@ export default function DashboardPage() {
 
             {/* Platforms */}
             <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>Plataformas activas</div>
-              <div style={{ fontSize: 12, color: '#aaa', marginBottom: 12 }}>Solo aparecen las plataformas con URL configurada arriba</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>{t.dash_active_platforms}</div>
+              <div style={{ fontSize: 12, color: '#aaa', marginBottom: 12 }}>{t.dash_platforms_hint}</div>
               {(() => {
                 const urlMap: Record<string, string> = { google: 'google_place_id', tripadvisor: 'tripadvisor_url', opentable: 'opentable_url', thefork: 'thefork_url', facebook: 'facebook_url', yelp: 'yelp_url' }
                 const withUrl = PLATFORMS.filter(p => (form as any)[urlMap[p.key]])
-                if (withUrl.length === 0) return <div style={{ fontSize: 13, color: '#bbb', padding: '12px 0' }}>Agregá URLs arriba para activar plataformas.</div>
+                if (withUrl.length === 0) return <div style={{ fontSize: 13, color: '#bbb', padding: '12px 0' }}>{t.dash_add_urls}</div>
                 return (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
                     {withUrl.map(p => {
@@ -503,7 +514,7 @@ export default function DashboardPage() {
 
             <button onClick={saveConfig} disabled={saving}
               style={{ width: '100%', padding: '13px 0', background: saving ? '#aaa' : saved ? '#16a34a' : '#C8102E', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', transition: 'background 0.2s' }}>
-              {saving ? 'Guardando…' : saved ? '✓ Guardado' : 'Guardar cambios'}
+              {saving ? t.saving : saved ? t.saved : t.save}
             </button>
           </div>
         )}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useTranslation, Lang } from '@/lib/i18n'
 
 type Restaurant = {
   id: string
@@ -23,15 +24,28 @@ type Restaurant = {
 
 type Screen = 'landing' | 'positive' | 'feedback' | 'thanks'
 
-const CATEGORIES_BY_TYPE: Record<string, string[]> = {
-  restaurant: ['Comida', 'Servicio', 'Ambiente', 'Tiempo de espera', 'Precio', 'Limpieza', 'Otro'],
-  hotel: ['Habitación', 'Limpieza', 'Servicio', 'Check-in/out', 'Amenidades', 'Ubicación', 'Otro'],
-  bar: ['Bebidas', 'Servicio', 'Ambiente', 'Música', 'Precio', 'Limpieza', 'Otro'],
-  default: ['Servicio', 'Calidad', 'Precio', 'Ambiente', 'Atención', 'Limpieza', 'Otro'],
+const CATEGORIES_BY_TYPE: Record<string, Record<Lang, string[]>> = {
+  restaurant: {
+    es: ['Comida', 'Servicio', 'Ambiente', 'Tiempo de espera', 'Precio', 'Limpieza', 'Otro'],
+    en: ['Food', 'Service', 'Ambience', 'Wait time', 'Price', 'Cleanliness', 'Other'],
+  },
+  hotel: {
+    es: ['Habitación', 'Limpieza', 'Servicio', 'Check-in/out', 'Amenidades', 'Ubicación', 'Otro'],
+    en: ['Room', 'Cleanliness', 'Service', 'Check-in/out', 'Amenities', 'Location', 'Other'],
+  },
+  bar: {
+    es: ['Bebidas', 'Servicio', 'Ambiente', 'Música', 'Precio', 'Limpieza', 'Otro'],
+    en: ['Drinks', 'Service', 'Ambience', 'Music', 'Price', 'Cleanliness', 'Other'],
+  },
+  default: {
+    es: ['Servicio', 'Calidad', 'Precio', 'Ambiente', 'Atención', 'Limpieza', 'Otro'],
+    en: ['Service', 'Quality', 'Price', 'Ambience', 'Attention', 'Cleanliness', 'Other'],
+  },
 }
 
 export default function ReviewPage() {
   const { slug } = useParams<{ slug: string }>()
+  const { t, lang, setLang } = useTranslation()
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [loading, setLoading] = useState(true)
   const [screen, setScreen] = useState<Screen>('landing')
@@ -42,12 +56,11 @@ export default function ReviewPage() {
   const [experience, setExperience] = useState('')
   const [wantsContact, setWantsContact] = useState<boolean | null>(null)
   const [contactName, setContactName] = useState('')
-
-  const categories = restaurant
-    ? (CATEGORIES_BY_TYPE[restaurant.business_type || 'default'] ?? CATEGORIES_BY_TYPE.default)
-    : CATEGORIES_BY_TYPE.default
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [kioskMode, setKioskMode] = useState(false)
+
+  const typeKey = restaurant?.business_type || 'default'
+  const categories = (CATEGORIES_BY_TYPE[typeKey] ?? CATEGORIES_BY_TYPE.default)[lang]
 
   useEffect(() => {
     async function load() {
@@ -62,7 +75,6 @@ export default function ReviewPage() {
     load()
     setKioskMode(new URLSearchParams(window.location.search).get('kiosk') === '1')
   }, [slug])
-
 
   async function saveScans(platformChosen: string | null, wantsContactVal: boolean) {
     await supabase.from('scans').insert({
@@ -79,25 +91,19 @@ export default function ReviewPage() {
   function handleStarClick(rating: number) {
     setSelectedRating(rating)
     setTimeout(() => {
-      if (rating >= 4) {
-        setScreen('positive')
-      } else {
-        setFormRating(rating)
-        setScreen('feedback')
-      }
+      if (rating >= 4) setScreen('positive')
+      else { setFormRating(rating); setScreen('feedback') }
     }, 250)
   }
 
   function toggleChip(chip: string) {
-    setSelectedChips(prev =>
-      prev.includes(chip) ? prev.filter(c => c !== chip) : [...prev, chip]
-    )
+    setSelectedChips(prev => prev.includes(chip) ? prev.filter(c => c !== chip) : [...prev, chip])
   }
 
   function validate() {
     const errs: Record<string, string> = {}
-    if (selectedChips.length === 0) errs.chips = 'Por favor seleccioná al menos una categoría.'
-    if (!experience.trim()) errs.experience = 'Por favor describí tu experiencia.'
+    if (selectedChips.length === 0) errs.chips = t.review_err_chips
+    if (!experience.trim()) errs.experience = t.review_err_experience
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -124,15 +130,15 @@ export default function ReviewPage() {
     if (!validate()) return
     const stars = '★'.repeat(formRating) + '☆'.repeat(5 - formRating)
     const msg = [
-      `Hola, tengo un comentario sobre *${restaurant?.name}*.`,
+      lang === 'en'
+        ? `Hi, I have a comment about *${restaurant?.name}*.`
+        : `Hola, tengo un comentario sobre *${restaurant?.name}*.`,
       '',
-      `*Calificación:* ${stars} (${formRating}/5)`,
-      `*Problema con:* ${selectedChips.join(', ')}`,
-      `*Mi experiencia:* ${experience}`,
-      contactName ? `*Cliente:* ${contactName}` : '',
+      lang === 'en' ? `*Rating:* ${stars} (${formRating}/5)` : `*Calificación:* ${stars} (${formRating}/5)`,
+      lang === 'en' ? `*Issue with:* ${selectedChips.join(', ')}` : `*Problema con:* ${selectedChips.join(', ')}`,
+      lang === 'en' ? `*My experience:* ${experience}` : `*Mi experiencia:* ${experience}`,
+      contactName ? (lang === 'en' ? `*Customer:* ${contactName}` : `*Cliente:* ${contactName}`) : '',
     ].filter(Boolean).join('\n')
-    // Open WA immediately (before async) to avoid browser popup blocking
-    // Fire notifications with keepalive so they survive the page unload
     notifyManager(true, true)
     saveScans(null, true).catch(() => {})
     setScreen('thanks')
@@ -169,15 +175,28 @@ export default function ReviewPage() {
     }
   }
 
+  const LangToggle = () => (
+    <div style={{ position: 'absolute', top: 12, right: 14, display: 'flex', gap: 2, zIndex: 10 }}>
+      {(['es', 'en'] as Lang[]).map(l => (
+        <button key={l} onClick={() => setLang(l)} style={{
+          background: lang === l ? '#C8102E' : 'transparent',
+          color: lang === l ? '#fff' : '#aaa',
+          border: 'none', borderRadius: 6, padding: '3px 8px', fontSize: 11,
+          fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.05em',
+        }}>{l}</button>
+      ))}
+    </div>
+  )
+
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1a1a' }}>
-      <div style={{ color: '#fff', fontSize: 14 }}>Cargando…</div>
+      <div style={{ color: '#fff', fontSize: 14 }}>{t.loading}</div>
     </div>
   )
 
   if (!restaurant) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1a1a' }}>
-      <div style={{ color: '#fff', fontSize: 14 }}>Restaurante no encontrado.</div>
+      <div style={{ color: '#fff', fontSize: 14 }}>{t.restaurant_not_found}</div>
     </div>
   )
 
@@ -190,7 +209,7 @@ export default function ReviewPage() {
       )}
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: 28, fontWeight: 800, color: '#fff', marginBottom: 8 }}>{restaurant.name}</div>
-        <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>Escaneá para dejar tu opinión</div>
+        <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>{t.kiosk_scan}</div>
       </div>
       <div style={{ background: '#fff', borderRadius: 20, padding: 20, boxShadow: '0 8px 40px rgba(0,0,0,0.5)' }}>
         <img
@@ -218,13 +237,15 @@ export default function ReviewPage() {
 
   return (
     <div style={{ minHeight: '100dvh', background: 'radial-gradient(ellipse at 20% 50%, rgba(200,16,46,0.18) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(200,16,46,0.10) 0%, transparent 50%), linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
-      <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 8px 32px rgba(0,0,0,0.45)', width: '100%', maxWidth: 440, overflow: 'hidden' }}>
+      <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 8px 32px rgba(0,0,0,0.45)', width: '100%', maxWidth: 440, overflow: 'hidden', position: 'relative' }}>
+
+        <LangToggle />
 
         {/* Header */}
         <div style={{ background: '#fff', padding: '20px 24px 16px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>
-          {restaurant.logo_url ? (
+          {restaurant.logo_url && (
             <img src={restaurant.logo_url} alt={restaurant.name} style={{ height: 48, width: 'auto', display: 'block', margin: '0 auto 8px' }} />
-          ) : null}
+          )}
           <div style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>{restaurant.name}</div>
         </div>
 
@@ -232,10 +253,10 @@ export default function ReviewPage() {
         {screen === 'landing' && (
           <div style={{ padding: '28px 24px 32px' }}>
             <div style={{ fontSize: 22, fontWeight: 700, color: '#111', marginBottom: 8, lineHeight: 1.3 }}>
-              Tu opinión nos importa
+              {t.review_opinion_title}
             </div>
             <p style={{ fontSize: 15, color: '#555', lineHeight: 1.6, marginBottom: 28 }}>
-              ¿Cómo calificarías tu visita a {restaurant.name}?
+              {t.review_how_rate(restaurant.name)}
             </p>
             <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
               {[1, 2, 3, 4, 5].map(v => (
@@ -258,9 +279,9 @@ export default function ReviewPage() {
         {/* Screen: Positive */}
         {screen === 'positive' && (
           <div style={{ padding: '24px' }}>
-            <button onClick={() => setScreen('landing')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', fontSize: 13, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 4 }}>← Volver</button>
-            <div style={{ fontSize: 22, fontWeight: 700, color: '#111', marginBottom: 6 }}>¡Qué bueno saberlo! 🎉</div>
-            <p style={{ fontSize: 14, color: '#555', lineHeight: 1.6, marginBottom: 24 }}>¿Nos ayudarías dejando una reseña en alguna de estas plataformas?</p>
+            <button onClick={() => setScreen('landing')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', fontSize: 13, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 4 }}>{t.back}</button>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#111', marginBottom: 6 }}>{t.review_great}</div>
+            <p style={{ fontSize: 14, color: '#555', lineHeight: 1.6, marginBottom: 24 }}>{t.review_help_platforms}</p>
             {platforms.map(p => (
               <button key={p.key} onClick={() => handlePlatformClick(p.key, getPlatformUrl(p.key)!)}
                 style={{
@@ -271,7 +292,7 @@ export default function ReviewPage() {
                   marginBottom: 10,
                 }}>
                 <span style={{ fontSize: 14, fontWeight: 800, minWidth: 24, textAlign: 'center' }}>{p.abbr}</span>
-                Dejar reseña en {p.label}
+                {t.review_leave_on(p.label)}
               </button>
             ))}
           </div>
@@ -280,20 +301,18 @@ export default function ReviewPage() {
         {/* Screen: Feedback */}
         {screen === 'feedback' && (
           <div style={{ padding: '24px' }}>
-            <button onClick={() => setScreen('landing')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', fontSize: 13, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 4 }}>← Volver</button>
-            <div style={{ fontSize: 22, fontWeight: 700, color: '#111', marginBottom: 6 }}>Queremos mejorar</div>
-            <p style={{ fontSize: 14, color: '#555', lineHeight: 1.6, marginBottom: 24 }}>Tu opinión nos ayuda a brindarte una mejor experiencia.</p>
+            <button onClick={() => setScreen('landing')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', fontSize: 13, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 4 }}>{t.back}</button>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#111', marginBottom: 6 }}>{t.review_improve}</div>
+            <p style={{ fontSize: 14, color: '#555', lineHeight: 1.6, marginBottom: 24 }}>{t.review_your_opinion_helps}</p>
 
-            {/* Mini stars */}
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>Calificación</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>{t.review_rating_label}</div>
             <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
               {[1, 2, 3, 4, 5].map(v => (
                 <span key={v} onClick={() => setFormRating(v)} style={{ fontSize: 32, cursor: 'pointer', color: v <= formRating ? '#f59e0b' : '#d1d5db' }}>★</span>
               ))}
             </div>
 
-            {/* Chips */}
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 10 }}>¿Qué no estuvo bien?</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 10 }}>{t.review_what_wrong}</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>
               {categories.map(c => (
                 <div key={c} onClick={() => toggleChip(c)} style={{
@@ -306,48 +325,46 @@ export default function ReviewPage() {
             </div>
             {errors.chips && <div style={{ fontSize: 12, color: '#C8102E', marginBottom: 12, marginTop: 4 }}>{errors.chips}</div>}
 
-            {/* Experience */}
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#333', margin: '18px 0 8px' }}>Cuéntanos qué pasó</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#333', margin: '18px 0 8px' }}>{t.review_tell_us}</div>
             <textarea
               value={experience} onChange={e => setExperience(e.target.value)}
-              placeholder="Describe tu experiencia…" rows={4}
+              placeholder={t.review_experience_placeholder} rows={4}
               style={{ width: '100%', border: `1.5px solid ${errors.experience ? '#C8102E' : '#e5e7eb'}`, borderRadius: 10, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', resize: 'none', outline: 'none', marginBottom: 4, color: '#111', background: '#fafafa', boxSizing: 'border-box' }}
             />
             {errors.experience && <div style={{ fontSize: 12, color: '#C8102E', marginBottom: 10 }}>{errors.experience}</div>}
 
-            {/* Contact toggle */}
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#333', margin: '18px 0 10px' }}>¿Querés que el manager te contacte?</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#333', margin: '18px 0 10px' }}>{t.review_wants_contact}</div>
             <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-              <button onClick={() => setWantsContact(true)} style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: `2px solid ${wantsContact === true ? '#16a34a' : '#e5e7eb'}`, cursor: 'pointer', fontSize: 14, fontWeight: 600, background: wantsContact === true ? '#f0fdf4' : '#fff', color: wantsContact === true ? '#16a34a' : '#555' }}>Sí</button>
-              <button onClick={() => setWantsContact(false)} style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: `2px solid ${wantsContact === false ? '#C8102E' : '#e5e7eb'}`, cursor: 'pointer', fontSize: 14, fontWeight: 600, background: wantsContact === false ? '#fef2f2' : '#fff', color: wantsContact === false ? '#C8102E' : '#555' }}>No</button>
+              <button onClick={() => setWantsContact(true)} style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: `2px solid ${wantsContact === true ? '#16a34a' : '#e5e7eb'}`, cursor: 'pointer', fontSize: 14, fontWeight: 600, background: wantsContact === true ? '#f0fdf4' : '#fff', color: wantsContact === true ? '#16a34a' : '#555' }}>{t.review_yes}</button>
+              <button onClick={() => setWantsContact(false)} style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: `2px solid ${wantsContact === false ? '#C8102E' : '#e5e7eb'}`, cursor: 'pointer', fontSize: 14, fontWeight: 600, background: wantsContact === false ? '#fef2f2' : '#fff', color: wantsContact === false ? '#C8102E' : '#555' }}>{t.review_no}</button>
             </div>
 
             {wantsContact === true && (
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>Tu nombre (opcional)</div>
-                <input value={contactName} onChange={e => setContactName(e.target.value)} placeholder="Ej: María González"
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>{t.review_your_name}</div>
+                <input value={contactName} onChange={e => setContactName(e.target.value)} placeholder={t.review_name_placeholder}
                   style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 10, padding: '11px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#111', boxSizing: 'border-box' }} />
               </div>
             )}
 
             {wantsContact === true && restaurant?.wa_enabled && restaurant?.wa_number && (
               <button onClick={handleSubmitWithWA} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, width: '100%', padding: 15, background: '#25D366', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
-                💬 Contactar al manager por WhatsApp
+                {t.review_contact_wa}
               </button>
             )}
             {wantsContact === true && (!restaurant?.wa_enabled || !restaurant?.wa_number) && (
               <button onClick={handleSubmitNoContact} style={{ width: '100%', padding: 14, background: '#C8102E', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
-                Enviar opinión
+                {t.review_submit}
               </button>
             )}
             {wantsContact === false && (
               <button onClick={handleSubmitNoContact} style={{ width: '100%', padding: 14, background: '#C8102E', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
-                Enviar opinión
+                {t.review_submit}
               </button>
             )}
             {wantsContact === null && (
               <button disabled style={{ width: '100%', padding: 14, background: '#f3f4f6', color: '#9ca3af', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: 'not-allowed' }}>
-                Seleccioná una opción arriba
+                {t.review_select_option}
               </button>
             )}
           </div>
@@ -357,8 +374,8 @@ export default function ReviewPage() {
         {screen === 'thanks' && (
           <div style={{ padding: '28px 24px', textAlign: 'center' }}>
             <div style={{ fontSize: 52, marginBottom: 12 }}>🙏</div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>¡Gracias por tu opinión!</div>
-            <p style={{ fontSize: 14, color: '#666', lineHeight: 1.5 }}>Tu retroalimentación nos ayuda a mejorar cada día.</p>
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>{t.review_thanks_title}</div>
+            <p style={{ fontSize: 14, color: '#666', lineHeight: 1.5 }}>{t.review_thanks_body}</p>
           </div>
         )}
 
