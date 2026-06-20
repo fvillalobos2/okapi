@@ -142,6 +142,13 @@ export default function DashboardPage() {
     setGoogleLocations([])
   }
 
+  async function handleCancelSubscription() {
+    if (!restaurant) return
+    if (!confirm('¿Cancelar suscripción? Mantenés acceso hasta el fin del período actual.')) return
+    await supabase.from('restaurants').update({ subscription_status: 'canceled' }).eq('id', restaurant.id)
+    setRestaurant({ ...restaurant, subscription_status: 'canceled' })
+  }
+
   async function handleAutoReplyToggle() {
     if (!restaurant) return
     const isOn = restaurant.auto_reply_enabled
@@ -243,6 +250,11 @@ export default function DashboardPage() {
           <Link href="/upgrade" style={{ background: status === 'active' ? 'none' : '#C8102E', border: status === 'active' ? '1px solid #e0e0e0' : 'none', borderRadius: 8, padding: '5px 14px', fontSize: 13, cursor: 'pointer', color: status === 'active' ? '#555' : '#fff', textDecoration: 'none', fontWeight: 600 }}>
             {status === 'active' ? 'Plan' : 'Activar plan'}
           </Link>
+          {status === 'active' && (
+            <button onClick={handleCancelSubscription} style={{ background: 'none', border: 'none', fontSize: 12, color: '#bbb', cursor: 'pointer', padding: '5px 4px', textDecoration: 'underline' }}>
+              Cancelar
+            </button>
+          )}
           <button onClick={handleLogout} style={{ background: 'none', border: '1px solid #e0e0e0', borderRadius: 8, padding: '5px 14px', fontSize: 13, cursor: 'pointer', color: '#555' }}>Salir</button>
         </div>
       </div>

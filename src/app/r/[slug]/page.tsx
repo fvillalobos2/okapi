@@ -47,6 +47,8 @@ export default function ReviewPage() {
     ? (CATEGORIES_BY_TYPE[restaurant.business_type || 'default'] ?? CATEGORIES_BY_TYPE.default)
     : CATEGORIES_BY_TYPE.default
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [kioskMode, setKioskMode] = useState(false)
+  const [kioskCountdown, setKioskCountdown] = useState(5)
 
   useEffect(() => {
     async function load() {
@@ -59,7 +61,31 @@ export default function ReviewPage() {
       setLoading(false)
     }
     load()
+    setKioskMode(new URLSearchParams(window.location.search).get('kiosk') === '1')
   }, [slug])
+
+  useEffect(() => {
+    if (screen !== 'thanks' || !kioskMode) return
+    setKioskCountdown(5)
+    const interval = setInterval(() => {
+      setKioskCountdown(n => {
+        if (n <= 1) {
+          clearInterval(interval)
+          setScreen('landing')
+          setSelectedRating(0)
+          setFormRating(0)
+          setSelectedChips([])
+          setExperience('')
+          setWantsContact(null)
+          setContactName('')
+          setErrors({})
+          return 5
+        }
+        return n - 1
+      })
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [screen, kioskMode])
 
   async function saveScans(platformChosen: string | null, wantsContactVal: boolean) {
     await supabase.from('scans').insert({
@@ -330,6 +356,11 @@ export default function ReviewPage() {
             <div style={{ fontSize: 52, marginBottom: 12 }}>🙏</div>
             <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>¡Gracias por tu opinión!</div>
             <p style={{ fontSize: 14, color: '#666', lineHeight: 1.5 }}>Tu retroalimentación nos ayuda a mejorar cada día.</p>
+            {kioskMode && (
+              <div style={{ marginTop: 20, fontSize: 13, color: '#aaa' }}>
+                Nueva encuesta en <strong style={{ color: '#C8102E' }}>{kioskCountdown}</strong>s…
+              </div>
+            )}
           </div>
         )}
 
