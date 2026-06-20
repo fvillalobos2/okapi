@@ -67,6 +67,7 @@ export default function DashboardPage() {
   const [saved, setSaved] = useState(false)
   const [form, setForm] = useState<Partial<Restaurant>>({})
   const [copied, setCopied] = useState(false)
+  const [copiedKiosk, setCopiedKiosk] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [logoDragging, setLogoDragging] = useState(false)
 
@@ -310,6 +311,13 @@ export default function DashboardPage() {
               style={{ padding: '10px 20px', background: 'rgba(255,255,255,0.12)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
               {t.dash_view_page}
             </a>
+            <button onClick={() => {
+              navigator.clipboard.writeText(`${reviewUrl}?kiosk=1`)
+              setCopiedKiosk(true)
+              setTimeout(() => setCopiedKiosk(false), 2000)
+            }} style={{ padding: '10px 20px', background: 'rgba(255,255,255,0.08)', color: copiedKiosk ? '#16a34a' : 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+              {copiedKiosk ? '✓ Copiado' : '📺 Link kiosk'}
+            </button>
           </div>
         </div>
 
