@@ -47,6 +47,8 @@ export default function UpgradePage() {
   const [loading, setLoading] = useState(true)
   const [paying, setPaying] = useState(false)
   const [error, setError] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [currentPlan, setCurrentPlan] = useState<Plan | null>(null)
   const [subStatus, setSubStatus] = useState<string>('trial')
   const sdkReady = useRef(false)
@@ -122,6 +124,8 @@ export default function UpgradePage() {
       amount: PLANS.find(p => p.id === selectedPlan)?.price ?? 29,
       orderNumber,
       billToEmail: email,
+      billToFirstName: firstName || 'Cliente',
+      billToLastName: lastName || 'Okapi',
       capture: '1',
       subscription: 1,
       tokenize: 'on',
@@ -133,9 +137,34 @@ export default function UpgradePage() {
   }
 
   async function handlePay() {
-    if (!window.Tilopay) return
+    if (!window.Tilopay || !restaurantId) return
     setError('')
     setPaying(true)
+
+    // Re-init with latest name values before paying
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch(`/api/tilopay/token?restaurantId=${restaurantId}&plan=${selectedPlan}`, {
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+    })
+    if (!res.ok) { setError('Error de conexión. Intenta de nuevo.'); setPaying(false); return }
+    const { token, orderNumber } = await res.json()
+
+    await window.Tilopay.Init({
+      token,
+      currency: 'USD',
+      amount: PLANS.find(p => p.id === selectedPlan)?.price ?? 29,
+      orderNumber,
+      billToEmail: email,
+      billToFirstName: firstName || 'Cliente',
+      billToLastName: lastName || 'Okapi',
+      capture: '1',
+      subscription: 1,
+      tokenize: 'on',
+      redirect: `${window.location.origin}/upgrade/callback`,
+      language: 'es',
+      hashVersion: 'V2',
+      platform: 'sdk',
+    })
 
     const result = await window.Tilopay.startPayment()
 
@@ -192,8 +221,21 @@ export default function UpgradePage() {
                 </div>
               </div>
 
-              {/* Tilopay SDK injects card fields into the page — they use fixed IDs */}
+              {/* Card holder + card fields */}
               <div style={{ marginBottom: 20 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Nombre</label>
+                    <input type="text" placeholder="Juan" value={firstName} onChange={e => setFirstName(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Apellido</label>
+                    <input type="text" placeholder="Pérez" value={lastName} onChange={e => setLastName(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                  </div>
+                </div>
+
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Método de pago</label>
                 <select id="tlpy_payment_method" defaultValue="" style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, background: '#fff', color: '#111', marginBottom: 14 }}>
                   <option value="">Selecciona método…</option>
