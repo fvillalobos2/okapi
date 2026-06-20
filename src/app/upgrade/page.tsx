@@ -254,10 +254,12 @@ export default function UpgradePage() {
                   </div>
                 </div>
 
-                {/* Hidden — required by Tilopay SDK, pre-selected to card */}
+                {/* Hidden elements required by Tilopay SDK */}
                 <select id="tlpy_payment_method" defaultValue="card:1:1" style={{ display: 'none' }}>
                   <option value="card:1:1">Tarjeta</option>
                 </select>
+                <div id="responseTilopay" style={{ display: 'none' }} />
+                <div id="tlpy_saved_cards" style={{ display: 'none' }} />
 
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Nombre de facturación</label>
