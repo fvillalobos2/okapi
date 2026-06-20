@@ -148,7 +148,14 @@ export default function OnboardingPage() {
       const { error } = await supabase.from('restaurants').update(payload).eq('id', restaurantId)
       if (error) { setSaveError(error.message); setSaving(false); return }
     } else {
-      const { error } = await supabase.from('restaurants').insert({ ...payload, user_id: user.id })
+      const trialEndsAt = new Date()
+      trialEndsAt.setDate(trialEndsAt.getDate() + 14)
+      const { error } = await supabase.from('restaurants').insert({
+        ...payload,
+        user_id: user.id,
+        trial_ends_at: trialEndsAt.toISOString(),
+        subscription_status: 'trial',
+      })
       if (error) { setSaveError(error.message); setSaving(false); return }
     }
 
