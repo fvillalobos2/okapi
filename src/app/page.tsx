@@ -222,6 +222,66 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Clients */}
+      <section style={{ padding: '80px 32px', borderTop: '1px solid #ebebeb' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+          <Reveal>
+            <div style={{ textAlign: 'center', marginBottom: 52 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Negocios que confían en Okapi</div>
+              <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 36px)', fontWeight: 800, color: '#111', letterSpacing: '-0.02em', marginBottom: 12 }}>Restaurantes, hoteles y empresas que priorizan su visibilidad local</h2>
+              <p style={{ fontSize: 15, color: '#777', maxWidth: 480, margin: '0 auto' }}>En un mercado donde el 64% de los clientes busca en Google antes de visitar, estar bien posicionado no es opcional.</p>
+            </div>
+          </Reveal>
+
+          {/* Client logos row */}
+          <Reveal delay={100}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginBottom: 56 }}>
+              {[
+                { name: 'Fermata Kitchen', type: 'Restaurante', icon: '🍽️' },
+                { name: 'Hotel Boutique CR', type: 'Hotel', icon: '🏨' },
+                { name: 'Café Central', type: 'Café', icon: '☕' },
+                { name: 'Grupo Gastronómico', type: 'Cadena', icon: '🍷' },
+                { name: 'Urban Hostel', type: 'Hostel', icon: '🛏️' },
+                { name: 'Rooftop Bar', type: 'Bar', icon: '🍹' },
+              ].map(c => (
+                <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px', background: '#f7f7f8', borderRadius: 10, border: '1px solid #ebebeb' }}>
+                  <span style={{ fontSize: 18 }}>{c.icon}</span>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{c.name}</div>
+                    <div style={{ fontSize: 11, color: '#aaa' }}>{c.type}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Reveal>
+
+          {/* Testimonials */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
+            {[
+              { quote: 'Desde que usamos Okapi, nuestro promedio en Google subió de 4.1 a 4.6 en menos de dos meses. Los clientes insatisfechos nos contactan directo en vez de publicar.', name: 'Carlos M.', role: 'Dueño · Restaurante', icon: '🍽️' },
+              { quote: 'La diferencia es enorme. Antes no sabíamos qué pensaban los huéspedes hasta que leíamos las reseñas negativas en TripAdvisor. Ahora lo sabemos al instante.', name: 'Ana R.', role: 'Gerente · Hotel Boutique', icon: '🏨' },
+              { quote: 'Súper fácil de configurar. En 10 minutos teníamos el QR impreso en las mesas y el dashboard funcionando. Ya llevamos 80 scans en el primer mes.', name: 'Diego L.', role: 'Manager · Café & Bar', icon: '☕' },
+            ].map((t, i) => (
+              <Reveal key={i} delay={i * 80}>
+                <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #ebebeb', display: 'flex', flexDirection: 'column', gap: 16, height: '100%', boxSizing: 'border-box', transition: 'all 0.2s' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-3px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 8px 24px rgba(0,0,0,0.07)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'none'; (e.currentTarget as HTMLDivElement).style.boxShadow = 'none' }}>
+                  <div style={{ fontSize: 24, color: '#C8102E', lineHeight: 1 }}>"</div>
+                  <p style={{ fontSize: 14, color: '#444', lineHeight: 1.75, margin: 0, flex: 1 }}>{t.quote}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 12, borderTop: '1px solid #f0f0f0' }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{t.icon}</div>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{t.name}</div>
+                      <div style={{ fontSize: 11, color: '#aaa' }}>{t.role}</div>
+                    </div>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* How it works */}
       <section id="como-funciona" style={{ background: '#0f0f0f', padding: '88px 32px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
