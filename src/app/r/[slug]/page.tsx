@@ -48,7 +48,6 @@ export default function ReviewPage() {
     : CATEGORIES_BY_TYPE.default
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [kioskMode, setKioskMode] = useState(false)
-  const [kioskCountdown, setKioskCountdown] = useState(5)
 
   useEffect(() => {
     async function load() {
@@ -64,28 +63,6 @@ export default function ReviewPage() {
     setKioskMode(new URLSearchParams(window.location.search).get('kiosk') === '1')
   }, [slug])
 
-  useEffect(() => {
-    if (screen !== 'thanks' || !kioskMode) return
-    setKioskCountdown(5)
-    const interval = setInterval(() => {
-      setKioskCountdown(n => {
-        if (n <= 1) {
-          clearInterval(interval)
-          setScreen('landing')
-          setSelectedRating(0)
-          setFormRating(0)
-          setSelectedChips([])
-          setExperience('')
-          setWantsContact(null)
-          setContactName('')
-          setErrors({})
-          return 5
-        }
-        return n - 1
-      })
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [screen, kioskMode])
 
   async function saveScans(platformChosen: string | null, wantsContactVal: boolean) {
     await supabase.from('scans').insert({
@@ -201,6 +178,32 @@ export default function ReviewPage() {
   if (!restaurant) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1a1a' }}>
       <div style={{ color: '#fff', fontSize: 14 }}>Restaurante no encontrado.</div>
+    </div>
+  )
+
+  const reviewUrl = `https://reviews.projectokapi.com/r/${slug}`
+
+  if (kioskMode) return (
+    <div style={{ minHeight: '100dvh', background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 40, gap: 32 }}>
+      {restaurant.logo_url && (
+        <img src={restaurant.logo_url} alt={restaurant.name} style={{ height: 72, width: 'auto', objectFit: 'contain' }} />
+      )}
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: 28, fontWeight: 800, color: '#fff', marginBottom: 8 }}>{restaurant.name}</div>
+        <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>Escaneá para dejar tu opinión</div>
+      </div>
+      <div style={{ background: '#fff', borderRadius: 20, padding: 20, boxShadow: '0 8px 40px rgba(0,0,0,0.5)' }}>
+        <img
+          src={`https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(reviewUrl)}&bgcolor=ffffff&color=1a1a1a&margin=6`}
+          alt="QR"
+          style={{ width: 280, height: 280, display: 'block' }}
+        />
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#C8102E', animation: 'pulse 2s infinite' }} />
+        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>{reviewUrl}</span>
+      </div>
+      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>
     </div>
   )
 
@@ -356,11 +359,6 @@ export default function ReviewPage() {
             <div style={{ fontSize: 52, marginBottom: 12 }}>🙏</div>
             <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>¡Gracias por tu opinión!</div>
             <p style={{ fontSize: 14, color: '#666', lineHeight: 1.5 }}>Tu retroalimentación nos ayuda a mejorar cada día.</p>
-            {kioskMode && (
-              <div style={{ marginTop: 20, fontSize: 13, color: '#aaa' }}>
-                Nueva encuesta en <strong style={{ color: '#C8102E' }}>{kioskCountdown}</strong>s…
-              </div>
-            )}
           </div>
         )}
 
