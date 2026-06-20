@@ -314,44 +314,46 @@ export default function OnboardingPage() {
 
               {activePlatforms.includes('google') && (
                 <div style={{ marginBottom: 20 }}>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: '#333', display: 'block', marginBottom: 4 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#333', display: 'block', marginBottom: 8 }}>
                     <span style={{ display: 'inline-block', width: 20, height: 20, background: '#4285F4', borderRadius: 4, color: '#fff', fontSize: 10, fontWeight: 700, textAlign: 'center', lineHeight: '20px', marginRight: 6, verticalAlign: 'middle' }}>G</span>
-                    Google — Buscá tu negocio
+                    Google Reviews
                   </label>
-                  <div style={{ background: '#f0f6ff', border: '1px solid #c5d9f7', borderRadius: 8, padding: '10px 12px', marginBottom: 8, fontSize: 12, color: '#1a4a8a', lineHeight: 1.5 }}>
-                    📍 Pegá cualquiera de estos:<br />
-                    • Link corto de Maps (maps.app.goo.gl/...)<br />
-                    • URL completa de Google Maps<br />
-                    • Link de reviews de Google<br />
-                    • Place ID directo (ChIJ...)
-                  </div>
+
                   <a
                     href={`https://www.google.com/maps/search/${encodeURIComponent(name || 'mi restaurante')}`}
                     target="_blank" rel="noopener"
-                    style={{ display: 'inline-block', marginBottom: 10, fontSize: 12, color: '#4285F4', textDecoration: 'none', fontWeight: 600 }}>
-                    🔍 Buscar "{name || 'mi restaurante'}" en Google Maps →
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px', background: '#f0f6ff', border: '1px solid #c5d9f7', borderRadius: 10, marginBottom: 12, textDecoration: 'none', color: '#1a4a8a' }}>
+                    <span style={{ fontSize: 18 }}>🔍</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>Buscar "{name || 'mi restaurante'}" en Google Maps</div>
+                      <div style={{ fontSize: 11, color: '#5b8ac4', marginTop: 1 }}>Abre Maps → copia la URL de tu negocio</div>
+                    </div>
+                    <span style={{ marginLeft: 'auto', fontSize: 12, color: '#4285F4' }}>→</span>
                   </a>
+
+                  <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>Pegá el link que copiaste de Google Maps:</div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <input
                       value={googleInput}
                       onChange={e => { setGoogleInput(e.target.value); setGoogleResolved(false) }}
-                      placeholder="https://maps.app.goo.gl/... o ChIJ..."
+                      placeholder="https://maps.google.com/... o g.page/r/..."
                       style={{ flex: 1, border: `1.5px solid ${errors.google ? '#C8102E' : googleResolved ? '#22c55e' : '#e0e0e0'}`, borderRadius: 10, padding: '12px 14px', fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
                     />
                     <button
                       type="button"
                       onClick={() => resolveGoogleInput(googleInput)}
                       disabled={resolvingGoogle || !googleInput.trim()}
-                      style={{ padding: '12px 16px', background: '#4285F4', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', opacity: resolvingGoogle || !googleInput.trim() ? 0.6 : 1 }}>
-                      {resolvingGoogle ? '…' : 'Resolver'}
+                      style={{ padding: '12px 16px', background: '#4285F4', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: resolvingGoogle || !googleInput.trim() ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', opacity: resolvingGoogle || !googleInput.trim() ? 0.5 : 1 }}>
+                      {resolvingGoogle ? '…' : 'Confirmar'}
                     </button>
                   </div>
                   {googleResolved && (
-                    <div style={{ fontSize: 12, color: '#16a34a', marginTop: 6, background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '8px 12px', borderRadius: 8 }}>
-                      ✅ Place ID encontrado: <strong>{urls.google_place_id}</strong>
+                    <div style={{ fontSize: 12, color: '#16a34a', marginTop: 8, background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '10px 12px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span>✅</span>
+                      <span>Link de Google confirmado — tus clientes serán dirigidos a dejar su reseña.</span>
                     </div>
                   )}
-                  {errors.google && <div style={{ fontSize: 12, color: '#C8102E', marginTop: 4 }}>{errors.google}</div>}
+                  {errors.google && <div style={{ fontSize: 12, color: '#C8102E', marginTop: 6 }}>{errors.google}</div>}
                 </div>
               )}
 
