@@ -99,11 +99,12 @@ export default function ReviewPage() {
     return Object.keys(errs).length === 0
   }
 
-  async function notifyManager(wantsContactVal: boolean) {
+  function notifyManager(wantsContactVal: boolean, keepalive = false) {
     if (!restaurant?.manager_email) return
-    await fetch('/api/notify-feedback', {
+    fetch('/api/notify-feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      keepalive,
       body: JSON.stringify({
         restaurantName: restaurant.name,
         managerEmail: restaurant.manager_email,
@@ -128,12 +129,11 @@ export default function ReviewPage() {
       contactName ? `*Cliente:* ${contactName}` : '',
     ].filter(Boolean).join('\n')
     // Open WA immediately (before async) to avoid browser popup blocking
-    window.location.href = `https://wa.me/${restaurant?.wa_number}?text=${encodeURIComponent(msg)}`
+    // Fire notifications with keepalive so they survive the page unload
+    notifyManager(true, true)
+    saveScans(null, true).catch(() => {})
     setScreen('thanks')
-    try {
-      await saveScans(null, true)
-      await notifyManager(true)
-    } catch { /* ignore */ }
+    window.location.href = `https://wa.me/${restaurant?.wa_number}?text=${encodeURIComponent(msg)}`
   }
 
   async function handleSubmitNoContact() {
