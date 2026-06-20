@@ -27,6 +27,7 @@ type Restaurant = {
   subscription_ends_at: string | null
   auto_reply_enabled: boolean
   google_account_id: string | null
+  google_access_token: string | null
 }
 
 type Scan = {
@@ -120,7 +121,7 @@ export default function DashboardPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ restaurantId: restaurant.id, locationId, accountId: locationId }),
     })
-    setRestaurant({ ...restaurant, google_account_id: locationId, google_location_id: locationId, auto_reply_enabled: true })
+    setRestaurant({ ...restaurant, google_account_id: locationId, auto_reply_enabled: true })
     setGoogleLocations([])
   }
 
