@@ -34,14 +34,14 @@ const PLANS = [
 declare global {
   interface Window {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    TiloPay?: any
+    Tilopay?: any
   }
 }
 
 export default function UpgradePage() {
   const router = useRouter()
   const [selectedPlan, setSelectedPlan] = useState<Plan>('pro')
-  const [step, setStep] = useState<'plans' | 'payment' | 'success'>('plans')
+  const [step, setStep] = useState<'plans' | 'payment'>('plans')
   const [restaurantId, setRestaurantId] = useState<string | null>(null)
   const [email, setEmail] = useState<string>('')
   const [loading, setLoading] = useState(true)
@@ -49,7 +49,8 @@ export default function UpgradePage() {
   const [error, setError] = useState('')
   const [currentPlan, setCurrentPlan] = useState<Plan | null>(null)
   const [subStatus, setSubStatus] = useState<string>('trial')
-  const sdkLoaded = useRef(false)
+  const sdkReady = useRef(false)
+  const tilopayInitialized = useRef(false)
 
   useEffect(() => {
     async function load() {
@@ -74,59 +75,80 @@ export default function UpgradePage() {
     load()
   }, [router])
 
-  // Load Tilopay SDK when moving to payment step
-  useEffect(() => {
-    if (step !== 'payment' || sdkLoaded.current) return
-    sdkLoaded.current = true
+  async function goToPayment() {
+    setStep('payment')
+    // Load SDK script if not already loaded
+    if (!document.getElementById('tilopay-sdk')) {
+      const script = document.createElement('script')
+      script.id = 'tilopay-sdk'
+      script.src = 'https://app.tilopay.com/sdk/v2/sdk_tpay.min.js'
+      script.async = true
+      script.onload = () => { sdkReady.current = true; initSdk() }
+      document.body.appendChild(script)
+    } else if (window.Tilopay) {
+      sdkReady.current = true
+      setTimeout(initSdk, 300)
+    }
+  }
 
-    const script = document.createElement('script')
-    script.src = 'https://app.tilopay.com/sdk/v2/sdk_tpay.min.js'
-    script.async = true
-    script.onload = () => initTilopayForm()
-    document.body.appendChild(script)
-  }, [step])
+  async function initSdk() {
+    if (tilopayInitialized.current) return
+    tilopayInitialized.current = true
 
-  function initTilopayForm() {
-    if (!window.TiloPay) return
-    window.TiloPay.init({
-      apiKey: process.env.NEXT_PUBLIC_TILOPAY_KEY,
-      containerId: 'tilopay-form',
-      onSuccess: handleCardToken,
-      onError: (err: string) => setError(err),
+    if (!restaurantId) return
+
+    // Get bearer token from our backend
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch(`/api/tilopay/token?restaurantId=${restaurantId}&plan=${selectedPlan}`, {
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+    })
+
+    if (!res.ok) {
+      setError('Error al conectar con el servicio de pago.')
+      return
+    }
+
+    const { token, orderNumber } = await res.json()
+    const callbackUrl = `${window.location.origin}/upgrade/callback`
+
+    if (!window.Tilopay) {
+      setError('El SDK de Tilopay no cargó. Recarga la página.')
+      return
+    }
+
+    await window.Tilopay.Init({
+      token,
+      currency: 'USD',
+      amount: PLANS.find(p => p.id === selectedPlan)?.price ?? 29,
+      orderNumber,
+      billToEmail: email,
+      capture: '1',
+      subscription: 1,
+      tokenize: 'on',
+      redirect: callbackUrl,
       language: 'es',
-      theme: { primaryColor: '#C8102E' },
+      hashVersion: 'V2',
+      platform: 'sdk',
     })
   }
 
-  async function handleCardToken(cardToken: string) {
-    if (!restaurantId) return
-    setPaying(true)
+  async function handlePay() {
+    if (!window.Tilopay) return
     setError('')
+    setPaying(true)
 
-    const orderNumber = `okapi-${restaurantId}-${Date.now()}`
+    const result = await window.Tilopay.startPayment()
 
-    try {
-      const res = await fetch('/api/tilopay', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ restaurantId, plan: selectedPlan, cardToken, email, orderNumber }),
-      })
-      const data = await res.json()
-      if (!res.ok || data.error) {
-        setError(data.error || 'Error al procesar el pago.')
-      } else {
-        setStep('success')
-      }
-    } catch {
-      setError('Error de conexión. Intenta de nuevo.')
+    if (result?.message) {
+      setError(result.message)
+      setPaying(false)
     }
-    setPaying(false)
+    // If no error message, SDK handles redirect to /upgrade/callback
   }
 
   async function handleCancel() {
     if (!restaurantId) return
-    if (!confirm('¿Confirmas que deseas cancelar tu suscripción? Mantendrás acceso hasta el fin del período pagado.')) return
-
+    if (!confirm('¿Confirmas cancelar tu suscripción? Mantendrás acceso hasta el fin del período pagado.')) return
     await supabase.from('restaurants').update({ subscription_status: 'canceled' }).eq('id', restaurantId)
     router.push('/dashboard')
   }
@@ -151,22 +173,17 @@ export default function UpgradePage() {
 
       <div style={{ maxWidth: 860, margin: '0 auto', padding: '48px 20px' }}>
 
-        {step === 'success' ? (
-          <div style={{ textAlign: 'center', padding: '80px 20px' }}>
-            <div style={{ fontSize: 56, marginBottom: 20 }}>🎉</div>
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#111', marginBottom: 12 }}>¡Suscripción activada!</h1>
-            <p style={{ fontSize: 15, color: '#666', marginBottom: 32 }}>Tu plan {PLANS.find(p => p.id === selectedPlan)?.label} está activo. El cobro se renueva automáticamente cada mes.</p>
-            <Link href="/dashboard" style={{ background: '#C8102E', color: '#fff', borderRadius: 10, padding: '12px 28px', fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>
-              Ir al dashboard →
-            </Link>
-          </div>
-        ) : step === 'payment' ? (
+        {step === 'payment' ? (
           <div style={{ maxWidth: 480, margin: '0 auto' }}>
-            <button onClick={() => setStep('plans')} style={{ background: 'none', border: 'none', fontSize: 13, color: '#888', cursor: 'pointer', marginBottom: 24, padding: 0 }}>← Cambiar plan</button>
+            <button onClick={() => { setStep('plans'); tilopayInitialized.current = false }} style={{ background: 'none', border: 'none', fontSize: 13, color: '#888', cursor: 'pointer', marginBottom: 24, padding: 0 }}>
+              ← Cambiar plan
+            </button>
+
             <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #ebebeb', padding: '28px 24px', marginBottom: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              {/* Plan summary */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, paddingBottom: 20, borderBottom: '1px solid #f0f0f0' }}>
                 <div>
-                  <div style={{ fontSize: 13, color: '#888', marginBottom: 4 }}>Plan seleccionado</div>
+                  <div style={{ fontSize: 12, color: '#aaa', marginBottom: 4 }}>Plan seleccionado</div>
                   <div style={{ fontSize: 18, fontWeight: 800, color: '#111' }}>{PLANS.find(p => p.id === selectedPlan)?.label}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
@@ -175,27 +192,50 @@ export default function UpgradePage() {
                 </div>
               </div>
 
-              {/* Tilopay form container */}
-              <div id="tilopay-form" style={{ minHeight: 200 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200, color: '#aaa', fontSize: 13 }}>Cargando formulario seguro…</div>
+              {/* Tilopay SDK injects card fields into the page — they use fixed IDs */}
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Método de pago</label>
+                <select id="tlpy_payment_method" defaultValue="" style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, background: '#fff', color: '#111', marginBottom: 14 }}>
+                  <option value="">Selecciona método…</option>
+                  <option value="card:1:1">Tarjeta de crédito / débito</option>
+                </select>
+
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Número de tarjeta</label>
+                <input id="tlpy_cc_number" type="tel" placeholder="1234 5678 9012 3456" maxLength={19}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, marginBottom: 14, boxSizing: 'border-box' }} />
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Vencimiento</label>
+                    <input id="tlpy_cc_expiration_date" type="tel" placeholder="MM/AA" maxLength={5}
+                      style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>CVV</label>
+                    <input id="tlpy_cvv" type="tel" placeholder="123" maxLength={4}
+                      style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                  </div>
+                </div>
               </div>
 
               {error && (
-                <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#dc2626', marginTop: 12 }}>
+                <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#dc2626', marginBottom: 14 }}>
                   {error}
                 </div>
               )}
 
-              {paying && (
-                <div style={{ textAlign: 'center', marginTop: 16, fontSize: 13, color: '#888' }}>Procesando pago…</div>
-              )}
+              <button onClick={handlePay} disabled={paying}
+                style={{ width: '100%', padding: '13px 0', background: paying ? '#aaa' : '#C8102E', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: paying ? 'not-allowed' : 'pointer' }}>
+                {paying ? 'Procesando…' : `Pagar $${PLANS.find(p => p.id === selectedPlan)?.price}/mes`}
+              </button>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', fontSize: 12, color: '#aaa' }}>
               <span>🔒</span>
-              <span>Pago seguro procesado por Tilopay. PCI DSS compliant.</span>
+              <span>Pago seguro procesado por Tilopay · PCI DSS compliant</span>
             </div>
           </div>
+
         ) : (
           <>
             <div style={{ textAlign: 'center', marginBottom: 40 }}>
@@ -204,7 +244,7 @@ export default function UpgradePage() {
               </h1>
               <p style={{ fontSize: 14, color: '#888' }}>
                 {subStatus === 'active'
-                  ? `Estás en el plan ${currentPlan}. Puedes cambiar o cancelar cuando quieras.`
+                  ? `Estás en el plan ${currentPlan}. Cambia o cancela cuando quieras.`
                   : 'Sin contratos. Cancela cuando quieras. Renovación mensual automática.'}
               </p>
             </div>
@@ -230,7 +270,7 @@ export default function UpgradePage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {plan.features.map(f => (
                         <div key={f} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                          <span style={{ color: '#C8102E', fontSize: 13, flexShrink: 0, marginTop: 1 }}>✓</span>
+                          <span style={{ color: isSelected ? '#C8102E' : '#C8102E', fontSize: 13, flexShrink: 0, marginTop: 1 }}>✓</span>
                           <span style={{ fontSize: 13, color: isSelected ? '#ccc' : '#555' }}>{f}</span>
                         </div>
                       ))}
@@ -241,9 +281,11 @@ export default function UpgradePage() {
             </div>
 
             <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-              <button onClick={() => setStep('payment')}
+              <button onClick={goToPayment}
                 style={{ background: '#C8102E', color: '#fff', border: 'none', borderRadius: 12, padding: '14px 40px', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
-                {subStatus === 'active' ? `Cambiar a ${PLANS.find(p => p.id === selectedPlan)?.label}` : `Activar plan ${PLANS.find(p => p.id === selectedPlan)?.label} — $${PLANS.find(p => p.id === selectedPlan)?.price}/mes`}
+                {subStatus === 'active'
+                  ? `Cambiar a ${PLANS.find(p => p.id === selectedPlan)?.label}`
+                  : `Activar plan ${PLANS.find(p => p.id === selectedPlan)?.label} — $${PLANS.find(p => p.id === selectedPlan)?.price}/mes`}
               </button>
 
               {subStatus === 'active' && (
