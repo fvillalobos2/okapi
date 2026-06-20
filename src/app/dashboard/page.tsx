@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 type Restaurant = {
@@ -50,7 +50,6 @@ const PLATFORMS = [
 
 export default function DashboardPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [googleNotif, setGoogleNotif] = useState<'connected' | 'error' | null>(null)
   const [togglingAutoReply, setTogglingAutoReply] = useState(false)
@@ -95,12 +94,13 @@ export default function DashboardPage() {
   }, [router])
 
   useEffect(() => {
-    const g = searchParams.get('google')
+    const params = new URLSearchParams(window.location.search)
+    const g = params.get('google')
     if (g === 'connected' || g === 'error') {
       setGoogleNotif(g as 'connected' | 'error')
       setTimeout(() => setGoogleNotif(null), 5000)
     }
-  }, [searchParams])
+  }, [])
 
   async function handleAutoReplyToggle() {
     if (!restaurant) return
