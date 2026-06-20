@@ -8,12 +8,18 @@ export default function AuthCallback() {
   const router = useRouter()
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
+    // Supabase puts tokens in the URL hash after email confirmation
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
         router.replace('/dashboard')
-      } else {
-        router.replace('/login')
+      } else if (event === 'TOKEN_REFRESHED' && session) {
+        router.replace('/dashboard')
       }
+    })
+
+    // Also check existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace('/dashboard')
     })
   }, [router])
 
