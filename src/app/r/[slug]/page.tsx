@@ -118,8 +118,10 @@ export default function ReviewPage() {
 
   async function handleSubmitWithWA() {
     if (!validate()) return
-    await saveScans(null, true)
-    await notifyManager(true)
+    try {
+      await saveScans(null, true)
+      await notifyManager(true)
+    } catch { /* ignore */ }
     const stars = '★'.repeat(formRating) + '☆'.repeat(5 - formRating)
     const msg = [
       `Hola, tengo un comentario sobre *${restaurant?.name}*.`,
@@ -135,8 +137,10 @@ export default function ReviewPage() {
 
   async function handleSubmitNoContact() {
     if (!validate()) return
-    await saveScans(null, false)
-    await notifyManager(false)
+    try {
+      await saveScans(null, false)
+      await notifyManager(false)
+    } catch { /* ignore errors, still show thanks */ }
     setScreen('thanks')
   }
 
