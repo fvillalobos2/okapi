@@ -182,29 +182,32 @@ export default function Home() {
       </section>
 
       {/* How it works */}
-      <section id="como-funciona" style={{ padding: '88px 32px', maxWidth: 880, margin: '0 auto' }}>
-        <Reveal>
-          <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Cómo funciona</div>
-            <h2 style={{ fontSize: 'clamp(26px, 3.5vw, 38px)', fontWeight: 800, color: '#111', letterSpacing: '-0.02em' }}>Simple para el cliente. Poderoso para vos.</h2>
+      <section id="como-funciona" style={{ background: '#0f0f0f', padding: '88px 32px' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+          <Reveal>
+            <div style={{ textAlign: 'center', marginBottom: 64 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Cómo funciona</div>
+              <h2 style={{ fontSize: 'clamp(26px, 3.5vw, 38px)', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>Simple para el cliente. Poderoso para vos.</h2>
+            </div>
+          </Reveal>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2 }}>
+            {[
+              { n: '01', icon: '📱', t: 'Escanea el QR', d: 'En la mesa, el menú o la salida. Sin app, sin descarga.', color: '#4285F4' },
+              { n: '02', icon: '⭐', t: 'Califica su visita', d: '4-5★ va a Google. 1-3★ el feedback queda privado para vos.', color: '#f59e0b' },
+              { n: '03', icon: '🔔', t: 'Recibís la alerta', d: 'Email al instante con el detalle. WhatsApp si quiere hablar.', color: '#C8102E' },
+              { n: '04', icon: '📈', t: 'Tu rating sube', d: 'Más reseñas 5★ publicadas. Menos críticas en internet.', color: '#22c55e' },
+            ].map((s, i) => (
+              <Reveal key={s.n} delay={i * 80}>
+                <div style={{ padding: '36px 28px', borderLeft: i > 0 ? '1px solid #1e1e1e' : 'none', position: 'relative' }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: s.color, letterSpacing: '0.1em', marginBottom: 20 }}>{s.n}</div>
+                  <div style={{ width: 48, height: 48, borderRadius: 14, background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 20, border: `1px solid #2a2a2a` }}>{s.icon}</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 10 }}>{s.t}</div>
+                  <div style={{ fontSize: 13, color: '#555', lineHeight: 1.7 }}>{s.d}</div>
+                  <div style={{ position: 'absolute', bottom: 0, left: 28, right: 28, height: 2, background: s.color, borderRadius: 2, opacity: 0.4 }} />
+                </div>
+              </Reveal>
+            ))}
           </div>
-        </Reveal>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 24 }}>
-          {[
-            { n: '1', icon: '📱', t: 'Escanea el QR', d: 'En la mesa, el menú o la salida. Sin app, sin registro.' },
-            { n: '2', icon: '⭐', t: 'Califica su visita', d: '4-5★ lo llevamos a Google. 1-3★ capturamos el feedback en privado.' },
-            { n: '3', icon: '🔔', t: 'Vos recibís la alerta', d: 'Email instantáneo con el detalle. WhatsApp si quiere contacto directo.' },
-            { n: '4', icon: '📈', t: 'Tu rating sube', d: 'Más reseñas positivas publicadas. Menos críticas en internet.' },
-          ].map((s, i) => (
-            <Reveal key={s.n} delay={i * 80}>
-              <div style={{ padding: '28px 0' }}>
-                <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: '#555', marginBottom: 16 }}>{s.n}</div>
-                <div style={{ fontSize: 26, marginBottom: 12 }}>{s.icon}</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 8 }}>{s.t}</div>
-                <div style={{ fontSize: 13, color: '#777', lineHeight: 1.65 }}>{s.d}</div>
-              </div>
-            </Reveal>
-          ))}
         </div>
       </section>
 
