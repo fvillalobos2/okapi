@@ -190,8 +190,8 @@ export default function ReviewPage() {
   ].filter(p => restaurant.platforms_active[p.key] && getPlatformUrl(p.key))
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f4f4f5', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 16px' }}>
-      <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', width: '100%', maxWidth: 440, overflow: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: 'radial-gradient(ellipse at 20% 50%, rgba(200,16,46,0.18) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(200,16,46,0.10) 0%, transparent 50%), linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
+      <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 8px 32px rgba(0,0,0,0.45)', width: '100%', maxWidth: 440, overflow: 'hidden' }}>
 
         {/* Header */}
         <div style={{ background: '#fff', padding: '20px 24px 16px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>
