@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 type Mode = 'login' | 'signup'
 
@@ -90,7 +91,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5', padding: 20 }}>
+    <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+      <nav style={{ padding: '16px 24px' }}>
+        <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#555', textDecoration: 'none', fontWeight: 500 }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#111' }}
+          onMouseLeave={e => { e.currentTarget.style.color = '#555' }}>
+          ← Okapi Reviews
+        </Link>
+      </nav>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, minHeight: 'calc(100vh - 56px)' }}>
       <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 4px 24px rgba(0,0,0,0.08)', width: '100%', maxWidth: 400, padding: '40px 32px' }}>
 
         {/* Logo */}
@@ -194,6 +203,7 @@ export default function LoginPage() {
         </form>
 
       </div>
+    </div>
     </div>
   )
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 type Restaurant = {
   id: string
@@ -19,6 +20,10 @@ type Restaurant = {
   facebook_url: string | null
   yelp_url: string | null
   platforms_active: Record<string, boolean>
+  trial_ends_at: string | null
+  plan: 'starter' | 'pro' | 'business' | null
+  subscription_status: 'trial' | 'active' | 'canceled' | 'expired'
+  subscription_ends_at: string | null
 }
 
 type Scan = {
@@ -136,6 +141,17 @@ export default function DashboardPage() {
   const negativeFeed = scans.filter(s => s.stars < 4).slice(0, 10)
   const reviewUrl = `https://reviews.projectokapi.com/r/${restaurant!.slug}`
 
+  // Trial / subscription state
+  const status = restaurant!.subscription_status
+  const trialEnd = restaurant!.trial_ends_at ? new Date(restaurant!.trial_ends_at) : null
+  const subEnd = restaurant!.subscription_ends_at ? new Date(restaurant!.subscription_ends_at) : null
+  const now = new Date()
+  const trialDaysLeft = trialEnd ? Math.max(0, Math.ceil((trialEnd.getTime() - now.getTime()) / 86400000)) : 0
+  const isTrialExpired = status === 'trial' && trialDaysLeft === 0
+  const isCanceled = status === 'canceled'
+  const subDaysLeft = subEnd ? Math.max(0, Math.ceil((subEnd.getTime() - now.getTime()) / 86400000)) : 0
+  const showBanner = status === 'trial' || isCanceled
+
   return (
     <div style={{ minHeight: '100vh', background: '#f7f7f8', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
@@ -149,10 +165,38 @@ export default function DashboardPage() {
           <span style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>Okapi Reviews</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 13, color: '#666', display: 'none' }}>{restaurant?.name}</span>
+          {status === 'active' && restaurant!.plan && (
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 20, padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {restaurant!.plan}
+            </span>
+          )}
+          <Link href="/upgrade" style={{ background: status === 'active' ? 'none' : '#C8102E', border: status === 'active' ? '1px solid #e0e0e0' : 'none', borderRadius: 8, padding: '5px 14px', fontSize: 13, cursor: 'pointer', color: status === 'active' ? '#555' : '#fff', textDecoration: 'none', fontWeight: 600 }}>
+            {status === 'active' ? 'Plan' : 'Activar plan'}
+          </Link>
           <button onClick={handleLogout} style={{ background: 'none', border: '1px solid #e0e0e0', borderRadius: 8, padding: '5px 14px', fontSize: 13, cursor: 'pointer', color: '#555' }}>Salir</button>
         </div>
       </div>
+
+      {/* Trial / cancellation banner */}
+      {showBanner && (
+        <div style={{ background: isTrialExpired || isCanceled ? '#1a1a1a' : trialDaysLeft <= 3 ? '#7f1d1d' : '#0f0f0f', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 16 }}>{isTrialExpired ? '🔒' : isCanceled ? '⚠️' : '⏳'}</span>
+            <span style={{ fontSize: 13, color: '#fff', fontWeight: 500 }}>
+              {isTrialExpired
+                ? 'Tu período de prueba terminó. Activa un plan para seguir usando el dashboard.'
+                : isCanceled
+                ? `Tu suscripción fue cancelada. Acceso hasta el ${subEnd ? subEnd.toLocaleDateString('es-CR') : '—'}. Reactiva cuando quieras.`
+                : trialDaysLeft === 1
+                ? 'Queda 1 día de prueba gratuita.'
+                : `Quedan ${trialDaysLeft} días de prueba gratuita.`}
+            </span>
+          </div>
+          <Link href="/upgrade" style={{ background: '#C8102E', color: '#fff', borderRadius: 8, padding: '6px 16px', fontSize: 13, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            {isCanceled ? 'Reactivar' : 'Ver planes'}
+          </Link>
+        </div>
+      )}
 
       <div style={{ maxWidth: 860, margin: '0 auto', padding: '24px 16px' }}>
 

@@ -193,8 +193,30 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Stats */}
-      <section style={{ background: '#f7f7f8', padding: '72px 32px', borderTop: '1px solid #ebebeb', borderBottom: '1px solid #ebebeb' }}>
+      {/* Client logos — credibilidad inmediata */}
+      <section style={{ background: '#fff', padding: '40px 32px', borderTop: '1px solid #ebebeb', borderBottom: '1px solid #ebebeb' }}>
+        <div style={{ maxWidth: 700, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#bbb', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 20 }}>Negocios que confían en Okapi</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 12 }}>
+            {[
+              { name: 'Innova Home Center', type: 'Empresa', icon: '🏠' },
+              { name: 'Hotel Fermata', type: 'Hotel', icon: '🏨' },
+              { name: 'Restaurante Fuso', type: 'Restaurante', icon: '🍽️' },
+            ].map(c => (
+              <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px', background: '#f7f7f8', borderRadius: 10, border: '1px solid #ebebeb' }}>
+                <span style={{ fontSize: 18 }}>{c.icon}</span>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{c.name}</div>
+                  <div style={{ fontSize: 11, color: '#aaa' }}>{c.type}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Stats — urgencia */}
+      <section style={{ background: '#f7f7f8', padding: '80px 32px' }}>
         <div style={{ maxWidth: 880, margin: '0 auto' }}>
           <Reveal>
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
@@ -204,8 +226,8 @@ export default function Home() {
           </Reveal>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
             {[
-              { stat: '64%', desc: 'de los clientes googlea el restaurante antes de visitarlo' },
-              { stat: '91%', desc: 'evita restaurantes con menos de 4 estrellas' },
+              { stat: '64%', desc: 'de los clientes googlea el negocio antes de visitarlo' },
+              { stat: '91%', desc: 'evita negocios con menos de 4 estrellas' },
               { stat: '70%', desc: 'menos clicks si tu rating es menor a 4.0' },
               { stat: '126%', desc: 'más tráfico para negocios en el Top 3 de Google Maps' },
             ].map((s, i) => (
@@ -215,63 +237,6 @@ export default function Home() {
                   onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLDivElement).style.boxShadow = 'none' }}>
                   <div style={{ fontSize: 40, fontWeight: 900, color: '#C8102E', lineHeight: 1, marginBottom: 10, letterSpacing: '-0.02em' }}>{s.stat}</div>
                   <div style={{ fontSize: 13, color: '#555', lineHeight: 1.55 }}>{s.desc}</div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Clients */}
-      <section style={{ padding: '80px 32px', borderTop: '1px solid #ebebeb' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <Reveal>
-            <div style={{ textAlign: 'center', marginBottom: 52 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Negocios que confían en Okapi</div>
-              <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 36px)', fontWeight: 800, color: '#111', letterSpacing: '-0.02em', marginBottom: 12 }}>Restaurantes, hoteles y empresas que priorizan su visibilidad local</h2>
-              <p style={{ fontSize: 15, color: '#777', maxWidth: 480, margin: '0 auto' }}>En un mercado donde el 64% de los clientes busca en Google antes de visitar, estar bien posicionado no es opcional.</p>
-            </div>
-          </Reveal>
-
-          {/* Client logos row */}
-          <Reveal delay={100}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginBottom: 56 }}>
-              {[
-                { name: 'Innova Home Center', type: 'Empresa', icon: '🏠' },
-                { name: 'Hotel Fermata', type: 'Hotel', icon: '🏨' },
-                { name: 'Restaurante Fuso', type: 'Restaurante', icon: '🍽️' },
-              ].map(c => (
-                <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px', background: '#f7f7f8', borderRadius: 10, border: '1px solid #ebebeb' }}>
-                  <span style={{ fontSize: 18 }}>{c.icon}</span>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{c.name}</div>
-                    <div style={{ fontSize: 11, color: '#aaa' }}>{c.type}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Reveal>
-
-          {/* Testimonials */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
-            {[
-              { quote: 'Okapi nos permitió entender qué piensan nuestros clientes antes de que lo publiquen. Ahora respondemos al instante y protegemos nuestra reputación online.', name: 'Innova Home Center', role: 'Empresa · Costa Rica', icon: '🏠' },
-              { quote: 'La diferencia es enorme. Antes no sabíamos qué pensaban los huéspedes hasta leer las reseñas negativas. Ahora lo sabemos al instante y actuamos.', name: 'Hotel Fermata', role: 'Hotel · Costa Rica', icon: '🏨' },
-              { quote: 'En pocas semanas mejoramos nuestro promedio en Google. El QR en las mesas funciona perfecto y el manager recibe las alertas de inmediato.', name: 'Restaurante Fuso', role: 'Restaurante · Costa Rica', icon: '🍽️' },
-            ].map((t, i) => (
-              <Reveal key={i} delay={i * 80}>
-                <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #ebebeb', display: 'flex', flexDirection: 'column', gap: 16, height: '100%', boxSizing: 'border-box', transition: 'all 0.2s' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-3px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 8px 24px rgba(0,0,0,0.07)' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'none'; (e.currentTarget as HTMLDivElement).style.boxShadow = 'none' }}>
-                  <div style={{ fontSize: 24, color: '#C8102E', lineHeight: 1 }}>"</div>
-                  <p style={{ fontSize: 14, color: '#444', lineHeight: 1.75, margin: 0, flex: 1 }}>{t.quote}</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 12, borderTop: '1px solid #f0f0f0' }}>
-                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{t.icon}</div>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{t.name}</div>
-                      <div style={{ fontSize: 11, color: '#aaa' }}>{t.role}</div>
-                    </div>
-                  </div>
                 </div>
               </Reveal>
             ))}
@@ -335,6 +300,41 @@ export default function Home() {
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: '#111', marginBottom: 5 }}>{f.t}</div>
                     <div style={{ fontSize: 13, color: '#777', lineHeight: 1.6 }}>{f.d}</div>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section style={{ background: '#0f0f0f', padding: '88px 32px' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+          <Reveal>
+            <div style={{ textAlign: 'center', marginBottom: 52 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Lo que dicen nuestros clientes</div>
+              <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 36px)', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>Resultados reales, no promesas</h2>
+            </div>
+          </Reveal>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
+            {[
+              { quote: 'Okapi nos permitió entender qué piensan nuestros clientes antes de que lo publiquen. Ahora respondemos al instante y protegemos nuestra reputación online.', name: 'Innova Home Center', role: 'Empresa · Costa Rica', icon: '🏠' },
+              { quote: 'La diferencia es enorme. Antes no sabíamos qué pensaban los huéspedes hasta leer las reseñas negativas. Ahora lo sabemos al instante y actuamos.', name: 'Hotel Fermata', role: 'Hotel · Costa Rica', icon: '🏨' },
+              { quote: 'En pocas semanas mejoramos nuestro promedio en Google. El QR en las mesas funciona perfecto y el manager recibe las alertas de inmediato.', name: 'Restaurante Fuso', role: 'Restaurante · Costa Rica', icon: '🍽️' },
+            ].map((t, i) => (
+              <Reveal key={i} delay={i * 80}>
+                <div style={{ background: '#161616', borderRadius: 14, padding: '28px', border: '1px solid #2a2a2a', display: 'flex', flexDirection: 'column', gap: 16, height: '100%', boxSizing: 'border-box', transition: 'all 0.2s' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = '#C8102E'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-3px)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = '#2a2a2a'; (e.currentTarget as HTMLDivElement).style.transform = 'none' }}>
+                  <div style={{ color: '#C8102E', fontSize: 28, lineHeight: 1, fontWeight: 800 }}>"</div>
+                  <p style={{ fontSize: 14, color: '#bbb', lineHeight: 1.75, margin: 0, flex: 1 }}>{t.quote}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 16, borderTop: '1px solid #222' }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#222', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{t.icon}</div>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{t.name}</div>
+                      <div style={{ fontSize: 11, color: '#555' }}>{t.role}</div>
+                    </div>
                   </div>
                 </div>
               </Reveal>
