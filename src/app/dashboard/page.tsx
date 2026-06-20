@@ -355,6 +355,33 @@ export default function DashboardPage() {
         {/* Stats tab */}
         {activeTab === 'stats' && (
           <div>
+            {/* Download CSV */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+              <button onClick={() => {
+                const headers = ['Fecha', 'Estrellas', 'Tipo', 'Plataforma', 'Categorías', 'Comentario', 'Quiere contacto', 'Nombre']
+                const rows = scans.map(s => [
+                  new Date(s.created_at).toLocaleString('es-CR'),
+                  s.stars,
+                  s.stars >= 4 ? 'Positiva' : 'Privada',
+                  s.platform_chosen || '',
+                  (s.feedback_categories || []).join(' | '),
+                  (s.feedback_text || '').replace(/,/g, ';'),
+                  s.wants_contact ? 'Sí' : 'No',
+                  s.contact_name || '',
+                ])
+                const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n')
+                const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `opiniones-${restaurant?.slug || 'export'}-${new Date().toISOString().slice(0,10)}.csv`
+                a.click()
+                URL.revokeObjectURL(url)
+              }} style={{ padding: '9px 18px', background: '#f7f7f8', border: '1px solid #ddd', borderRadius: 10, fontSize: 13, fontWeight: 600, color: '#444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                ⬇ Descargar CSV
+              </button>
+            </div>
+
             {/* KPI cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 20 }}>
               <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb' }}>

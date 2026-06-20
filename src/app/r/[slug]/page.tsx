@@ -124,6 +124,21 @@ export default function ReviewPage() {
         wantsContact: wantsContactVal,
       }),
     })
+    // WhatsApp notification to manager
+    if (restaurant?.wa_enabled && restaurant?.wa_number) {
+      fetch('/api/notify/manager', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        keepalive,
+        body: JSON.stringify({
+          restaurantId: restaurant.id,
+          stars: formRating || selectedRating,
+          categories: selectedChips,
+          feedbackText: experience,
+          contactName: wantsContactVal ? contactName : null,
+        }),
+      })
+    }
   }
 
   async function handleSubmitWithWA() {

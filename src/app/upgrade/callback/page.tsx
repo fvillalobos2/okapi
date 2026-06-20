@@ -73,11 +73,18 @@ function CallbackContent() {
         return
       }
 
-      // Send invoice email (fire and forget — don't block success on it)
+      // Send invoice email (fire and forget)
       fetch('/api/tilopay/invoice', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ restaurantId, orderNumber }),
+      }).catch(() => {})
+
+      // Notify owner via WhatsApp (fire and forget)
+      fetch('/api/notify/owner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restaurantId, plan, orderNumber }),
       }).catch(() => {})
 
       setStatus('success')
