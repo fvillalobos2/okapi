@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -31,19 +31,11 @@ const PLANS = [
   },
 ]
 
-declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Tilopay?: any
-  }
-}
-
 export default function UpgradePage() {
   const router = useRouter()
   const [selectedPlan, setSelectedPlan] = useState<Plan>('pro')
   const [step, setStep] = useState<'plans' | 'payment'>('plans')
   const [restaurantId, setRestaurantId] = useState<string | null>(null)
-  const [email, setEmail] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [paying, setPaying] = useState(false)
   const [error, setError] = useState('')
@@ -54,14 +46,11 @@ export default function UpgradePage() {
   const [billingAddress, setBillingAddress] = useState('')
   const [currentPlan, setCurrentPlan] = useState<Plan | null>(null)
   const [subStatus, setSubStatus] = useState<string>('trial')
-  const sdkReady = useRef(false)
-  const tilopayInitialized = useRef(false)
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      setEmail(user.email ?? '')
 
       const { data: rest } = await supabase
         .from('restaurants')
@@ -80,122 +69,41 @@ export default function UpgradePage() {
       setLoading(false)
     }
     load()
-
   }, [router])
 
-  async function goToPayment() {
-    setStep('payment')
-    // Load SDK script if not already loaded
-    if (!document.getElementById('tilopay-sdk')) {
-      const script = document.createElement('script')
-      script.id = 'tilopay-sdk'
-      script.src = 'https://app.tilopay.com/sdk/v2/sdk_tpay.min.js'
-      script.async = true
-      script.onload = () => { sdkReady.current = true; initSdk() }
-      document.body.appendChild(script)
-    } else if (window.Tilopay) {
-      sdkReady.current = true
-      setTimeout(initSdk, 300)
-    }
-  }
-
-  async function initSdk() {
-    if (tilopayInitialized.current) return
-    tilopayInitialized.current = true
-
-    if (!restaurantId) return
-
-    // Get bearer token from our backend
-    const { data: { session } } = await supabase.auth.getSession()
-    const res = await fetch(`/api/tilopay/token?restaurantId=${restaurantId}&plan=${selectedPlan}`, {
-      headers: { Authorization: `Bearer ${session?.access_token}` },
-    })
-
-    if (!res.ok) {
-      setError('Error al conectar con el servicio de pago.')
-      return
-    }
-
-    const { token, orderNumber } = await res.json()
-    const callbackUrl = `${window.location.origin}/upgrade/callback`
-
-    if (!window.Tilopay) {
-      setError('El SDK de Tilopay no cargó. Recarga la página.')
-      return
-    }
-
-    await window.Tilopay.Init({
-      token,
-      currency: 'USD',
-      amount: PLANS.find(p => p.id === selectedPlan)?.price ?? 29,
-      orderNumber,
-      billToEmail: email,
-      billToFirstName: firstName || 'Cliente',
-      billToLastName: lastName || 'Okapi',
-      billToAddress: billingAddress || 'Costa Rica',
-      billToCountry: 'CR',
-      capture: '1',
-      subscription: 1,
-      tokenize: 'on',
-      redirect: callbackUrl,
-      language: 'es',
-      hashVersion: 'V2',
-      platform: 'sdk',
-    })
-  }
-
   async function handlePay() {
-    if (!window.Tilopay || !restaurantId) return
+    if (!restaurantId) return
     setError('')
     setPaying(true)
 
-    // Save billing info before redirect
-    if (restaurantId) {
-      await supabase.from('restaurants').update({
-        billing_email: billingEmail || undefined,
-        billing_name: billingName || undefined,
-      }).eq('id', restaurantId)
-    }
-
-    // Re-init with latest name values before paying
     const { data: { session } } = await supabase.auth.getSession()
-    const res = await fetch(`/api/tilopay/token?restaurantId=${restaurantId}&plan=${selectedPlan}`, {
-      headers: { Authorization: `Bearer ${session?.access_token}` },
-    })
-    if (!res.ok) { setError('Error de conexión. Intenta de nuevo.'); setPaying(false); return }
-    const { token, orderNumber } = await res.json()
 
-    await window.Tilopay.Init({
-      token,
-      currency: 'USD',
-      amount: PLANS.find(p => p.id === selectedPlan)?.price ?? 29,
-      orderNumber,
-      billToEmail: email,
-      billToFirstName: firstName || 'Cliente',
-      billToLastName: lastName || 'Okapi',
-      billToAddress: billingAddress || 'Costa Rica',
-      billToCountry: 'CR',
-      capture: '1',
-      subscription: 1,
-      tokenize: 'on',
-      redirect: `${window.location.origin}/upgrade/callback`,
-      language: 'es',
-      hashVersion: 'V2',
-      platform: 'sdk',
+    const res = await fetch('/api/tilopay/checkout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session?.access_token}`,
+      },
+      body: JSON.stringify({
+        restaurantId,
+        plan: selectedPlan,
+        firstName,
+        lastName,
+        billingEmail,
+        billingName,
+        billingAddress,
+        redirectBase: window.location.origin,
+      }),
     })
 
-    // startPayment either redirects (success) or returns {message: error}
-    // Add a 30s timeout in case it hangs
-    const result = await Promise.race([
-      window.Tilopay.startPayment(),
-      new Promise(resolve => setTimeout(() => resolve({ message: 'Tiempo de espera agotado. Intenta de nuevo.' }), 30000)),
-    ]) as { message?: string } | null
+    const data = await res.json()
 
-    if (result?.message) {
-      setError(result.message)
+    if (data.url) {
+      window.location.href = data.url
+    } else {
+      setError(data.error || 'Error al procesar el pago. Intenta de nuevo.')
       setPaying(false)
     }
-    // If no error, SDK redirects to /upgrade/callback
   }
 
   async function handleCancel() {
@@ -227,7 +135,7 @@ export default function UpgradePage() {
 
         {step === 'payment' ? (
           <div style={{ maxWidth: 480, margin: '0 auto' }}>
-            <button onClick={() => { setStep('plans'); tilopayInitialized.current = false }} style={{ background: 'none', border: 'none', fontSize: 13, color: '#888', cursor: 'pointer', marginBottom: 24, padding: 0 }}>
+            <button onClick={() => setStep('plans')} style={{ background: 'none', border: 'none', fontSize: 13, color: '#888', cursor: 'pointer', marginBottom: 24, padding: 0 }}>
               ← Cambiar plan
             </button>
 
@@ -244,7 +152,7 @@ export default function UpgradePage() {
                 </div>
               </div>
 
-              {/* Card holder + card fields */}
+              {/* Billing info */}
               <div style={{ marginBottom: 20 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
                   <div>
@@ -259,13 +167,6 @@ export default function UpgradePage() {
                   </div>
                 </div>
 
-                {/* Hidden elements required by Tilopay SDK */}
-                <select id="tlpy_payment_method" defaultValue="card:1:1" style={{ display: 'none' }}>
-                  <option value="card:1:1">Tarjeta</option>
-                </select>
-                <div id="responseTilopay" style={{ display: 'none' }} />
-                <div id="tlpy_saved_cards" style={{ display: 'none' }} />
-
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Nombre de facturación</label>
                   <input type="text" placeholder="Empresa S.A. o nombre completo" value={billingName} onChange={e => setBillingName(e.target.value)}
@@ -279,29 +180,10 @@ export default function UpgradePage() {
                   <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>La factura se enviará a este correo</div>
                 </div>
 
-                <div style={{ marginBottom: 14 }}>
+                <div style={{ marginBottom: 6 }}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Dirección de facturación</label>
                   <input type="text" placeholder="San José, Costa Rica" value={billingAddress} onChange={e => setBillingAddress(e.target.value)}
                     style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
-                </div>
-
-                <div className="payFormTilopay">
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Número de tarjeta</label>
-                  <input id="tlpy_cc_number" type="tel" placeholder="1234 5678 9012 3456" maxLength={19}
-                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, marginBottom: 14, boxSizing: 'border-box' }} />
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Vencimiento</label>
-                      <input id="tlpy_cc_expiration_date" type="tel" placeholder="MM/AA" maxLength={5}
-                        style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>CVV</label>
-                      <input id="tlpy_cvv" type="tel" placeholder="123" maxLength={4}
-                        style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
-                    </div>
-                  </div>
                 </div>
               </div>
 
@@ -313,13 +195,13 @@ export default function UpgradePage() {
 
               <button onClick={handlePay} disabled={paying}
                 style={{ width: '100%', padding: '13px 0', background: paying ? '#aaa' : '#C8102E', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: paying ? 'not-allowed' : 'pointer' }}>
-                {paying ? 'Procesando…' : `Pagar $${PLANS.find(p => p.id === selectedPlan)?.price}/mes`}
+                {paying ? 'Redirigiendo a pago seguro…' : `Continuar al pago — $${PLANS.find(p => p.id === selectedPlan)?.price}/mes`}
               </button>
-            </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', fontSize: 12, color: '#aaa' }}>
-              <span>🔒</span>
-              <span>Pago seguro procesado por Tilopay · PCI DSS compliant</span>
+              <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', fontSize: 12, color: '#aaa' }}>
+                <span>🔒</span>
+                <span>Ingresarás tu tarjeta en la página segura de Tilopay · PCI DSS</span>
+              </div>
             </div>
           </div>
 
@@ -357,7 +239,7 @@ export default function UpgradePage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {plan.features.map(f => (
                         <div key={f} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                          <span style={{ color: isSelected ? '#C8102E' : '#C8102E', fontSize: 13, flexShrink: 0, marginTop: 1 }}>✓</span>
+                          <span style={{ color: '#C8102E', fontSize: 13, flexShrink: 0, marginTop: 1 }}>✓</span>
                           <span style={{ fontSize: 13, color: isSelected ? '#ccc' : '#555' }}>{f}</span>
                         </div>
                       ))}
@@ -368,7 +250,7 @@ export default function UpgradePage() {
             </div>
 
             <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-              <button onClick={goToPayment}
+              <button onClick={() => setStep('payment')}
                 style={{ background: '#C8102E', color: '#fff', border: 'none', borderRadius: 12, padding: '14px 40px', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
                 {subStatus === 'active'
                   ? `Cambiar a ${PLANS.find(p => p.id === selectedPlan)?.label}`
