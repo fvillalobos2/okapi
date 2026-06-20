@@ -25,6 +25,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [resendingEmail, setResendingEmail] = useState(false)
 
   function validate(): string | null {
     if (!email.trim()) return 'El email es obligatorio.'
@@ -35,6 +36,21 @@ export default function LoginPage() {
       if (password !== confirmPassword) return 'Las contraseñas no coinciden.'
     }
     return null
+  }
+
+  async function handleResendConfirmation() {
+    setResendingEmail(true)
+    await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: 'https://reviews.projectokapi.com/dashboard' } })
+    setSuccess('Te reenviamos el email de confirmación. Revisá tu bandeja.')
+    setError('')
+    setResendingEmail(false)
+  }
+
+  async function handleForgotPassword() {
+    if (!email.trim()) { setError('Ingresá tu email primero.'); return }
+    await supabase.auth.resetPasswordForEmail(email, { redirectTo: 'https://reviews.projectokapi.com/dashboard' })
+    setSuccess('Te enviamos un link para restablecer tu contraseña.')
+    setError('')
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -147,12 +163,27 @@ export default function LoginPage() {
                   → Ir a entrar
                 </button>
               )}
+              {error.includes('confirmá tu cuenta') && (
+                <button type="button" onClick={handleResendConfirmation} disabled={resendingEmail}
+                  style={{ display: 'block', marginTop: 6, background: 'none', border: 'none', color: '#C8102E', cursor: 'pointer', fontWeight: 600, fontSize: 13, padding: 0 }}>
+                  {resendingEmail ? 'Enviando…' : '→ Reenviar email de confirmación'}
+                </button>
+              )}
             </div>
           )}
 
           {success && (
             <div style={{ fontSize: 13, color: '#2e7d32', background: '#e8f5e9', border: '1px solid #c8e6c9', padding: '10px 14px', borderRadius: 8, marginBottom: 16 }}>
               {success}
+            </div>
+          )}
+
+          {mode === 'login' && (
+            <div style={{ textAlign: 'right', marginBottom: 16 }}>
+              <button type="button" onClick={handleForgotPassword}
+                style={{ background: 'none', border: 'none', color: '#C8102E', cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>
+                ¿Olvidaste tu contraseña?
+              </button>
             </div>
           )}
 
