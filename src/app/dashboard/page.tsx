@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 type Restaurant = {
@@ -24,6 +24,8 @@ type Restaurant = {
   plan: 'starter' | 'pro' | 'business' | null
   subscription_status: 'trial' | 'active' | 'canceled' | 'expired'
   subscription_ends_at: string | null
+  auto_reply_enabled: boolean
+  google_account_id: string | null
 }
 
 type Scan = {
@@ -48,7 +50,10 @@ const PLATFORMS = [
 
 export default function DashboardPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
+  const [googleNotif, setGoogleNotif] = useState<'connected' | 'error' | null>(null)
+  const [togglingAutoReply, setTogglingAutoReply] = useState(false)
   const [scans, setScans] = useState<Scan[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'stats' | 'config'>('stats')
@@ -88,6 +93,32 @@ export default function DashboardPage() {
     }
     load()
   }, [router])
+
+  useEffect(() => {
+    const g = searchParams.get('google')
+    if (g === 'connected' || g === 'error') {
+      setGoogleNotif(g as 'connected' | 'error')
+      setTimeout(() => setGoogleNotif(null), 5000)
+    }
+  }, [searchParams])
+
+  async function handleAutoReplyToggle() {
+    if (!restaurant) return
+    const isOn = restaurant.auto_reply_enabled
+
+    // Turning ON: if not connected to Google, start OAuth
+    if (!isOn && !restaurant.google_account_id) {
+      const { data: { session } } = await supabase.auth.getSession()
+      window.location.href = `/api/google/connect?restaurantId=${restaurant.id}&token=${session?.access_token}`
+      return
+    }
+
+    // Already connected or turning OFF: just toggle
+    setTogglingAutoReply(true)
+    await supabase.from('restaurants').update({ auto_reply_enabled: !isOn }).eq('id', restaurant.id)
+    setRestaurant({ ...restaurant, auto_reply_enabled: !isOn })
+    setTogglingAutoReply(false)
+  }
 
   async function saveConfig() {
     if (!restaurant) return
@@ -195,6 +226,12 @@ export default function DashboardPage() {
           <Link href="/upgrade" style={{ background: '#C8102E', color: '#fff', borderRadius: 8, padding: '6px 16px', fontSize: 13, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>
             {isCanceled ? 'Reactivar' : 'Ver planes'}
           </Link>
+        </div>
+      )}
+
+      {googleNotif && (
+        <div style={{ background: googleNotif === 'connected' ? '#f0fdf4' : '#fef2f2', borderBottom: `1px solid ${googleNotif === 'connected' ? '#bbf7d0' : '#fecaca'}`, padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: googleNotif === 'connected' ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
+          {googleNotif === 'connected' ? '✓ Google conectado — la respuesta automática está activa.' : '✗ Error al conectar Google. Intentá de nuevo.'}
         </div>
       )}
 
@@ -389,6 +426,36 @@ export default function DashboardPage() {
               <div onClick={() => setForm({ ...form, wa_enabled: !form.wa_enabled })}
                 style={{ width: 44, height: 24, borderRadius: 12, background: form.wa_enabled ? '#25D366' : '#d1d5db', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
                 <div style={{ position: 'absolute', top: 2, left: form.wa_enabled ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', transition: 'left 0.2s' }} />
+              </div>
+            </div>
+
+            {/* Auto-reply toggle — Business plan only */}
+            <div style={{ padding: '14px 0', borderTop: '1px solid #f0f0f0', marginBottom: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ flex: 1, marginRight: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>Respuesta automática a Google Reviews</div>
+                    {restaurant?.plan !== 'business' && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: '#C8102E', background: '#fff0f3', border: '1px solid #fecdd3', borderRadius: 20, padding: '2px 8px' }}>BUSINESS</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>
+                    {restaurant?.plan !== 'business'
+                      ? 'Disponible en el plan Business. Responde reseñas de 4-5⭐ con IA automáticamente.'
+                      : restaurant?.google_account_id
+                        ? `Google conectado · Responde reseñas de 4-5⭐ entre 30-60 min después de recibirlas`
+                        : 'Conectá tu cuenta de Google para activar. Responde 4-5⭐ automáticamente con IA.'}
+                  </div>
+                </div>
+                {restaurant?.plan === 'business' ? (
+                  <div
+                    onClick={togglingAutoReply ? undefined : handleAutoReplyToggle}
+                    style={{ width: 44, height: 24, borderRadius: 12, background: restaurant?.auto_reply_enabled ? '#4285F4' : '#d1d5db', cursor: togglingAutoReply ? 'not-allowed' : 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0, opacity: togglingAutoReply ? 0.6 : 1 }}>
+                    <div style={{ position: 'absolute', top: 2, left: restaurant?.auto_reply_enabled ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', transition: 'left 0.2s' }} />
+                  </div>
+                ) : (
+                  <Link href="/upgrade" style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', textDecoration: 'none', whiteSpace: 'nowrap' }}>Actualizar →</Link>
+                )}
               </div>
             </div>
 
