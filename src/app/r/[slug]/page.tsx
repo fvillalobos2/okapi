@@ -137,9 +137,12 @@ export default function ReviewPage() {
   function getPlatformUrl(platform: string): string | null {
     if (!restaurant) return null
     switch (platform) {
-      case 'google': return restaurant.google_place_id
-        ? `https://search.google.com/local/writereview?placeid=${restaurant.google_place_id}`
-        : null
+      case 'google': {
+        const g = restaurant.google_place_id
+        if (!g) return null
+        if (g.startsWith('http')) return g
+        return `https://search.google.com/local/writereview?placeid=${g}`
+      }
       case 'tripadvisor': return restaurant.tripadvisor_url
       case 'opentable': return restaurant.opentable_url
       case 'thefork': return restaurant.thefork_url

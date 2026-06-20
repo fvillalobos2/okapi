@@ -96,12 +96,12 @@ export default function OnboardingPage() {
       body: JSON.stringify({ input }),
     })
     const data = await res.json()
-    if (data.placeId) {
-      setUrls(u => ({ ...u, google_place_id: data.placeId }))
+    if (data.reviewUrl) {
+      setUrls(u => ({ ...u, google_place_id: data.reviewUrl }))
       setGoogleResolved(true)
       setErrors(e => ({ ...e, google: '' }))
     } else {
-      setErrors(e => ({ ...e, google: 'No se pudo extraer el Place ID. Pegá el ID directamente (empieza con ChIJ...).' }))
+      setErrors(e => ({ ...e, google: 'No se pudo resolver el link. Intentá con otro formato.' }))
     }
     setResolvingGoogle(false)
   }
