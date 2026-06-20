@@ -118,10 +118,6 @@ export default function ReviewPage() {
 
   async function handleSubmitWithWA() {
     if (!validate()) return
-    try {
-      await saveScans(null, true)
-      await notifyManager(true)
-    } catch { /* ignore */ }
     const stars = '★'.repeat(formRating) + '☆'.repeat(5 - formRating)
     const msg = [
       `Hola, tengo un comentario sobre *${restaurant?.name}*.`,
@@ -131,8 +127,13 @@ export default function ReviewPage() {
       `*Mi experiencia:* ${experience}`,
       contactName ? `*Cliente:* ${contactName}` : '',
     ].filter(Boolean).join('\n')
-    window.open(`https://wa.me/${restaurant?.wa_number}?text=${encodeURIComponent(msg)}`, '_blank')
+    // Open WA immediately (before async) to avoid browser popup blocking
+    window.location.href = `https://wa.me/${restaurant?.wa_number}?text=${encodeURIComponent(msg)}`
     setScreen('thanks')
+    try {
+      await saveScans(null, true)
+      await notifyManager(true)
+    } catch { /* ignore */ }
   }
 
   async function handleSubmitNoContact() {
