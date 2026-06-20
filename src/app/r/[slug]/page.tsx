@@ -138,10 +138,8 @@ export default function ReviewPage() {
 
   async function handleSubmitNoContact() {
     if (!validate()) return
-    try {
-      await saveScans(null, false)
-      await notifyManager(false)
-    } catch { /* ignore errors, still show thanks */ }
+    saveScans(null, false).catch(() => {})
+    notifyManager(false, true)
     setScreen('thanks')
   }
 
