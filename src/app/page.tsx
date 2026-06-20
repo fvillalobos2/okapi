@@ -5,15 +5,17 @@ export default function Home() {
     <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', color: '#111', background: '#fff', overflowX: 'hidden' }}>
 
       {/* Nav */}
-      <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #f0f0f0', padding: '0 32px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: '100%' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 7, background: '#C8102E', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: '#fff' }}>O</div>
-          <span style={{ fontWeight: 700, fontSize: 15 }}>Okapi Reviews</span>
+      <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(10,10,10,0.92)', backdropFilter: 'blur(16px)', borderBottom: '1px solid #1e1e1e', padding: '0 32px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: '#C8102E', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 900, color: '#fff', letterSpacing: '-0.5px' }}>O</div>
+          <span style={{ fontWeight: 700, fontSize: 15, color: '#fff', letterSpacing: '-0.01em' }}>Okapi Reviews</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <a href="#pricing" style={{ fontSize: 14, fontWeight: 500, color: '#666', textDecoration: 'none', padding: '6px 14px' }}>Precios</a>
-          <Link href="/login" style={{ fontSize: 14, fontWeight: 500, color: '#666', textDecoration: 'none', padding: '6px 14px' }}>Entrar</Link>
-          <Link href="/login" style={{ padding: '8px 18px', background: '#C8102E', color: '#fff', borderRadius: 8, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>Empezar gratis</Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <a href="#como-funciona" style={{ fontSize: 13, fontWeight: 500, color: '#888', textDecoration: 'none', padding: '7px 14px', borderRadius: 8, transition: 'color 0.15s' }}>Cómo funciona</a>
+          <a href="#pricing" style={{ fontSize: 13, fontWeight: 500, color: '#888', textDecoration: 'none', padding: '7px 14px', borderRadius: 8 }}>Precios</a>
+          <div style={{ width: 1, height: 20, background: '#2a2a2a', margin: '0 8px' }} />
+          <Link href="/login" style={{ fontSize: 13, fontWeight: 500, color: '#aaa', textDecoration: 'none', padding: '7px 14px', borderRadius: 8 }}>Entrar</Link>
+          <Link href="/login" style={{ padding: '8px 18px', background: '#C8102E', color: '#fff', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none', letterSpacing: '-0.01em' }}>Empezar gratis</Link>
         </div>
       </nav>
 
