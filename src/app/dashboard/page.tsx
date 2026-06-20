@@ -154,6 +154,27 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* QR Code */}
+        <div style={{ background: '#fff', borderRadius: 16, padding: '20px 24px', marginBottom: 24, border: '1px solid #ebebeb', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+          <img
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(reviewUrl)}&bgcolor=ffffff&color=1a1a1a&margin=6`}
+            alt="QR Code"
+            style={{ width: 100, height: 100, borderRadius: 8, border: '1px solid #ebebeb', flexShrink: 0 }}
+          />
+          <div style={{ flex: 1, minWidth: 180 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 4 }}>Código QR</div>
+            <div style={{ fontSize: 13, color: '#777', lineHeight: 1.5, marginBottom: 14 }}>Imprimilo y poné en las mesas, mostrador o menú para que tus clientes dejen su opinión.</div>
+            <a
+              href={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(reviewUrl)}&bgcolor=ffffff&color=1a1a1a&margin=20`}
+              download={`qr-${restaurant?.slug}.png`}
+              target="_blank"
+              rel="noopener"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', background: '#111', color: '#fff', borderRadius: 10, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+              ↓ Descargar QR
+            </a>
+          </div>
+        </div>
+
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#ebebeb', borderRadius: 10, padding: 4 }}>
           {[{ key: 'stats', label: 'Estadísticas' }, { key: 'config', label: 'Configuración' }].map(t => (
