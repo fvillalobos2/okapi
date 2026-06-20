@@ -51,7 +51,6 @@ export default function UpgradePage() {
   const [lastName, setLastName] = useState('')
   const [billingEmail, setBillingEmail] = useState('')
   const [billingName, setBillingName] = useState('')
-  const [applePaySupported, setApplePaySupported] = useState(false)
   const [currentPlan, setCurrentPlan] = useState<Plan | null>(null)
   const [subStatus, setSubStatus] = useState<string>('trial')
   const sdkReady = useRef(false)
@@ -81,12 +80,6 @@ export default function UpgradePage() {
     }
     load()
 
-    // Detect Apple Pay support
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const aps = (window as any).ApplePaySession
-    if (typeof window !== 'undefined' && aps && aps.canMakePayments()) {
-      setApplePaySupported(true)
-    }
   }, [router])
 
   async function goToPayment() {
@@ -186,61 +179,18 @@ export default function UpgradePage() {
       platform: 'sdk',
     })
 
-    const result = await window.Tilopay.startPayment()
+    // startPayment either redirects (success) or returns {message: error}
+    // Add a 30s timeout in case it hangs
+    const result = await Promise.race([
+      window.Tilopay.startPayment(),
+      new Promise(resolve => setTimeout(() => resolve({ message: 'Tiempo de espera agotado. Intenta de nuevo.' }), 30000)),
+    ]) as { message?: string } | null
 
     if (result?.message) {
       setError(result.message)
       setPaying(false)
     }
-    // If no error message, SDK handles redirect to /upgrade/callback
-  }
-
-  async function handleApplePay() {
-    if (!window.Tilopay || !restaurantId) return
-    setError('')
-    setPaying(true)
-
-    if (restaurantId) {
-      await supabase.from('restaurants').update({
-        billing_email: billingEmail || undefined,
-        billing_name: billingName || undefined,
-      }).eq('id', restaurantId)
-    }
-
-    // Switch payment method to Apple Pay in the hidden select
-    const sel = document.getElementById('tlpy_payment_method') as HTMLSelectElement | null
-    if (sel) {
-      // Tilopay uses a specific value for Apple Pay — trigger via SDK's own Apple Pay flow
-      sel.value = 'applepay:4:1'
-    }
-
-    const { data: { session } } = await supabase.auth.getSession()
-    const res = await fetch(`/api/tilopay/token?restaurantId=${restaurantId}&plan=${selectedPlan}`, {
-      headers: { Authorization: `Bearer ${session?.access_token}` },
-    })
-    if (!res.ok) { setError('Error de conexión.'); setPaying(false); return }
-    const { token, orderNumber } = await res.json()
-
-    await window.Tilopay.Init({
-      token,
-      currency: 'USD',
-      amount: PLANS.find(p => p.id === selectedPlan)?.price ?? 29,
-      orderNumber,
-      billToEmail: email,
-      billToFirstName: firstName || 'Cliente',
-      billToLastName: lastName || 'Okapi',
-      capture: '1',
-      subscription: 1,
-      tokenize: 'on',
-      redirect: `${window.location.origin}/upgrade/callback`,
-      language: 'es',
-      hashVersion: 'V2',
-      platform: 'sdk',
-      applePayBrowserSupported: true,
-    })
-
-    const result = await window.Tilopay.startPayment()
-    if (result?.message) { setError(result.message); setPaying(false) }
+    // If no error, SDK redirects to /upgrade/callback
   }
 
   async function handleCancel() {
@@ -347,23 +297,9 @@ export default function UpgradePage() {
               )}
 
               <button onClick={handlePay} disabled={paying}
-                style={{ width: '100%', padding: '13px 0', background: paying ? '#aaa' : '#C8102E', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: paying ? 'not-allowed' : 'pointer', marginBottom: applePaySupported ? 10 : 0 }}>
+                style={{ width: '100%', padding: '13px 0', background: paying ? '#aaa' : '#C8102E', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: paying ? 'not-allowed' : 'pointer' }}>
                 {paying ? 'Procesando…' : `Pagar $${PLANS.find(p => p.id === selectedPlan)?.price}/mes`}
               </button>
-
-              {applePaySupported && (
-                <>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '4px 0' }}>
-                    <div style={{ flex: 1, height: 1, background: '#eee' }} />
-                    <span style={{ fontSize: 12, color: '#aaa' }}>o</span>
-                    <div style={{ flex: 1, height: 1, background: '#eee' }} />
-                  </div>
-                  <button onClick={handleApplePay} disabled={paying}
-                    style={{ width: '100%', padding: '13px 0', background: '#000', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: paying ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 18 }}></span> Pay
-                  </button>
-                </>
-              )}
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', fontSize: 12, color: '#aaa' }}>
