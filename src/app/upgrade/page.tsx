@@ -49,6 +49,7 @@ export default function UpgradePage() {
   const [error, setError] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
+  const [applePaySupported, setApplePaySupported] = useState(false)
   const [currentPlan, setCurrentPlan] = useState<Plan | null>(null)
   const [subStatus, setSubStatus] = useState<string>('trial')
   const sdkReady = useRef(false)
@@ -75,6 +76,13 @@ export default function UpgradePage() {
       setLoading(false)
     }
     load()
+
+    // Detect Apple Pay support
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const aps = (window as any).ApplePaySession
+    if (typeof window !== 'undefined' && aps && aps.canMakePayments()) {
+      setApplePaySupported(true)
+    }
   }, [router])
 
   async function goToPayment() {
@@ -175,6 +183,47 @@ export default function UpgradePage() {
     // If no error message, SDK handles redirect to /upgrade/callback
   }
 
+  async function handleApplePay() {
+    if (!window.Tilopay || !restaurantId) return
+    setError('')
+    setPaying(true)
+
+    // Switch payment method to Apple Pay in the hidden select
+    const sel = document.getElementById('tlpy_payment_method') as HTMLSelectElement | null
+    if (sel) {
+      // Tilopay uses a specific value for Apple Pay — trigger via SDK's own Apple Pay flow
+      sel.value = 'applepay:4:1'
+    }
+
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch(`/api/tilopay/token?restaurantId=${restaurantId}&plan=${selectedPlan}`, {
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+    })
+    if (!res.ok) { setError('Error de conexión.'); setPaying(false); return }
+    const { token, orderNumber } = await res.json()
+
+    await window.Tilopay.Init({
+      token,
+      currency: 'USD',
+      amount: PLANS.find(p => p.id === selectedPlan)?.price ?? 29,
+      orderNumber,
+      billToEmail: email,
+      billToFirstName: firstName || 'Cliente',
+      billToLastName: lastName || 'Okapi',
+      capture: '1',
+      subscription: 1,
+      tokenize: 'on',
+      redirect: `${window.location.origin}/upgrade/callback`,
+      language: 'es',
+      hashVersion: 'V2',
+      platform: 'sdk',
+      applePayBrowserSupported: true,
+    })
+
+    const result = await window.Tilopay.startPayment()
+    if (result?.message) { setError(result.message); setPaying(false) }
+  }
+
   async function handleCancel() {
     if (!restaurantId) return
     if (!confirm('¿Confirmas cancelar tu suscripción? Mantendrás acceso hasta el fin del período pagado.')) return
@@ -236,10 +285,9 @@ export default function UpgradePage() {
                   </div>
                 </div>
 
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Método de pago</label>
-                <select id="tlpy_payment_method" defaultValue="" style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, background: '#fff', color: '#111', marginBottom: 14 }}>
-                  <option value="">Selecciona método…</option>
-                  <option value="card:1:1">Tarjeta de crédito / débito</option>
+                {/* Hidden — required by Tilopay SDK, pre-selected to card */}
+                <select id="tlpy_payment_method" defaultValue="card:1:1" style={{ display: 'none' }}>
+                  <option value="card:1:1">Tarjeta</option>
                 </select>
 
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Número de tarjeta</label>
@@ -267,9 +315,23 @@ export default function UpgradePage() {
               )}
 
               <button onClick={handlePay} disabled={paying}
-                style={{ width: '100%', padding: '13px 0', background: paying ? '#aaa' : '#C8102E', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: paying ? 'not-allowed' : 'pointer' }}>
+                style={{ width: '100%', padding: '13px 0', background: paying ? '#aaa' : '#C8102E', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: paying ? 'not-allowed' : 'pointer', marginBottom: applePaySupported ? 10 : 0 }}>
                 {paying ? 'Procesando…' : `Pagar $${PLANS.find(p => p.id === selectedPlan)?.price}/mes`}
               </button>
+
+              {applePaySupported && (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '4px 0' }}>
+                    <div style={{ flex: 1, height: 1, background: '#eee' }} />
+                    <span style={{ fontSize: 12, color: '#aaa' }}>o</span>
+                    <div style={{ flex: 1, height: 1, background: '#eee' }} />
+                  </div>
+                  <button onClick={handleApplePay} disabled={paying}
+                    style={{ width: '100%', padding: '13px 0', background: '#000', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: paying ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 18 }}></span> Pay
+                  </button>
+                </>
+              )}
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', fontSize: 12, color: '#aaa' }}>
