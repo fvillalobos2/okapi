@@ -350,19 +350,27 @@ export default function DashboardPage() {
 
             {/* Platforms */}
             <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 12 }}>Plataformas activas</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-                {PLATFORMS.map(p => {
-                  const active = form.platforms_active?.[p.key] ?? false
-                  return (
-                    <div key={p.key} onClick={() => setForm({ ...form, platforms_active: { ...form.platforms_active, [p.key]: !active } })}
-                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10, border: `2px solid ${active ? p.color : '#e5e7eb'}`, background: active ? `${p.color}10` : '#fafafa', cursor: 'pointer' }}>
-                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: active ? p.color : '#d1d5db', flexShrink: 0 }} />
-                      <span style={{ fontSize: 13, fontWeight: 600, color: active ? p.color : '#888' }}>{p.label}</span>
-                    </div>
-                  )
-                })}
-              </div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>Plataformas activas</div>
+              <div style={{ fontSize: 12, color: '#aaa', marginBottom: 12 }}>Solo aparecen las plataformas con URL configurada arriba</div>
+              {(() => {
+                const urlMap: Record<string, string> = { google: 'google_place_id', tripadvisor: 'tripadvisor_url', opentable: 'opentable_url', thefork: 'thefork_url', facebook: 'facebook_url', yelp: 'yelp_url' }
+                const withUrl = PLATFORMS.filter(p => (form as any)[urlMap[p.key]])
+                if (withUrl.length === 0) return <div style={{ fontSize: 13, color: '#bbb', padding: '12px 0' }}>Agregá URLs arriba para activar plataformas.</div>
+                return (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                    {withUrl.map(p => {
+                      const active = form.platforms_active?.[p.key] ?? false
+                      return (
+                        <div key={p.key} onClick={() => setForm({ ...form, platforms_active: { ...form.platforms_active, [p.key]: !active } })}
+                          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10, border: `2px solid ${active ? p.color : '#e5e7eb'}`, background: active ? `${p.color}10` : '#fafafa', cursor: 'pointer' }}>
+                          <div style={{ width: 10, height: 10, borderRadius: '50%', background: active ? p.color : '#d1d5db', flexShrink: 0 }} />
+                          <span style={{ fontSize: 13, fontWeight: 600, color: active ? p.color : '#888' }}>{p.label}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
             </div>
 
             <button onClick={saveConfig} disabled={saving}
