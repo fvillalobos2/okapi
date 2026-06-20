@@ -40,7 +40,7 @@ export default function LoginPage() {
 
   async function handleResendConfirmation() {
     setResendingEmail(true)
-    await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: 'https://reviews.projectokapi.com/dashboard' } })
+    await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: 'https://reviews.projectokapi.com/auth/callback' } })
     setSuccess('Te reenviamos el email de confirmación. Revisá tu bandeja.')
     setError('')
     setResendingEmail(false)
@@ -67,7 +67,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: 'https://reviews.projectokapi.com/dashboard' },
+        options: { emailRedirectTo: 'https://reviews.projectokapi.com/auth/callback' },
       })
       if (error) {
         setError(getErrorMessage(error.message))
