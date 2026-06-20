@@ -190,32 +190,27 @@ export default function ReviewPage() {
   ].filter(p => restaurant.platforms_active[p.key] && getPlatformUrl(p.key))
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'radial-gradient(ellipse at 20% 50%, rgba(200,16,46,0.18) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(200,16,46,0.10) 0%, transparent 50%), linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
-    }}>
-      <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 8px 32px rgba(0,0,0,0.45)', width: '100%', maxWidth: 420, overflow: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: '#f4f4f5', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 16px' }}>
+      <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', width: '100%', maxWidth: 440, overflow: 'hidden' }}>
 
         {/* Header */}
-        <div style={{ background: '#fff', padding: '24px 24px 20px', textAlign: 'center', borderBottom: '1px solid #e0e0e0' }}>
+        <div style={{ background: '#fff', padding: '20px 24px 16px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>
           {restaurant.logo_url ? (
-            <img src={restaurant.logo_url} alt={restaurant.name} style={{ height: 52, width: 'auto', display: 'block', margin: '0 auto' }} />
-          ) : (
-            <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a' }}>{restaurant.name}</div>
-          )}
+            <img src={restaurant.logo_url} alt={restaurant.name} style={{ height: 48, width: 'auto', display: 'block', margin: '0 auto 8px' }} />
+          ) : null}
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#111' }}>{restaurant.name}</div>
         </div>
 
         {/* Screen: Landing */}
         {screen === 'landing' && (
-          <div style={{ padding: '28px 24px' }}>
-            <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', marginBottom: 8, lineHeight: 1.3 }}>
-              Tu opinión es muy<br />importante para nosotros.
+          <div style={{ padding: '28px 24px 32px' }}>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#111', marginBottom: 8, lineHeight: 1.3 }}>
+              Tu opinión nos importa
             </div>
-            <p style={{ fontSize: 14, color: '#666', lineHeight: 1.5, marginBottom: 24 }}>
-              ¿Cómo calificarías tu experiencia en {restaurant.name}?
+            <p style={{ fontSize: 15, color: '#555', lineHeight: 1.6, marginBottom: 28 }}>
+              ¿Cómo calificarías tu visita a {restaurant.name}?
             </p>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
               {[1, 2, 3, 4, 5].map(v => (
                 <button key={v}
                   onMouseEnter={() => setHoverRating(v)}
@@ -223,9 +218,9 @@ export default function ReviewPage() {
                   onClick={() => handleStarClick(v)}
                   style={{
                     background: 'none', border: 'none', cursor: 'pointer', padding: 4,
-                    fontSize: 42, lineHeight: 1,
-                    color: v <= (hoverRating || selectedRating) ? '#f5a623' : '#e0e0e0',
-                    transform: v <= (hoverRating || selectedRating) ? 'scale(1.25)' : 'scale(1)',
+                    fontSize: 46, lineHeight: 1,
+                    color: v <= (hoverRating || selectedRating) ? '#f59e0b' : '#d1d5db',
+                    transform: v <= (hoverRating || selectedRating) ? 'scale(1.2)' : 'scale(1)',
                     transition: 'color 0.15s, transform 0.2s',
                   }}>★</button>
               ))}
@@ -235,21 +230,21 @@ export default function ReviewPage() {
 
         {/* Screen: Positive */}
         {screen === 'positive' && (
-          <div style={{ padding: '28px 24px' }}>
-            <button onClick={() => setScreen('landing')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', fontSize: 13, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 4 }}>← Volver</button>
-            <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>¡Nos alegra mucho! 🎉</div>
-            <p style={{ fontSize: 14, color: '#666', lineHeight: 1.5, marginBottom: 24 }}>¿Nos ayudarías compartiendo tu experiencia?</p>
+          <div style={{ padding: '24px' }}>
+            <button onClick={() => setScreen('landing')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', fontSize: 13, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 4 }}>← Volver</button>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#111', marginBottom: 6 }}>¡Qué bueno saberlo! 🎉</div>
+            <p style={{ fontSize: 14, color: '#555', lineHeight: 1.6, marginBottom: 24 }}>¿Nos ayudarías dejando una reseña en alguna de estas plataformas?</p>
             {platforms.map(p => (
               <button key={p.key} onClick={() => handlePlatformClick(p.key, getPlatformUrl(p.key)!)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                  padding: '13px 16px', borderRadius: 8, border: 'none',
-                  fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 12, width: '100%',
+                  padding: '14px 16px', borderRadius: 10, border: 'none',
+                  fontSize: 15, fontWeight: 600, cursor: 'pointer',
                   background: p.color, color: (p as any).textColor || '#fff',
                   marginBottom: 10,
                 }}>
-                <span style={{ fontSize: 13, fontWeight: 700 }}>{p.abbr}</span>
-                {p.label}
+                <span style={{ fontSize: 14, fontWeight: 800, minWidth: 24, textAlign: 'center' }}>{p.abbr}</span>
+                Dejar reseña en {p.label}
               </button>
             ))}
           </div>
@@ -257,74 +252,74 @@ export default function ReviewPage() {
 
         {/* Screen: Feedback */}
         {screen === 'feedback' && (
-          <div style={{ padding: '28px 24px' }}>
-            <button onClick={() => setScreen('landing')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', fontSize: 13, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 4 }}>← Volver</button>
-            <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>Queremos mejorar</div>
-            <p style={{ fontSize: 14, color: '#666', lineHeight: 1.5, marginBottom: 24 }}>Cuéntanos qué pasó para poder atenderte mejor.</p>
+          <div style={{ padding: '24px' }}>
+            <button onClick={() => setScreen('landing')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', fontSize: 13, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 4 }}>← Volver</button>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#111', marginBottom: 6 }}>Queremos mejorar</div>
+            <p style={{ fontSize: 14, color: '#555', lineHeight: 1.6, marginBottom: 24 }}>Tu opinión nos ayuda a brindarte una mejor experiencia.</p>
 
             {/* Mini stars */}
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Tu Calificación <span style={{ fontSize: 10, background: '#C8102E', color: '#fff', padding: '1px 5px', borderRadius: 3 }}>Obligatorio</span></div>
-            <div style={{ display: 'flex', gap: 6, marginBottom: 18 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>Calificación</div>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
               {[1, 2, 3, 4, 5].map(v => (
-                <span key={v} onClick={() => setFormRating(v)} style={{ fontSize: 28, cursor: 'pointer', color: v <= formRating ? '#f5a623' : '#ddd' }}>★</span>
+                <span key={v} onClick={() => setFormRating(v)} style={{ fontSize: 32, cursor: 'pointer', color: v <= formRating ? '#f59e0b' : '#d1d5db' }}>★</span>
               ))}
             </div>
 
             {/* Chips */}
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Tuve problemas con <span style={{ fontSize: 10, background: '#C8102E', color: '#fff', padding: '1px 5px', borderRadius: 3 }}>Obligatorio</span></div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 10 }}>¿Qué no estuvo bien?</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>
               {categories.map(c => (
                 <div key={c} onClick={() => toggleChip(c)} style={{
-                  padding: '7px 14px', borderRadius: 20, cursor: 'pointer', fontSize: 13,
-                  border: selectedChips.includes(c) ? '1.5px solid #C8102E' : '1.5px solid #e0e0e0',
-                  background: selectedChips.includes(c) ? '#C8102E' : '#fff',
-                  color: selectedChips.includes(c) ? '#fff' : '#333',
+                  padding: '8px 16px', borderRadius: 20, cursor: 'pointer', fontSize: 13, fontWeight: 500,
+                  border: `1.5px solid ${selectedChips.includes(c) ? '#C8102E' : '#e5e7eb'}`,
+                  background: selectedChips.includes(c) ? '#C8102E' : '#f9fafb',
+                  color: selectedChips.includes(c) ? '#fff' : '#374151',
                 }}>{c}</div>
               ))}
             </div>
-            {errors.chips && <div style={{ fontSize: 12, color: '#C8102E', marginBottom: 14 }}>{errors.chips}</div>}
+            {errors.chips && <div style={{ fontSize: 12, color: '#C8102E', marginBottom: 12, marginTop: 4 }}>{errors.chips}</div>}
 
             {/* Experience */}
-            <div style={{ fontSize: 13, fontWeight: 600, margin: '14px 0 8px' }}>Cuéntanos tu experiencia <span style={{ fontSize: 10, background: '#C8102E', color: '#fff', padding: '1px 5px', borderRadius: 3 }}>Obligatorio</span></div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#333', margin: '18px 0 8px' }}>Cuéntanos qué pasó</div>
             <textarea
               value={experience} onChange={e => setExperience(e.target.value)}
-              placeholder="Describe qué pasó…" rows={4}
-              style={{ width: '100%', border: `1.5px solid ${errors.experience ? '#C8102E' : '#e0e0e0'}`, borderRadius: 8, padding: 12, fontSize: 14, fontFamily: 'inherit', resize: 'vertical', minHeight: 90, outline: 'none', marginBottom: 4 }}
+              placeholder="Describe tu experiencia…" rows={4}
+              style={{ width: '100%', border: `1.5px solid ${errors.experience ? '#C8102E' : '#e5e7eb'}`, borderRadius: 10, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', resize: 'none', outline: 'none', marginBottom: 4, color: '#111', background: '#fafafa', boxSizing: 'border-box' }}
             />
             {errors.experience && <div style={{ fontSize: 12, color: '#C8102E', marginBottom: 10 }}>{errors.experience}</div>}
 
             {/* Contact toggle */}
-            <div style={{ fontSize: 13, fontWeight: 600, margin: '14px 0 10px' }}>¿Querés hablar directamente con el manager?</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#333', margin: '18px 0 10px' }}>¿Querés que el manager te contacte?</div>
             <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-              <button onClick={() => setWantsContact(true)} style={{ flex: 1, padding: 10, borderRadius: 8, border: '1.5px solid', cursor: 'pointer', fontSize: 14, fontWeight: 600, borderColor: wantsContact === true ? '#43a047' : '#e0e0e0', background: wantsContact === true ? '#e8f5e9' : '#fff', color: wantsContact === true ? '#2e7d32' : '#333' }}>Sí</button>
-              <button onClick={() => setWantsContact(false)} style={{ flex: 1, padding: 10, borderRadius: 8, border: '1.5px solid', cursor: 'pointer', fontSize: 14, fontWeight: 600, borderColor: wantsContact === false ? '#C8102E' : '#e0e0e0', background: wantsContact === false ? '#fce4e4' : '#fff', color: wantsContact === false ? '#a50d26' : '#333' }}>No</button>
+              <button onClick={() => setWantsContact(true)} style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: `2px solid ${wantsContact === true ? '#16a34a' : '#e5e7eb'}`, cursor: 'pointer', fontSize: 14, fontWeight: 600, background: wantsContact === true ? '#f0fdf4' : '#fff', color: wantsContact === true ? '#16a34a' : '#555' }}>Sí</button>
+              <button onClick={() => setWantsContact(false)} style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: `2px solid ${wantsContact === false ? '#C8102E' : '#e5e7eb'}`, cursor: 'pointer', fontSize: 14, fontWeight: 600, background: wantsContact === false ? '#fef2f2' : '#fff', color: wantsContact === false ? '#C8102E' : '#555' }}>No</button>
             </div>
 
             {wantsContact === true && (
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Tu nombre</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 8 }}>Tu nombre (opcional)</div>
                 <input value={contactName} onChange={e => setContactName(e.target.value)} placeholder="Ej: María González"
-                  style={{ width: '100%', border: '1.5px solid #e0e0e0', borderRadius: 8, padding: '10px 12px', fontSize: 14, fontFamily: 'inherit', outline: 'none' }} />
+                  style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 10, padding: '11px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#111', boxSizing: 'border-box' }} />
               </div>
             )}
 
             {wantsContact === true && restaurant?.wa_enabled && restaurant?.wa_number && (
-              <button onClick={handleSubmitWithWA} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, width: '100%', padding: 15, background: '#25D366', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
-                Hablar con el Manager por WhatsApp
+              <button onClick={handleSubmitWithWA} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, width: '100%', padding: 15, background: '#25D366', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                💬 Contactar al manager por WhatsApp
               </button>
             )}
             {wantsContact === true && (!restaurant?.wa_enabled || !restaurant?.wa_number) && (
-              <button onClick={handleSubmitNoContact} style={{ width: '100%', padding: 13, background: '#C8102E', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
-                Enviar Opinión
+              <button onClick={handleSubmitNoContact} style={{ width: '100%', padding: 14, background: '#C8102E', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                Enviar opinión
               </button>
             )}
             {wantsContact === false && (
-              <button onClick={handleSubmitNoContact} style={{ width: '100%', padding: 13, background: '#C8102E', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
-                Enviar Opinión
+              <button onClick={handleSubmitNoContact} style={{ width: '100%', padding: 14, background: '#C8102E', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                Enviar opinión
               </button>
             )}
             {wantsContact === null && (
-              <button disabled style={{ width: '100%', padding: 13, background: '#e0e0e0', color: '#999', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'not-allowed' }}>
+              <button disabled style={{ width: '100%', padding: 14, background: '#f3f4f6', color: '#9ca3af', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: 'not-allowed' }}>
                 Seleccioná una opción arriba
               </button>
             )}
