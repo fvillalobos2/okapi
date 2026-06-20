@@ -51,6 +51,8 @@ export default function DashboardPage() {
   const [saved, setSaved] = useState(false)
   const [form, setForm] = useState<Partial<Restaurant>>({})
   const [copied, setCopied] = useState(false)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [logoDragging, setLogoDragging] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -97,6 +99,19 @@ export default function DashboardPage() {
     router.push('/login')
   }
 
+  async function handleLogoUpload(file: File) {
+    if (file.size > 2 * 1024 * 1024) { alert('El archivo debe ser menor a 2MB'); return }
+    setUploadingLogo(true)
+    const ext = file.name.split('.').pop()
+    const path = `${Date.now()}.${ext}`
+    const { error } = await supabase.storage.from('logos').upload(path, file, { upsert: true })
+    if (!error) {
+      const { data } = supabase.storage.from('logos').getPublicUrl(path)
+      setForm(f => ({ ...f, logo_url: data.publicUrl }))
+    }
+    setUploadingLogo(false)
+  }
+
   function copyLink() {
     navigator.clipboard.writeText(`https://reviews.projectokapi.com/r/${restaurant?.slug}`)
     setCopied(true)
@@ -114,7 +129,7 @@ export default function DashboardPage() {
   const positive = scans.filter(s => s.stars >= 4).length
   const negative = scans.filter(s => s.stars < 4).length
   const negativeFeed = scans.filter(s => s.stars < 4).slice(0, 10)
-  const reviewUrl = `https://reviews.projectokapi.com/r/${restaurant?.slug}`
+  const reviewUrl = `https://reviews.projectokapi.com/r/${restaurant!.slug}`
 
   return (
     <div style={{ minHeight: '100vh', background: '#f7f7f8', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
@@ -265,26 +280,29 @@ export default function DashboardPage() {
         {tab === 'config' && (
           <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #ebebeb' }}>
 
-            {/* Logo preview */}
+            {/* Logo upload */}
             <div style={{ marginBottom: 24 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 10 }}>Logo</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12 }}>
-                <div style={{ width: 72, height: 72, borderRadius: 12, border: '2px dashed #e0e0e0', background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+              <label
+                onDragOver={e => { e.preventDefault(); setLogoDragging(true) }}
+                onDragLeave={() => setLogoDragging(false)}
+                onDrop={e => { e.preventDefault(); setLogoDragging(false); const file = e.dataTransfer.files?.[0]; if (file) handleLogoUpload(file) }}
+                style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px', border: `2px dashed ${logoDragging ? '#C8102E' : '#e0e0e0'}`, borderRadius: 12, cursor: 'pointer', background: logoDragging ? '#fff5f5' : '#fafafa', transition: 'all 0.15s' }}>
+                <div style={{ width: 64, height: 64, borderRadius: 10, background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
                   {form.logo_url
-                    ? <img src={form.logo_url} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={e => (e.currentTarget.style.display = 'none')} />
-                    : <span style={{ fontSize: 11, color: '#bbb', textAlign: 'center', padding: 4 }}>Sin logo</span>
+                    ? <img src={form.logo_url} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    : <span style={{ fontSize: 26 }}>🖼️</span>
                   }
                 </div>
-                <div style={{ flex: 1 }}>
-                  <input
-                    value={form.logo_url || ''}
-                    onChange={e => setForm({ ...form, logo_url: e.target.value })}
-                    placeholder="https://tu-dominio.com/logo.png"
-                    style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '10px 12px', fontSize: 13, outline: 'none', boxSizing: 'border-box', color: '#111' }}
-                  />
-                  <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>Pegá la URL de tu logo (PNG o SVG recomendado)</div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>
+                    {uploadingLogo ? 'Subiendo…' : form.logo_url ? 'Cambiar logo' : 'Subir logo'}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>Arrastrá o hacé click · JPG, PNG, WebP · Máx 2MB</div>
                 </div>
-              </div>
+                <input type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }}
+                  onChange={e => { const file = e.target.files?.[0]; if (file) handleLogoUpload(file) }} />
+              </label>
             </div>
 
             <div style={{ height: 1, background: '#f0f0f0', marginBottom: 20 }} />
