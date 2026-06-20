@@ -316,7 +316,7 @@ export default function DashboardPage() {
               setCopiedKiosk(true)
               setTimeout(() => setCopiedKiosk(false), 2000)
             }} style={{ padding: '10px 20px', background: 'rgba(255,255,255,0.08)', color: copiedKiosk ? '#16a34a' : 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-              {copiedKiosk ? '✓ Copiado' : '📺 Link kiosk'}
+              {copiedKiosk ? '✓ Copiado' : '📺 Modo pantalla'}
             </button>
           </div>
         </div>
