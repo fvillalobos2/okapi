@@ -51,6 +51,7 @@ export default function UpgradePage() {
   const [lastName, setLastName] = useState('')
   const [billingEmail, setBillingEmail] = useState('')
   const [billingName, setBillingName] = useState('')
+  const [billingAddress, setBillingAddress] = useState('')
   const [currentPlan, setCurrentPlan] = useState<Plan | null>(null)
   const [subStatus, setSubStatus] = useState<string>('trial')
   const sdkReady = useRef(false)
@@ -131,6 +132,8 @@ export default function UpgradePage() {
       billToEmail: email,
       billToFirstName: firstName || 'Cliente',
       billToLastName: lastName || 'Okapi',
+      billToAddress: billingAddress || 'Costa Rica',
+      billToCountry: 'CR',
       capture: '1',
       subscription: 1,
       tokenize: 'on',
@@ -170,6 +173,8 @@ export default function UpgradePage() {
       billToEmail: email,
       billToFirstName: firstName || 'Cliente',
       billToLastName: lastName || 'Okapi',
+      billToAddress: billingAddress || 'Costa Rica',
+      billToCountry: 'CR',
       capture: '1',
       subscription: 1,
       tokenize: 'on',
@@ -272,6 +277,12 @@ export default function UpgradePage() {
                   <input type="email" placeholder="facturacion@empresa.com" value={billingEmail} onChange={e => setBillingEmail(e.target.value)}
                     style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
                   <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>La factura se enviará a este correo</div>
+                </div>
+
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Dirección de facturación</label>
+                  <input type="text" placeholder="San José, Costa Rica" value={billingAddress} onChange={e => setBillingAddress(e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
                 </div>
 
                 <div className="payFormTilopay">
