@@ -430,8 +430,8 @@ export default function DashboardPage() {
             </div>
 
             {/* Auto-reply toggle — Business plan only */}
-            <div style={{ padding: '14px 0', borderTop: '1px solid #f0f0f0', marginBottom: 4 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ padding: '16px 0', borderTop: '1px solid #f0f0f0', marginBottom: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: restaurant?.plan === 'business' ? 12 : 0 }}>
                 <div style={{ flex: 1, marginRight: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>Respuesta automática a Google Reviews</div>
@@ -442,9 +442,7 @@ export default function DashboardPage() {
                   <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>
                     {restaurant?.plan !== 'business'
                       ? 'Disponible en el plan Business. Responde reseñas de 4-5⭐ con IA automáticamente.'
-                      : restaurant?.google_account_id
-                        ? `Google conectado · Responde reseñas de 4-5⭐ entre 30-60 min después de recibirlas`
-                        : 'Conectá tu cuenta de Google para activar. Responde 4-5⭐ automáticamente con IA.'}
+                      : 'Responde reseñas de 4-5⭐ automáticamente con IA entre 30-60 min de recibirlas.'}
                   </div>
                 </div>
                 {restaurant?.plan === 'business' ? (
@@ -457,6 +455,23 @@ export default function DashboardPage() {
                   <Link href="/upgrade" style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', textDecoration: 'none', whiteSpace: 'nowrap' }}>Actualizar →</Link>
                 )}
               </div>
+
+              {/* Google connection status */}
+              {restaurant?.plan === 'business' && (
+                <div style={{ background: restaurant?.google_account_id ? '#f0fdf4' : '#f7f7f8', border: `1px solid ${restaurant?.google_account_id ? '#bbf7d0' : '#e5e7eb'}`, borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: restaurant?.google_account_id ? '#16a34a' : '#d1d5db', flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, color: restaurant?.google_account_id ? '#16a34a' : '#888', fontWeight: 600 }}>
+                      {restaurant?.google_account_id ? 'Google Business conectado' : 'Google Business no conectado'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => { window.location.href = `/api/google/connect?restaurantId=${restaurant.id}` }}
+                    style={{ fontSize: 11, fontWeight: 700, color: '#4285F4', background: 'none', border: '1px solid #4285F4', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                    {restaurant?.google_account_id ? 'Reconectar' : 'Conectar Google'}
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Platforms */}
