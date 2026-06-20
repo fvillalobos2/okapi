@@ -489,41 +489,35 @@ export default function DashboardPage() {
                       </span>
                     </div>
                     <div style={{ display: 'flex', gap: 8 }}>
-                      {restaurant?.google_access_token && !restaurant?.google_account_id && (
+                      {restaurant?.google_access_token && (
                         <button
                           onClick={() => loadGoogleLocations(restaurant.id)}
                           disabled={loadingLocations}
                           style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', background: 'none', border: '1px solid #16a34a', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                          {loadingLocations ? 'Cargando…' : 'Ver mis perfiles'}
+                          {loadingLocations ? 'Cargando…' : restaurant?.google_account_id ? 'Cambiar perfil' : 'Ver mis perfiles'}
                         </button>
                       )}
                       <button
                         onClick={() => { window.location.href = `/api/google/connect?restaurantId=${restaurant.id}` }}
                         style={{ fontSize: 11, fontWeight: 700, color: '#4285F4', background: 'none', border: '1px solid #4285F4', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                        {restaurant?.google_account_id ? 'Cambiar cuenta' : 'Conectar con Google'}
+                        {restaurant?.google_account_id ? 'Reconectar cuenta' : 'Conectar con Google'}
                       </button>
                     </div>
                   </div>
 
-                  {/* Location picker */}
+                  {/* Location picker — choose ONE profile */}
                   {googleLocations.length > 0 && (
                     <div style={{ marginTop: 8, border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
                       <div style={{ padding: '8px 12px', background: '#f7f7f8', fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Seleccioná tu perfil de negocio
+                        Elegí el perfil que va a contestar las reseñas
                       </div>
                       {googleLocations.map(loc => (
                         <button key={loc.id} onClick={() => selectLocation(loc.id)}
-                          style={{ width: '100%', textAlign: 'left', padding: '10px 12px', borderTop: '1px solid #f0f0f0', background: '#fff', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 2, border: 'none' }}>
-                          <span style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{loc.name}</span>
+                          style={{ width: '100%', textAlign: 'left', padding: '12px 14px', borderTop: '1px solid #f0f0f0', background: '#fff', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 2, border: 'none' }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{loc.name}</span>
                           {loc.address && <span style={{ fontSize: 11, color: '#888' }}>{loc.address}</span>}
                         </button>
                       ))}
-                    </div>
-                  )}
-
-                  {googleLocations.length === 0 && loadingLocations === false && restaurant?.google_access_token && !restaurant?.google_account_id && (
-                    <div style={{ marginTop: 6, fontSize: 11, color: '#aaa' }}>
-                      Si conectaste Google pero no ves perfiles, asegurate de que tu cuenta tenga un Google Business Profile activo.
                     </div>
                   )}
                 </div>
