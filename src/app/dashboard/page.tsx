@@ -54,6 +54,7 @@ export default function DashboardPage() {
   const router = useRouter()
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [googleNotif, setGoogleNotif] = useState<'connected' | 'error' | null>(null)
+  const [autoLoadLocations, setAutoLoadLocations] = useState(false)
   const [togglingAutoReply, setTogglingAutoReply] = useState(false)
   const [googleLocations, setGoogleLocations] = useState<{id: string, name: string, address: string}[]>([])
   const [loadingLocations, setLoadingLocations] = useState(false)
@@ -103,8 +104,20 @@ export default function DashboardPage() {
     if (g === 'connected' || g === 'error') {
       setGoogleNotif(g as 'connected' | 'error')
       setTimeout(() => setGoogleNotif(null), 6000)
+      if (g === 'connected') {
+        setTab('config')
+        setAutoLoadLocations(true)
+      }
     }
   }, [])
+
+  useEffect(() => {
+    if (autoLoadLocations && restaurant?.google_access_token) {
+      setAutoLoadLocations(false)
+      loadGoogleLocations(restaurant.id)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoLoadLocations, restaurant])
 
   async function loadGoogleLocations(restId: string) {
     setLoadingLocations(true)
