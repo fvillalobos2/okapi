@@ -143,8 +143,8 @@ export default function ReviewPage() {
     setScreen('thanks')
   }
 
-  async function handlePlatformClick(platform: string, url: string) {
-    await saveScans(platform, false)
+  function handlePlatformClick(platform: string, url: string) {
+    saveScans(platform, false).catch(() => {})
     window.open(url, '_blank')
   }
 
