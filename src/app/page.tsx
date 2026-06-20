@@ -16,6 +16,47 @@ function useScrollReveal() {
   return { ref, visible }
 }
 
+const FAQS = [
+  { q: '¿Necesito instalar algo?', a: 'No. Okapi funciona 100% en el navegador. Vos accedés desde tu computadora y tus clientes desde el celular al escanear el QR. Sin apps, sin descargas.' },
+  { q: '¿Cómo llega el QR a mis clientes?', a: 'Generamos un código QR listo para imprimir en alta resolución. Lo podés poner en las mesas, el menú, la salida o donde quieras. Al escanearlo con la cámara del celular se abre la página de reseñas.' },
+  { q: '¿Qué pasa con los clientes insatisfechos?', a: 'Si alguien califica con 1-3 estrellas, lo llevamos a un formulario privado donde puede contar qué pasó. Vos recibís esa información por email y si quiere contacto directo, se abre WhatsApp automáticamente.' },
+  { q: '¿Puedo conectar múltiples plataformas?', a: 'Sí. Podés activar hasta 6 plataformas: Google, TripAdvisor, OpenTable, TheFork, Facebook y Yelp. Los clientes satisfechos eligen en cuál dejar su reseña.' },
+  { q: '¿Es legal hacer esto?', a: 'Sí. Okapi no altera ni elimina reseñas — simplemente filtra el feedback antes de que llegue a publicarse. Es una práctica común en la industria de hospitalidad.' },
+  { q: '¿Cuánto tarda en estar activo?', a: 'Menos de 5 minutos. Creás tu cuenta, configurás tu negocio con nuestro wizard paso a paso, y ya tenés tu QR listo para imprimir.' },
+  { q: '¿Puedo cancelar cuando quiera?', a: 'Sí, sin contratos ni penalidades. Podés cancelar tu suscripción en cualquier momento desde el dashboard.' },
+]
+
+function FAQ() {
+  const [open, setOpen] = useState<number | null>(null)
+  return (
+    <section style={{ padding: '88px 32px', maxWidth: 720, margin: '0 auto' }}>
+      <Reveal>
+        <div style={{ textAlign: 'center', marginBottom: 56 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>FAQ</div>
+          <h2 style={{ fontSize: 'clamp(26px, 3.5vw, 38px)', fontWeight: 800, color: '#111', letterSpacing: '-0.02em' }}>Preguntas frecuentes</h2>
+        </div>
+      </Reveal>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+        {FAQS.map((faq, i) => (
+          <Reveal key={i} delay={i * 40}>
+            <div style={{ borderBottom: '1px solid #ebebeb', overflow: 'hidden' }}>
+              <button
+                onClick={() => setOpen(open === i ? null : i)}
+                style={{ width: '100%', background: 'none', border: 'none', padding: '20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, cursor: 'pointer', textAlign: 'left' }}>
+                <span style={{ fontSize: 15, fontWeight: 600, color: '#111', lineHeight: 1.4 }}>{faq.q}</span>
+                <span style={{ fontSize: 20, color: '#aaa', flexShrink: 0, transform: open === i ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s ease', lineHeight: 1 }}>+</span>
+              </button>
+              <div style={{ maxHeight: open === i ? 200 : 0, overflow: 'hidden', transition: 'max-height 0.35s ease' }}>
+                <p style={{ fontSize: 14, color: '#666', lineHeight: 1.75, paddingBottom: 20, margin: 0 }}>{faq.a}</p>
+              </div>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   const { ref, visible } = useScrollReveal()
   return (
@@ -291,6 +332,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* FAQ */}
+      <FAQ />
 
       {/* CTA */}
       <section style={{ background: '#0f0f0f', padding: '88px 32px', textAlign: 'center' }}>
