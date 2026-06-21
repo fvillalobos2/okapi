@@ -179,20 +179,23 @@ export default function ReviewPage() {
   }
 
   async function checkRetentionOffer(stars: number) {
-    if (!restaurant?.retention_active) return false
+    console.log('[retention] stars:', stars, 'active:', restaurant?.retention_active, 'showTo:', restaurant?.retention_show_to)
+    if (!restaurant?.retention_active) { console.log('[retention] blocked: not active'); return false }
     if (!restaurant?.retention_offer_text && !restaurant?.retention_offer_text_positive &&
-        !restaurant?.retention_offer_text_en && !restaurant?.retention_offer_text_positive_en) return false
+        !restaurant?.retention_offer_text_en && !restaurant?.retention_offer_text_positive_en) { console.log('[retention] blocked: no offer text'); return false }
     const showTo = restaurant.retention_show_to
     const isPositive = stars >= 4
-    if (showTo === 'negative' && isPositive) return false
-    if (showTo === 'positive' && !isPositive) return false
+    if (showTo === 'negative' && isPositive) { console.log('[retention] blocked: negative-only offer'); return false }
+    if (showTo === 'positive' && !isPositive) { console.log('[retention] blocked: positive-only offer'); return false }
 
+    console.log('[retention] calling API...')
     const res = await fetch('/api/retention/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ restaurantId: restaurant.id, stars, lang }),
     })
     const data = await res.json()
+    console.log('[retention] API response:', data)
     if (data.ok && data.code) {
       setOfferCode(data.code)
       setOfferText(data.offerText)
