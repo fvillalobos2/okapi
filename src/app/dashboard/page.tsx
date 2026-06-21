@@ -700,11 +700,10 @@ export default function DashboardPage() {
 
               <div style={{ marginBottom: 20 }}>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 6 }}>Validez del código (días)</label>
-                <select value={form.retention_valid_days || 14}
-                  onChange={e => setForm({ ...form, retention_valid_days: Number(e.target.value) })}
-                  style={{ width: '100%', padding: '11px 14px', border: '1px solid #ddd', borderRadius: 10, fontSize: 14, background: '#fff' }}>
-                  {[7, 14, 30, 60].map(d => <option key={d} value={d}>{d} días</option>)}
-                </select>
+                <input type="number" min={1} max={365}
+                  value={form.retention_valid_days || 14}
+                  onChange={e => setForm({ ...form, retention_valid_days: Math.min(365, Math.max(1, Number(e.target.value))) })}
+                  style={{ width: '100%', padding: '11px 14px', border: '1px solid #ddd', borderRadius: 10, fontSize: 14, background: '#fff', boxSizing: 'border-box' }} />
               </div>
 
               <button onClick={async () => {
