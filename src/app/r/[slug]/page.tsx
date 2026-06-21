@@ -430,39 +430,43 @@ export default function ReviewPage() {
         {screen === 'offer' && offerCode && (
           <div style={{ padding: '28px 24px' }}>
             <div style={{ textAlign: 'center', marginBottom: 24 }}>
-              <div style={{ fontSize: 44, marginBottom: 8 }}>🎁</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: '#111', marginBottom: 6 }}>
-                {lang === 'en' ? 'A gift from us' : 'Un regalo para vos'}
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#C8102E', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                {lang === 'en' ? 'Exclusive offer' : 'Oferta exclusiva'}
               </div>
-              <div style={{ fontSize: 13, color: '#666', lineHeight: 1.5 }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#111', marginBottom: 6 }}>
+                {lang === 'en' ? 'We appreciate your honesty' : 'Valoramos tu opinión'}
+              </div>
+              <div style={{ fontSize: 13, color: '#888', lineHeight: 1.5 }}>
                 {lang === 'en'
-                  ? `${restaurant?.name} wants to make it up to you`
-                  : `${restaurant?.name} quiere compensarte`}
+                  ? `${restaurant?.name} has a special offer for you`
+                  : `${restaurant?.name} tiene una oferta especial para vos`}
               </div>
             </div>
 
             {/* Offer card — designed to screenshot */}
-            <div id="offer-card" style={{ background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)', borderRadius: 16, padding: '24px', marginBottom: 20, textAlign: 'center' }}>
+            <div id="offer-card" style={{ background: 'linear-gradient(160deg, #111 0%, #1e1e1e 100%)', borderRadius: 16, padding: '28px 24px', marginBottom: 16, textAlign: 'center' }}>
               {restaurant?.logo_url && (
-                <img src={restaurant.logo_url} alt={restaurant.name}
-                  style={{ maxHeight: 48, maxWidth: 140, objectFit: 'contain', marginBottom: 16, filter: 'brightness(0) invert(1)' }} />
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+                  <img src={restaurant.logo_url} alt={restaurant.name}
+                    style={{ height: 44, maxWidth: 140, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+                </div>
               )}
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 6, fontWeight: 600 }}>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 4, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                 {restaurant?.name}
               </div>
-              <div style={{ fontSize: 17, fontWeight: 700, color: '#fff', marginBottom: 20, lineHeight: 1.4 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 24, lineHeight: 1.5 }}>
                 {offerText}
               </div>
-              <div style={{ background: 'rgba(255,255,255,0.08)', border: '1.5px dashed rgba(255,255,255,0.2)', borderRadius: 12, padding: '16px 20px', marginBottom: 12 }}>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
+              <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px dashed rgba(255,255,255,0.15)', borderRadius: 12, padding: '18px 20px', marginBottom: 16 }}>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 10 }}>
                   {lang === 'en' ? 'Your code' : 'Tu código'}
                 </div>
-                <div style={{ fontSize: 28, fontWeight: 900, color: '#fff', letterSpacing: 6, fontFamily: 'monospace' }}>
+                <div style={{ fontSize: 30, fontWeight: 900, color: '#fff', letterSpacing: 6, fontFamily: 'monospace' }}>
                   {offerCode}
                 </div>
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
-                {lang === 'en' ? `Valid for ${offerValidDays} days · Show this at checkout` : `Válido por ${offerValidDays} días · Mostrá esto en caja`}
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.02em' }}>
+                {lang === 'en' ? `Valid for ${offerValidDays} days · Present at checkout` : `Válido por ${offerValidDays} días · Presentá al momento de pagar`}
               </div>
             </div>
 
@@ -478,11 +482,10 @@ export default function ReviewPage() {
                   a.click()
                 })
               }).catch(() => {
-                // fallback: just show alert
-                alert(lang === 'en' ? 'Take a screenshot to save your code!' : '¡Tomá una captura de pantalla para guardar tu código!')
+                alert(lang === 'en' ? 'Take a screenshot to save your code.' : 'Tomá una captura de pantalla para guardar tu código.')
               })
-            }} style={{ width: '100%', padding: '13px', background: '#111', color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 12 }}>
-              {lang === 'en' ? '📸 Save as image' : '📸 Guardar como imagen'}
+            }} style={{ width: '100%', padding: '13px', background: '#111', color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 10 }}>
+              {lang === 'en' ? 'Save as image' : 'Guardar como imagen'}
             </button>
 
             {/* Email option */}
