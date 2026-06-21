@@ -62,6 +62,7 @@ export default function DashboardPage() {
   const [loadingLocations, setLoadingLocations] = useState(false)
   const [scans, setScans] = useState<Scan[]>([])
   const [loading, setLoading] = useState(true)
+  const [hoveredBar, setHoveredBar] = useState<{ label: string; pos: number; neg: number; x: number; y: number } | null>(null)
   const [activeTab, setTab] = useState<'stats' | 'config'>('stats')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -453,13 +454,22 @@ export default function DashboardPage() {
               <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb', marginBottom: 14 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>Opiniones por día de la semana</div>
                 <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>¿Cuándo tenés más actividad?</div>
-                <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 80 }}>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 80, position: 'relative' }}>
+                  {hoveredBar && (
+                    <div style={{ position: 'fixed', left: hoveredBar.x, top: hoveredBar.y - 60, background: '#111', color: '#fff', borderRadius: 8, padding: '6px 10px', fontSize: 12, fontWeight: 600, pointerEvents: 'none', zIndex: 100, whiteSpace: 'nowrap', transform: 'translateX(-50%)' }}>
+                      <div>{hoveredBar.label}</div>
+                      <div style={{ color: '#86efac' }}>✓ {hoveredBar.pos} positivas</div>
+                      <div style={{ color: '#fca5a5' }}>✗ {hoveredBar.neg} privadas</div>
+                    </div>
+                  )}
                   {byDow.map(d => {
                     const total = d.neg + d.pos
                     const pct = (total / maxDow) * 100
                     const negPct = total > 0 ? (d.neg / total) * 100 : 0
                     return (
-                      <div key={d.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                      <div key={d.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}
+                        onMouseEnter={e => setHoveredBar({ label: d.label, pos: d.pos, neg: d.neg, x: (e.currentTarget as HTMLElement).getBoundingClientRect().left + (e.currentTarget as HTMLElement).offsetWidth / 2, y: (e.currentTarget as HTMLElement).getBoundingClientRect().top })}
+                        onMouseLeave={() => setHoveredBar(null)}>
                         <div style={{ fontSize: 10, color: '#aaa', fontWeight: 600 }}>{total || ''}</div>
                         <div style={{ width: '100%', height: 56, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
                           <div style={{ width: '100%', height: `${pct}%`, minHeight: total ? 4 : 0, borderRadius: 4, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
@@ -488,7 +498,9 @@ export default function DashboardPage() {
                     const pct = (total / maxHour) * 100
                     const negPct = total > 0 ? (h.neg / total) * 100 : 0
                     return (
-                      <div key={h.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                      <div key={h.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}
+                        onMouseEnter={e => setHoveredBar({ label: h.label, pos: h.pos, neg: h.neg, x: (e.currentTarget as HTMLElement).getBoundingClientRect().left + (e.currentTarget as HTMLElement).offsetWidth / 2, y: (e.currentTarget as HTMLElement).getBoundingClientRect().top })}
+                        onMouseLeave={() => setHoveredBar(null)}>
                         <div style={{ width: '100%', height: 56, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
                           <div style={{ width: '100%', height: `${pct}%`, minHeight: total ? 3 : 0, borderRadius: 3, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                             <div style={{ flex: negPct, background: '#fecaca' }} />
