@@ -19,18 +19,22 @@ export async function POST(req: NextRequest) {
 
   const { data: restaurant } = await supabaseAdmin
     .from('restaurants')
-    .select('name, retention_active, retention_offer_text, retention_valid_days, retention_show_to, logo_url')
+    .select('name, retention_active, retention_offer_text, retention_offer_text_positive, retention_valid_days, retention_show_to, logo_url')
     .eq('id', restaurantId)
     .single()
 
-  if (!restaurant?.retention_active || !restaurant?.retention_offer_text) {
-    return NextResponse.json({ ok: false, reason: 'no offer' })
-  }
+  if (!restaurant?.retention_active) return NextResponse.json({ ok: false, reason: 'no offer' })
 
   const showTo = restaurant.retention_show_to || 'negative'
   const isPositive = stars >= 4
   if (showTo === 'negative' && isPositive) return NextResponse.json({ ok: false, reason: 'not eligible' })
   if (showTo === 'positive' && !isPositive) return NextResponse.json({ ok: false, reason: 'not eligible' })
+
+  const offerText = isPositive
+    ? (restaurant.retention_offer_text_positive || restaurant.retention_offer_text)
+    : restaurant.retention_offer_text
+
+  if (!offerText) return NextResponse.json({ ok: false, reason: 'no offer text' })
 
   const code = generateCode()
   const validDays = restaurant.retention_valid_days || 14
@@ -59,7 +63,7 @@ export async function POST(req: NextRequest) {
           </div>
           <div style="background:#fff;padding:32px;border:1px solid #ebebeb;border-top:none;border-radius:0 0 12px 12px;text-align:center">
             <div style="font-size:14px;color:#888;margin-bottom:8px">Tu oferta exclusiva</div>
-            <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:24px">${restaurant.retention_offer_text}</div>
+            <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:24px">${offerText}</div>
             <div style="background:#f7f7f8;border:2px dashed #ddd;border-radius:12px;padding:20px;margin-bottom:20px">
               <div style="font-size:11px;color:#aaa;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Tu código</div>
               <div style="font-size:32px;font-weight:900;color:#C8102E;letter-spacing:4px">${code}</div>
@@ -71,5 +75,5 @@ export async function POST(req: NextRequest) {
     }).catch(() => {})
   }
 
-  return NextResponse.json({ ok: true, code, offerText: restaurant.retention_offer_text, validDays, expiresAt })
+  return NextResponse.json({ ok: true, code, offerText, validDays, expiresAt })
 }

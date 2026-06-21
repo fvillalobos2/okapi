@@ -32,6 +32,7 @@ type Restaurant = {
   retention_active: boolean
   retention_show_to: 'all' | 'positive' | 'negative'
   retention_offer_text: string | null
+  retention_offer_text_positive: string | null
   retention_valid_days: number
 }
 
@@ -377,7 +378,7 @@ export default function DashboardPage() {
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#ebebeb', borderRadius: 10, padding: 4 }}>
-          {[{ key: 'stats', label: t.dash_stats_tab }, { key: 'retention', label: '🎁 Retención' }, { key: 'config', label: t.dash_config_tab }].map(tab => (
+          {[{ key: 'stats', label: t.dash_stats_tab }, { key: 'retention', label: 'Retención' }, { key: 'config', label: t.dash_config_tab }].map(tab => (
             <button key={tab.key} onClick={() => setTab(tab.key as any)}
               style={{ flex: 1, padding: '9px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, background: activeTab === tab.key ? '#fff' : 'transparent', color: activeTab === tab.key ? '#111' : '#777', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.15s' }}>
               {tab.label}
@@ -660,9 +661,9 @@ export default function DashboardPage() {
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 6 }}>¿A quién mostrarle la oferta?</label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   {[
-                    { value: 'negative', label: '😕 Solo negativos' },
-                    { value: 'positive', label: '😊 Solo positivos' },
-                    { value: 'all', label: '👥 A todos' },
+                    { value: 'negative', label: 'Solo negativos' },
+                    { value: 'positive', label: 'Solo positivos' },
+                    { value: 'all', label: 'A todos' },
                   ].map(opt => (
                     <button key={opt.value} onClick={async () => {
                       if (!restaurant) return
@@ -676,12 +677,26 @@ export default function DashboardPage() {
               </div>
 
               <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 6 }}>Texto de la oferta</label>
-                <input type="text" placeholder="ej: 20% de descuento en tu próxima visita"
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 6 }}>
+                  {restaurant?.retention_show_to === 'all' ? 'Oferta para negativos (1-3 estrellas)' : 'Texto de la oferta'}
+                </label>
+                <input type="text" placeholder="ej: 25% de descuento en tu próxima visita"
                   value={form.retention_offer_text || ''}
                   onChange={e => setForm({ ...form, retention_offer_text: e.target.value })}
                   style={{ width: '100%', padding: '11px 14px', border: '1px solid #ddd', borderRadius: 10, fontSize: 14, boxSizing: 'border-box' }} />
               </div>
+
+              {restaurant?.retention_show_to === 'all' && (
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 6 }}>
+                    Oferta para positivos (4-5 estrellas)
+                  </label>
+                  <input type="text" placeholder="ej: Postre gratis en tu próxima visita"
+                    value={form.retention_offer_text_positive || ''}
+                    onChange={e => setForm({ ...form, retention_offer_text_positive: e.target.value })}
+                    style={{ width: '100%', padding: '11px 14px', border: '1px solid #ddd', borderRadius: 10, fontSize: 14, boxSizing: 'border-box' }} />
+                </div>
+              )}
 
               <div style={{ marginBottom: 20 }}>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 6 }}>Validez del código (días)</label>
@@ -697,9 +712,10 @@ export default function DashboardPage() {
                 setSaving(true)
                 await supabase.from('restaurants').update({
                   retention_offer_text: form.retention_offer_text,
+                  retention_offer_text_positive: form.retention_offer_text_positive,
                   retention_valid_days: form.retention_valid_days,
                 }).eq('id', restaurant.id)
-                setRestaurant({ ...restaurant, retention_offer_text: form.retention_offer_text || null, retention_valid_days: form.retention_valid_days || 14 })
+                setRestaurant({ ...restaurant, retention_offer_text: form.retention_offer_text || null, retention_offer_text_positive: form.retention_offer_text_positive || null, retention_valid_days: form.retention_valid_days || 14 })
                 setSaving(false)
                 setSaved(true)
                 setTimeout(() => setSaved(false), 2500)

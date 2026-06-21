@@ -23,6 +23,7 @@ type Restaurant = {
   retention_active: boolean
   retention_show_to: 'all' | 'positive' | 'negative'
   retention_offer_text: string | null
+  retention_offer_text_positive: string | null
   retention_valid_days: number
 }
 
