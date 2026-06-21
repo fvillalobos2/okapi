@@ -301,11 +301,6 @@ export default function DashboardPage() {
           <Link href="/upgrade" style={{ background: status === 'active' ? 'none' : '#C8102E', border: status === 'active' ? '1px solid #e0e0e0' : 'none', borderRadius: 8, padding: '5px 14px', fontSize: 13, cursor: 'pointer', color: status === 'active' ? '#555' : '#fff', textDecoration: 'none', fontWeight: 600 }}>
             {status === 'active' ? t.dash_plan_btn_active : t.dash_plan_btn_inactive}
           </Link>
-          {status === 'active' && (
-            <button onClick={handleCancelSubscription} style={{ background: 'none', border: 'none', fontSize: 12, color: '#bbb', cursor: 'pointer', padding: '5px 4px', textDecoration: 'underline' }}>
-              {t.dash_cancel_sub}
-            </button>
-          )}
           <button onClick={handleLogout} style={{ background: 'none', border: '1px solid #e0e0e0', borderRadius: 8, padding: '5px 14px', fontSize: 13, cursor: 'pointer', color: '#555' }}>{t.logout}</button>
         </div>
       </div>
@@ -911,6 +906,30 @@ export default function DashboardPage() {
                   </div>
                 )
               })()}
+            </div>
+
+            {/* Plan section */}
+            <div style={{ marginBottom: 24, padding: '16px', background: '#f7f7f8', borderRadius: 12, border: '1px solid #ebebeb' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>
+                    {status === 'active' ? (restaurant!.plan ? restaurant!.plan.charAt(0).toUpperCase() + restaurant!.plan.slice(1) : 'Pro') : status === 'trial' ? (lang === 'en' ? 'Trial' : 'Prueba') : (lang === 'en' ? 'No active plan' : 'Sin plan activo')}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>
+                    {status === 'active' && subEnd ? (lang === 'en' ? `Renews ${subEnd.toLocaleDateString('en-US')}` : `Renueva ${subEnd.toLocaleDateString('es-CR')}`) : status === 'trial' ? (lang === 'en' ? 'Free trial' : 'Período de prueba') : ''}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  {status === 'active' && (
+                    <button onClick={handleCancelSubscription} style={{ background: 'none', border: '1px solid #e0e0e0', borderRadius: 8, padding: '5px 12px', fontSize: 12, color: '#aaa', cursor: 'pointer' }}>
+                      {t.dash_cancel_sub}
+                    </button>
+                  )}
+                  <Link href="/upgrade" style={{ background: '#111', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none' }}>
+                    {status === 'active' ? (lang === 'en' ? 'Change plan' : 'Cambiar plan') : (lang === 'en' ? 'See plans' : 'Ver planes')}
+                  </Link>
+                </div>
+              </div>
             </div>
 
             <button onClick={saveConfig} disabled={saving}
