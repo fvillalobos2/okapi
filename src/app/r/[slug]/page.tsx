@@ -463,7 +463,16 @@ export default function ReviewPage() {
                 {restaurant?.name}
               </div>
               <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 24, lineHeight: 1.5 }}>
-                {offerText}
+                {(() => {
+                  const isPos = (selectedRating || formRating) >= 4
+                  const useEn = lang === 'en'
+                  if (isPos) return useEn
+                    ? (restaurant?.retention_offer_text_positive_en || restaurant?.retention_offer_text_positive || restaurant?.retention_offer_text_en || restaurant?.retention_offer_text || offerText)
+                    : (restaurant?.retention_offer_text_positive || restaurant?.retention_offer_text || offerText)
+                  return useEn
+                    ? (restaurant?.retention_offer_text_en || restaurant?.retention_offer_text || offerText)
+                    : (restaurant?.retention_offer_text || offerText)
+                })()}
               </div>
               <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px dashed rgba(255,255,255,0.15)', borderRadius: 12, padding: '18px 20px', marginBottom: 16 }}>
                 <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 10 }}>
