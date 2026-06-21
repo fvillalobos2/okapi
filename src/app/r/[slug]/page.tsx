@@ -20,9 +20,13 @@ type Restaurant = {
   yelp_url: string | null
   platforms_active: Record<string, boolean>
   business_type: string | null
+  retention_active: boolean
+  retention_show_to: 'all' | 'positive' | 'negative'
+  retention_offer_text: string | null
+  retention_valid_days: number
 }
 
-type Screen = 'landing' | 'positive' | 'feedback' | 'thanks'
+type Screen = 'landing' | 'positive' | 'feedback' | 'thanks' | 'offer'
 
 const CATEGORIES_BY_TYPE: Record<string, Record<Lang, string[]>> = {
   restaurant: {
@@ -58,6 +62,12 @@ export default function ReviewPage() {
   const [contactName, setContactName] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [kioskMode, setKioskMode] = useState(false)
+  const [offerCode, setOfferCode] = useState<string | null>(null)
+  const [offerText, setOfferText] = useState<string | null>(null)
+  const [offerValidDays, setOfferValidDays] = useState<number>(14)
+  const [offerEmail, setOfferEmail] = useState('')
+  const [offerEmailSent, setOfferEmailSent] = useState(false)
+  const [sendingOfferEmail, setSendingOfferEmail] = useState(false)
 
   const typeKey = restaurant?.business_type || 'default'
   const categories = (CATEGORIES_BY_TYPE[typeKey] ?? CATEGORIES_BY_TYPE.default)[lang]
@@ -156,15 +166,43 @@ export default function ReviewPage() {
     ].filter(Boolean).join('\n')
     notifyManager(true, true)
     saveScans(null, true).catch(() => {})
-    setScreen('thanks')
+    const hasOffer = await checkRetentionOffer(formRating)
+    if (hasOffer) {
+      setScreen('offer')
+    } else {
+      setScreen('thanks')
+    }
     window.location.href = `https://wa.me/${restaurant?.wa_number}?text=${encodeURIComponent(msg)}`
+  }
+
+  async function checkRetentionOffer(stars: number) {
+    if (!restaurant?.retention_active || !restaurant?.retention_offer_text) return false
+    const showTo = restaurant.retention_show_to
+    const isPositive = stars >= 4
+    if (showTo === 'negative' && isPositive) return false
+    if (showTo === 'positive' && !isPositive) return false
+
+    const res = await fetch('/api/retention/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ restaurantId: restaurant.id, stars }),
+    })
+    const data = await res.json()
+    if (data.ok && data.code) {
+      setOfferCode(data.code)
+      setOfferText(data.offerText)
+      setOfferValidDays(data.validDays)
+      return true
+    }
+    return false
   }
 
   async function handleSubmitNoContact() {
     if (!validate()) return
     saveScans(null, false).catch(() => {})
     notifyManager(false, true)
-    setScreen('thanks')
+    const hasOffer = await checkRetentionOffer(formRating)
+    setScreen(hasOffer ? 'offer' : 'thanks')
   }
 
   function handlePlatformClick(platform: string, url: string) {
@@ -383,6 +421,99 @@ export default function ReviewPage() {
                 {t.review_submit}
               </button>
             )}
+          </div>
+        )}
+
+        {/* Screen: Offer */}
+        {screen === 'offer' && offerCode && (
+          <div style={{ padding: '28px 24px' }}>
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <div style={{ fontSize: 44, marginBottom: 8 }}>🎁</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: '#111', marginBottom: 6 }}>
+                {lang === 'en' ? 'A gift from us' : 'Un regalo para vos'}
+              </div>
+              <div style={{ fontSize: 13, color: '#666', lineHeight: 1.5 }}>
+                {lang === 'en'
+                  ? `${restaurant?.name} wants to make it up to you`
+                  : `${restaurant?.name} quiere compensarte`}
+              </div>
+            </div>
+
+            {/* Offer card — designed to screenshot */}
+            <div id="offer-card" style={{ background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)', borderRadius: 16, padding: '24px', marginBottom: 20, textAlign: 'center' }}>
+              {restaurant?.logo_url && (
+                <img src={restaurant.logo_url} alt={restaurant.name}
+                  style={{ maxHeight: 48, maxWidth: 140, objectFit: 'contain', marginBottom: 16, filter: 'brightness(0) invert(1)' }} />
+              )}
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 6, fontWeight: 600 }}>
+                {restaurant?.name}
+              </div>
+              <div style={{ fontSize: 17, fontWeight: 700, color: '#fff', marginBottom: 20, lineHeight: 1.4 }}>
+                {offerText}
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.08)', border: '1.5px dashed rgba(255,255,255,0.2)', borderRadius: 12, padding: '16px 20px', marginBottom: 12 }}>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
+                  {lang === 'en' ? 'Your code' : 'Tu código'}
+                </div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: '#fff', letterSpacing: 6, fontFamily: 'monospace' }}>
+                  {offerCode}
+                </div>
+              </div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
+                {lang === 'en' ? `Valid for ${offerValidDays} days · Show this at checkout` : `Válido por ${offerValidDays} días · Mostrá esto en caja`}
+              </div>
+            </div>
+
+            {/* Save as image button */}
+            <button onClick={() => {
+              const card = document.getElementById('offer-card')
+              if (!card) return
+              import('html2canvas').then(({ default: html2canvas }) => {
+                html2canvas(card, { scale: 3, backgroundColor: null }).then(canvas => {
+                  const a = document.createElement('a')
+                  a.download = `oferta-${offerCode}.png`
+                  a.href = canvas.toDataURL('image/png')
+                  a.click()
+                })
+              }).catch(() => {
+                // fallback: just show alert
+                alert(lang === 'en' ? 'Take a screenshot to save your code!' : '¡Tomá una captura de pantalla para guardar tu código!')
+              })
+            }} style={{ width: '100%', padding: '13px', background: '#111', color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 12 }}>
+              {lang === 'en' ? '📸 Save as image' : '📸 Guardar como imagen'}
+            </button>
+
+            {/* Email option */}
+            {!offerEmailSent ? (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                <input type="email" placeholder={lang === 'en' ? 'Send to my email (optional)' : 'Enviármelo al email (opcional)'}
+                  value={offerEmail} onChange={e => setOfferEmail(e.target.value)}
+                  style={{ flex: 1, padding: '11px 14px', border: '1px solid #ddd', borderRadius: 10, fontSize: 13, outline: 'none' }} />
+                <button onClick={async () => {
+                  if (!offerEmail || !restaurant) return
+                  setSendingOfferEmail(true)
+                  await fetch('/api/retention/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ restaurantId: restaurant.id, stars: formRating, email: offerEmail }),
+                  })
+                  setOfferEmailSent(true)
+                  setSendingOfferEmail(false)
+                }} disabled={sendingOfferEmail || !offerEmail}
+                  style={{ padding: '11px 16px', background: offerEmail ? '#C8102E' : '#f0f0f0', color: offerEmail ? '#fff' : '#aaa', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: offerEmail ? 'pointer' : 'default' }}>
+                  {sendingOfferEmail ? '…' : lang === 'en' ? 'Send' : 'Enviar'}
+                </button>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', fontSize: 13, color: '#16a34a', fontWeight: 600, marginBottom: 16 }}>
+                ✓ {lang === 'en' ? 'Sent to your email' : 'Enviado a tu email'}
+              </div>
+            )}
+
+            <button onClick={() => setScreen('thanks')}
+              style={{ width: '100%', padding: '11px', background: 'transparent', color: '#aaa', border: 'none', fontSize: 13, cursor: 'pointer' }}>
+              {lang === 'en' ? 'Continue' : 'Continuar'} →
+            </button>
           </div>
         )}
 

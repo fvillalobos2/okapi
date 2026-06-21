@@ -29,6 +29,21 @@ type Restaurant = {
   auto_reply_enabled: boolean
   google_account_id: string | null
   google_access_token: string | null
+  retention_active: boolean
+  retention_show_to: 'all' | 'positive' | 'negative'
+  retention_offer_text: string | null
+  retention_valid_days: number
+}
+
+type RetentionCode = {
+  id: string
+  code: string
+  stars: number
+  email: string | null
+  redeemed: boolean
+  redeemed_at: string | null
+  created_at: string
+  expires_at: string | null
 }
 
 type Scan = {
@@ -61,9 +76,11 @@ export default function DashboardPage() {
   const [googleLocations, setGoogleLocations] = useState<{id: string, name: string, address: string}[]>([])
   const [loadingLocations, setLoadingLocations] = useState(false)
   const [scans, setScans] = useState<Scan[]>([])
+  const [retentionCodes, setRetentionCodes] = useState<RetentionCode[]>([])
   const [loading, setLoading] = useState(true)
   const [hoveredBar, setHoveredBar] = useState<{ label: string; pos: number; neg: number; x: number; y: number } | null>(null)
-  const [activeTab, setTab] = useState<'stats' | 'config'>('stats')
+  const [redeemingCode, setRedeemingCode] = useState<string | null>(null)
+  const [activeTab, setTab] = useState<'stats' | 'config' | 'retention'>('stats')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [form, setForm] = useState<Partial<Restaurant>>({})
@@ -93,6 +110,14 @@ export default function DashboardPage() {
           .order('created_at', { ascending: false })
           .limit(500)
         setScans(scanData || [])
+
+        const { data: codesData } = await supabase
+          .from('retention_codes')
+          .select('*')
+          .eq('restaurant_id', rest.id)
+          .order('created_at', { ascending: false })
+          .limit(100)
+        setRetentionCodes(codesData || [])
       } else {
         router.push('/onboarding')
         return
@@ -352,7 +377,7 @@ export default function DashboardPage() {
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#ebebeb', borderRadius: 10, padding: 4 }}>
-          {[{ key: 'stats', label: t.dash_stats_tab }, { key: 'config', label: t.dash_config_tab }].map(tab => (
+          {[{ key: 'stats', label: t.dash_stats_tab }, { key: 'retention', label: '🎁 Retención' }, { key: 'config', label: t.dash_config_tab }].map(tab => (
             <button key={tab.key} onClick={() => setTab(tab.key as any)}
               style={{ flex: 1, padding: '9px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, background: activeTab === tab.key ? '#fff' : 'transparent', color: activeTab === tab.key ? '#111' : '#777', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.15s' }}>
               {tab.label}
@@ -610,6 +635,131 @@ export default function DashboardPage() {
             </div>
           )
         })()}
+
+        {/* Retention tab */}
+        {activeTab === 'retention' && (
+          <div>
+            {/* Config card */}
+            <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #ebebeb', marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>Oferta de retención</div>
+                  <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>Muestra un descuento o regalo al cliente después de dejar su opinión</div>
+                </div>
+                <div onClick={async () => {
+                  if (!restaurant) return
+                  const newVal = !restaurant.retention_active
+                  await supabase.from('restaurants').update({ retention_active: newVal }).eq('id', restaurant.id)
+                  setRestaurant({ ...restaurant, retention_active: newVal })
+                }} style={{ width: 44, height: 24, borderRadius: 12, background: restaurant?.retention_active ? '#16a34a' : '#ddd', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                  <div style={{ position: 'absolute', top: 2, left: restaurant?.retention_active ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 6 }}>¿A quién mostrarle la oferta?</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {[
+                    { value: 'negative', label: '😕 Solo negativos' },
+                    { value: 'positive', label: '😊 Solo positivos' },
+                    { value: 'all', label: '👥 A todos' },
+                  ].map(opt => (
+                    <button key={opt.value} onClick={async () => {
+                      if (!restaurant) return
+                      await supabase.from('restaurants').update({ retention_show_to: opt.value }).eq('id', restaurant.id)
+                      setRestaurant({ ...restaurant, retention_show_to: opt.value as 'all' | 'positive' | 'negative' })
+                    }} style={{ flex: 1, padding: '10px 8px', borderRadius: 10, border: `2px solid ${restaurant?.retention_show_to === opt.value ? '#C8102E' : '#ebebeb'}`, background: restaurant?.retention_show_to === opt.value ? '#fef2f2' : '#fff', color: restaurant?.retention_show_to === opt.value ? '#C8102E' : '#666', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 6 }}>Texto de la oferta</label>
+                <input type="text" placeholder="ej: 20% de descuento en tu próxima visita"
+                  value={form.retention_offer_text || ''}
+                  onChange={e => setForm({ ...form, retention_offer_text: e.target.value })}
+                  style={{ width: '100%', padding: '11px 14px', border: '1px solid #ddd', borderRadius: 10, fontSize: 14, boxSizing: 'border-box' }} />
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 6 }}>Validez del código (días)</label>
+                <select value={form.retention_valid_days || 14}
+                  onChange={e => setForm({ ...form, retention_valid_days: Number(e.target.value) })}
+                  style={{ width: '100%', padding: '11px 14px', border: '1px solid #ddd', borderRadius: 10, fontSize: 14, background: '#fff' }}>
+                  {[7, 14, 30, 60].map(d => <option key={d} value={d}>{d} días</option>)}
+                </select>
+              </div>
+
+              <button onClick={async () => {
+                if (!restaurant) return
+                setSaving(true)
+                await supabase.from('restaurants').update({
+                  retention_offer_text: form.retention_offer_text,
+                  retention_valid_days: form.retention_valid_days,
+                }).eq('id', restaurant.id)
+                setRestaurant({ ...restaurant, retention_offer_text: form.retention_offer_text || null, retention_valid_days: form.retention_valid_days || 14 })
+                setSaving(false)
+                setSaved(true)
+                setTimeout(() => setSaved(false), 2500)
+              }} style={{ width: '100%', padding: '12px', background: '#111', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                {saving ? 'Guardando…' : saved ? '✓ Guardado' : 'Guardar oferta'}
+              </button>
+            </div>
+
+            {/* Codes list */}
+            <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #ebebeb' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>Códigos generados</div>
+                <div style={{ fontSize: 12, color: '#888' }}>{retentionCodes.length} total · {retentionCodes.filter(c => c.redeemed).length} usados</div>
+              </div>
+              {retentionCodes.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '32px 0', color: '#aaa', fontSize: 13 }}>
+                  Aún no se han generado códigos.<br />Se crean automáticamente cuando un cliente ve la oferta.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {retentionCodes.map(c => (
+                    <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: c.redeemed ? '#f7f7f8' : '#fff', border: '1px solid #ebebeb', borderRadius: 10 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                          <span style={{ fontSize: 14, fontWeight: 800, color: c.redeemed ? '#aaa' : '#C8102E', letterSpacing: 2, fontFamily: 'monospace' }}>{c.code}</span>
+                          <span style={{ fontSize: 11, color: '#f59e0b' }}>{'★'.repeat(c.stars)}{'☆'.repeat(5 - c.stars)}</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: '#bbb' }}>
+                          {new Date(c.created_at).toLocaleDateString('es-CR', { day: 'numeric', month: 'short' })}
+                          {c.email && ` · ${c.email}`}
+                          {c.expires_at && ` · vence ${new Date(c.expires_at).toLocaleDateString('es-CR', { day: 'numeric', month: 'short' })}`}
+                          {c.redeemed && c.redeemed_at && ` · usado ${new Date(c.redeemed_at).toLocaleDateString('es-CR', { day: 'numeric', month: 'short' })}`}
+                        </div>
+                      </div>
+                      {!c.redeemed ? (
+                        <button onClick={async () => {
+                          setRedeemingCode(c.id)
+                          const res = await fetch('/api/retention/redeem', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ code: c.code, restaurantId: restaurant?.id }),
+                          })
+                          if (res.ok) {
+                            setRetentionCodes(prev => prev.map(x => x.id === c.id ? { ...x, redeemed: true, redeemed_at: new Date().toISOString() } : x))
+                          }
+                          setRedeemingCode(null)
+                        }} disabled={redeemingCode === c.id}
+                          style={{ padding: '6px 14px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          {redeemingCode === c.id ? '…' : '✓ Marcar usado'}
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: 11, color: '#aaa', fontWeight: 600 }}>Usado</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Config tab */}
         {activeTab === 'config' && (
