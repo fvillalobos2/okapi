@@ -177,7 +177,8 @@ export default function ReviewPage() {
   }
 
   async function checkRetentionOffer(stars: number) {
-    if (!restaurant?.retention_active || !restaurant?.retention_offer_text) return false
+    if (!restaurant?.retention_active) return false
+    if (!restaurant?.retention_offer_text && !restaurant?.retention_offer_text_positive) return false
     const showTo = restaurant.retention_show_to
     const isPositive = stars >= 4
     if (showTo === 'negative' && isPositive) return false
