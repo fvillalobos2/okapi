@@ -90,7 +90,7 @@ export default function DashboardPage() {
           .select('*')
           .eq('restaurant_id', rest.id)
           .order('created_at', { ascending: false })
-          .limit(50)
+          .limit(500)
         setScans(scanData || [])
       } else {
         router.push('/onboarding')
@@ -360,107 +360,244 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats tab */}
-        {activeTab === 'stats' && (
-          <div>
-            {/* Download CSV */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-              <button onClick={() => {
-                const headers = ['Fecha', 'Estrellas', 'Tipo', 'Plataforma', 'Categorías', 'Comentario', 'Quiere contacto', 'Nombre']
-                const rows = scans.map(s => [
-                  new Date(s.created_at).toLocaleString('es-CR'),
-                  s.stars,
-                  s.stars >= 4 ? 'Positiva' : 'Privada',
-                  s.platform_chosen || '',
-                  (s.feedback_categories || []).join(' | '),
-                  (s.feedback_text || '').replace(/,/g, ';'),
-                  s.wants_contact ? 'Sí' : 'No',
-                  s.contact_name || '',
-                ])
-                const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n')
-                const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
-                const url = URL.createObjectURL(blob)
-                const a = document.createElement('a')
-                a.href = url
-                a.download = `opiniones-${restaurant?.slug || 'export'}-${new Date().toISOString().slice(0,10)}.csv`
-                a.click()
-                URL.revokeObjectURL(url)
-              }} style={{ padding: '9px 18px', background: '#f7f7f8', border: '1px solid #ddd', borderRadius: 10, fontSize: 13, fontWeight: 600, color: '#444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                ⬇ Descargar CSV
-              </button>
-            </div>
+        {activeTab === 'stats' && (() => {
+          const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+          const HOUR_LABELS = ['12am','2am','4am','6am','8am','10am','12pm','2pm','4pm','6pm','8pm','10pm']
 
-            {/* KPI cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 20 }}>
-              <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb' }}>
-                <div style={{ fontSize: 32, fontWeight: 800, color: '#111', lineHeight: 1 }}>{totalScans}</div>
-                <div style={{ fontSize: 13, color: '#888', marginTop: 6 }}>{t.dash_total_opinions}</div>
-              </div>
-              <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb' }}>
-                <div style={{ fontSize: 32, fontWeight: 800, color: '#f59e0b', lineHeight: 1 }}>{avg ? `${avg}★` : '—'}</div>
-                <div style={{ fontSize: 13, color: '#888', marginTop: 6 }}>{t.dash_average}</div>
-              </div>
-              <div style={{ background: '#f0fdf4', borderRadius: 14, padding: '20px', border: '1px solid #bbf7d0' }}>
-                <div style={{ fontSize: 32, fontWeight: 800, color: '#16a34a', lineHeight: 1 }}>{positive}</div>
-                <div style={{ fontSize: 13, color: '#16a34a', marginTop: 6 }}>{t.dash_positive}</div>
-              </div>
-              <div style={{ background: '#fef2f2', borderRadius: 14, padding: '20px', border: '1px solid #fecaca' }}>
-                <div style={{ fontSize: 32, fontWeight: 800, color: '#C8102E', lineHeight: 1 }}>{negative}</div>
-                <div style={{ fontSize: 13, color: '#C8102E', marginTop: 6 }}>{t.dash_private_feedback}</div>
-              </div>
-            </div>
+          // By day of week
+          const byDow = Array(7).fill(0).map((_, d) => ({
+            label: DAY_NAMES[d],
+            neg: scans.filter(s => new Date(s.created_at).getDay() === d && s.stars < 4).length,
+            pos: scans.filter(s => new Date(s.created_at).getDay() === d && s.stars >= 4).length,
+          }))
+          const maxDow = Math.max(...byDow.map(d => d.neg + d.pos), 1)
 
-            {/* Platform clicks */}
-            {PLATFORMS.some(p => restaurant?.platforms_active?.[p.key]) && (
-              <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb', marginBottom: 20 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#111', marginBottom: 16 }}>{t.dash_platform_clicks}</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {PLATFORMS.filter(p => restaurant?.platforms_active?.[p.key]).map(p => {
-                    const count = scans.filter(s => s.platform_chosen === p.key).length
-                    const pct = totalScans > 0 ? Math.round((count / totalScans) * 100) : 0
+          // By hour (grouped in 2h buckets)
+          const byHour = Array(12).fill(0).map((_, i) => ({
+            label: HOUR_LABELS[i],
+            neg: scans.filter(s => { const h = new Date(s.created_at).getHours(); return h >= i*2 && h < i*2+2 && s.stars < 4 }).length,
+            pos: scans.filter(s => { const h = new Date(s.created_at).getHours(); return h >= i*2 && h < i*2+2 && s.stars >= 4 }).length,
+          }))
+          const maxHour = Math.max(...byHour.map(h => h.neg + h.pos), 1)
+
+          // Weekly trend (last 8 weeks)
+          const weeks = Array(8).fill(0).map((_, i) => {
+            const end = new Date(); end.setDate(end.getDate() - i * 7)
+            const start = new Date(end); start.setDate(start.getDate() - 7)
+            const ws = scans.filter(s => { const d = new Date(s.created_at); return d >= start && d < end })
+            const wavg = ws.length > 0 ? ws.reduce((a, s) => a + s.stars, 0) / ws.length : null
+            return { label: `S-${i}`, avg: wavg, count: ws.length }
+          }).reverse()
+
+          // Top negative categories
+          const catCount: Record<string, number> = {}
+          scans.filter(s => s.stars < 4).forEach(s => {
+            (s.feedback_categories || []).forEach(c => { catCount[c] = (catCount[c] || 0) + 1 })
+          })
+          const topCats = Object.entries(catCount).sort((a, b) => b[1] - a[1]).slice(0, 6)
+          const maxCat = topCats[0]?.[1] || 1
+
+          // Contact rate
+          const contactRate = negative > 0 ? Math.round((scans.filter(s => s.stars < 4 && s.wants_contact).length / negative) * 100) : 0
+          const negativeFeed = scans.filter(s => s.stars < 4).slice(0, 15)
+
+          // Last 30 days vs previous 30
+          const now30 = new Date(); const d30 = new Date(); d30.setDate(d30.getDate() - 30)
+          const d60 = new Date(); d60.setDate(d60.getDate() - 60)
+          const thisMonth = scans.filter(s => new Date(s.created_at) >= d30)
+          const lastMonth = scans.filter(s => { const d = new Date(s.created_at); return d >= d60 && d < d30 })
+          const trendPct = lastMonth.length > 0 ? Math.round(((thisMonth.length - lastMonth.length) / lastMonth.length) * 100) : null
+
+          return (
+            <div>
+              {/* CSV download */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+                <button onClick={() => {
+                  const headers = ['Fecha', 'Estrellas', 'Tipo', 'Plataforma', 'Categorías', 'Comentario', 'Quiere contacto', 'Nombre']
+                  const rows = scans.map(s => [
+                    new Date(s.created_at).toLocaleString('es-CR'),
+                    s.stars, s.stars >= 4 ? 'Positiva' : 'Privada',
+                    s.platform_chosen || '',
+                    (s.feedback_categories || []).join(' | '),
+                    (s.feedback_text || '').replace(/,/g, ';'),
+                    s.wants_contact ? 'Sí' : 'No', s.contact_name || '',
+                  ])
+                  const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n')
+                  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url; a.download = `opiniones-${restaurant?.slug || 'export'}-${new Date().toISOString().slice(0,10)}.csv`
+                  a.click(); URL.revokeObjectURL(url)
+                }} style={{ padding: '9px 18px', background: '#f7f7f8', border: '1px solid #ddd', borderRadius: 10, fontSize: 13, fontWeight: 600, color: '#444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  ⬇ Descargar CSV
+                </button>
+              </div>
+
+              {/* KPI row */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
+                {[
+                  { value: totalScans, label: 'Total opiniones', color: '#111', sub: trendPct !== null ? `${trendPct >= 0 ? '+' : ''}${trendPct}% vs mes anterior` : undefined },
+                  { value: avg ? `${avg}★` : '—', label: 'Rating promedio', color: '#f59e0b', sub: undefined },
+                  { value: `${positive}`, label: 'Positivas', color: '#16a34a', sub: totalScans ? `${Math.round((positive/totalScans)*100)}%` : undefined },
+                  { value: `${contactRate}%`, label: 'Piden contacto', color: '#4285F4', sub: `de ${negative} privadas` },
+                ].map(k => (
+                  <div key={k.label} style={{ background: '#fff', borderRadius: 14, padding: '16px', border: '1px solid #ebebeb' }}>
+                    <div style={{ fontSize: 26, fontWeight: 800, color: k.color, lineHeight: 1, marginBottom: 4 }}>{k.value}</div>
+                    <div style={{ fontSize: 11, color: '#888', fontWeight: 600 }}>{k.label}</div>
+                    {k.sub && <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>{k.sub}</div>}
+                  </div>
+                ))}
+              </div>
+
+              {/* Day of week */}
+              <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb', marginBottom: 14 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>Opiniones por día de la semana</div>
+                <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>¿Cuándo tenés más actividad?</div>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 80 }}>
+                  {byDow.map(d => {
+                    const total = d.neg + d.pos
+                    const pct = (total / maxDow) * 100
+                    const negPct = total > 0 ? (d.neg / total) * 100 : 0
                     return (
-                      <div key={p.key}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                          <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>{p.label}</span>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: p.color }}>{count}</span>
+                      <div key={d.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                        <div style={{ fontSize: 10, color: '#aaa', fontWeight: 600 }}>{total || ''}</div>
+                        <div style={{ width: '100%', height: 56, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                          <div style={{ width: '100%', height: `${pct}%`, minHeight: total ? 4 : 0, borderRadius: 4, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ flex: negPct, background: '#fecaca' }} />
+                            <div style={{ flex: 100 - negPct, background: '#bbf7d0' }} />
+                          </div>
                         </div>
-                        <div style={{ height: 6, background: '#f0f0f0', borderRadius: 3, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${pct}%`, background: p.color, borderRadius: 3, transition: 'width 0.6s ease' }} />
+                        <div style={{ fontSize: 11, color: '#666', fontWeight: 600 }}>{d.label}</div>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#888' }}><div style={{ width: 10, height: 10, borderRadius: 2, background: '#bbf7d0' }} />Positivas</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#888' }}><div style={{ width: 10, height: 10, borderRadius: 2, background: '#fecaca' }} />Privadas</div>
+                </div>
+              </div>
+
+              {/* Hour of day */}
+              <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb', marginBottom: 14 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>Opiniones por hora del día</div>
+                <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>¿En qué horario hay más quejas?</div>
+                <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', height: 80 }}>
+                  {byHour.map(h => {
+                    const total = h.neg + h.pos
+                    const pct = (total / maxHour) * 100
+                    const negPct = total > 0 ? (h.neg / total) * 100 : 0
+                    return (
+                      <div key={h.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                        <div style={{ width: '100%', height: 56, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                          <div style={{ width: '100%', height: `${pct}%`, minHeight: total ? 3 : 0, borderRadius: 3, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ flex: negPct, background: '#fecaca' }} />
+                            <div style={{ flex: 100 - negPct, background: '#bbf7d0' }} />
+                          </div>
                         </div>
+                        <div style={{ fontSize: 9, color: '#bbb', fontWeight: 600, whiteSpace: 'nowrap' }}>{h.label}</div>
                       </div>
                     )
                   })}
                 </div>
               </div>
-            )}
 
-            {/* Negative feedback */}
-            <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb' }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#111', marginBottom: 16 }}>{t.dash_recent_comments}</div>
-              {negativeFeed.length === 0
-                ? <div style={{ fontSize: 14, color: '#aaa', textAlign: 'center', padding: '24px 0' }}>{t.dash_no_negative}</div>
-                : negativeFeed.map(s => (
-                  <div key={s.id} style={{ borderBottom: '1px solid #f5f5f5', paddingBottom: 14, marginBottom: 14 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <span style={{ color: '#f59e0b', fontSize: 15, letterSpacing: 1 }}>{'★'.repeat(s.stars)}{'☆'.repeat(5 - s.stars)}</span>
-                      <span style={{ fontSize: 11, color: '#bbb' }}>{new Date(s.created_at).toLocaleDateString('es-CR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-                    {s.feedback_categories && s.feedback_categories.length > 0 && (
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
-                        {s.feedback_categories.map(c => (
-                          <span key={c} style={{ fontSize: 11, padding: '2px 8px', background: '#fef2f2', color: '#C8102E', borderRadius: 20, fontWeight: 600 }}>{c}</span>
-                        ))}
+              {/* Weekly trend */}
+              <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb', marginBottom: 14 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>Tendencia de rating (últimas 8 semanas)</div>
+                <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>¿Las mejoras están funcionando?</div>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 60 }}>
+                  {weeks.map((w, i) => {
+                    const pct = w.avg ? ((w.avg - 1) / 4) * 100 : 0
+                    const color = w.avg ? (w.avg >= 4 ? '#16a34a' : w.avg >= 3 ? '#f59e0b' : '#C8102E') : '#f0f0f0'
+                    return (
+                      <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                        <div style={{ fontSize: 10, color, fontWeight: 700 }}>{w.avg ? parseFloat(w.avg.toFixed(1)) : ''}</div>
+                        <div style={{ width: '100%', height: 40, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                          <div style={{ width: '100%', height: `${pct}%`, minHeight: w.avg ? 4 : 0, background: color, borderRadius: 4, opacity: w.count === 0 ? 0.2 : 1 }} />
+                        </div>
+                        <div style={{ fontSize: 9, color: '#ccc' }}>{w.count > 0 ? w.count : ''}</div>
                       </div>
-                    )}
-                    {s.feedback_text && <div style={{ fontSize: 13, color: '#444', lineHeight: 1.5 }}>{s.feedback_text}</div>}
-                    {s.wants_contact && s.contact_name && (
-                      <div style={{ fontSize: 12, color: '#16a34a', marginTop: 6, fontWeight: 600 }}>{t.dash_wants_contact} {s.contact_name}</div>
-                    )}
+                    )
+                  })}
+                </div>
+                <div style={{ fontSize: 10, color: '#ddd', marginTop: 6, textAlign: 'right' }}>← hace 8 semanas · hoy →</div>
+              </div>
+
+              {/* Top negative categories */}
+              {topCats.length > 0 && (
+                <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb', marginBottom: 14 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>Principales problemas</div>
+                  <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>Categorías más frecuentes en opiniones privadas</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {topCats.map(([cat, count]) => (
+                      <div key={cat}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>{cat}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#C8102E' }}>{count}</span>
+                        </div>
+                        <div style={{ height: 6, background: '#f0f0f0', borderRadius: 3, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${(count / maxCat) * 100}%`, background: '#fca5a5', borderRadius: 3 }} />
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))
-              }
+                </div>
+              )}
+
+              {/* Platform clicks */}
+              {PLATFORMS.some(p => restaurant?.platforms_active?.[p.key]) && (
+                <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb', marginBottom: 14 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 16 }}>{t.dash_platform_clicks}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {PLATFORMS.filter(p => restaurant?.platforms_active?.[p.key]).map(p => {
+                      const count = scans.filter(s => s.platform_chosen === p.key).length
+                      const pct = totalScans > 0 ? Math.round((count / totalScans) * 100) : 0
+                      return (
+                        <div key={p.key}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>{p.label}</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: p.color }}>{count}</span>
+                          </div>
+                          <div style={{ height: 6, background: '#f0f0f0', borderRadius: 3, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${pct}%`, background: p.color, borderRadius: 3 }} />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Recent negative feedback */}
+              <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 16 }}>{t.dash_recent_comments}</div>
+                {negativeFeed.length === 0
+                  ? <div style={{ fontSize: 14, color: '#aaa', textAlign: 'center', padding: '24px 0' }}>{t.dash_no_negative}</div>
+                  : negativeFeed.map(s => (
+                    <div key={s.id} style={{ borderBottom: '1px solid #f5f5f5', paddingBottom: 14, marginBottom: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <span style={{ color: '#f59e0b', fontSize: 15, letterSpacing: 1 }}>{'★'.repeat(s.stars)}{'☆'.repeat(5 - s.stars)}</span>
+                        <span style={{ fontSize: 11, color: '#bbb' }}>{new Date(s.created_at).toLocaleDateString('es-CR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      {s.feedback_categories && s.feedback_categories.length > 0 && (
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
+                          {s.feedback_categories.map(c => (
+                            <span key={c} style={{ fontSize: 11, padding: '2px 8px', background: '#fef2f2', color: '#C8102E', borderRadius: 20, fontWeight: 600 }}>{c}</span>
+                          ))}
+                        </div>
+                      )}
+                      {s.feedback_text && <div style={{ fontSize: 13, color: '#444', lineHeight: 1.5 }}>{s.feedback_text}</div>}
+                      {s.wants_contact && s.contact_name && (
+                        <div style={{ fontSize: 12, color: '#16a34a', marginTop: 6, fontWeight: 600 }}>{t.dash_wants_contact} {s.contact_name}</div>
+                      )}
+                    </div>
+                  ))
+                }
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
 
         {/* Config tab */}
         {activeTab === 'config' && (
