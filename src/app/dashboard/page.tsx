@@ -339,6 +339,13 @@ export default function DashboardPage() {
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', background: '#111', color: '#fff', borderRadius: 10, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
               {t.dash_download_qr}
             </a>
+            <a
+              href={`/r/${restaurant?.slug}/print`}
+              target="_blank"
+              rel="noopener"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', background: '#f7f7f8', color: '#444', border: '1px solid #ddd', borderRadius: 10, fontSize: 13, fontWeight: 600, textDecoration: 'none', marginLeft: 8 }}>
+              🖨 PDF para imprimir
+            </a>
           </div>
         </div>
 
