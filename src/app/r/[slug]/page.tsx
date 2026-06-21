@@ -214,7 +214,7 @@ export default function ReviewPage() {
     saveScans(platform, false).catch(() => {})
     window.open(url, '_blank')
     const hasOffer = await checkRetentionOffer(selectedRating || formRating)
-    if (!hasOffer) setScreen('thanks')
+    setScreen(hasOffer ? 'offer' : 'thanks')
   }
 
   function getPlatformUrl(platform: string): string | null {
