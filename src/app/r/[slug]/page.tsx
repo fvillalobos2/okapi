@@ -210,9 +210,11 @@ export default function ReviewPage() {
     setScreen(hasOffer ? 'offer' : 'thanks')
   }
 
-  function handlePlatformClick(platform: string, url: string) {
+  async function handlePlatformClick(platform: string, url: string) {
     saveScans(platform, false).catch(() => {})
     window.open(url, '_blank')
+    const hasOffer = await checkRetentionOffer(formRating)
+    if (!hasOffer) setScreen('thanks')
   }
 
   function getPlatformUrl(platform: string): string | null {
