@@ -14,12 +14,12 @@ function generateCode() {
 }
 
 export async function POST(req: NextRequest) {
-  const { restaurantId, stars, email } = await req.json()
+  const { restaurantId, stars, email, lang } = await req.json()
   if (!restaurantId) return NextResponse.json({ error: 'Missing restaurantId' }, { status: 400 })
 
   const { data: restaurant } = await supabaseAdmin
     .from('restaurants')
-    .select('name, retention_active, retention_offer_text, retention_offer_text_positive, retention_valid_days, retention_show_to, logo_url')
+    .select('name, retention_active, retention_offer_text, retention_offer_text_en, retention_offer_text_positive, retention_offer_text_positive_en, retention_valid_days, retention_show_to, logo_url')
     .eq('id', restaurantId)
     .single()
 
@@ -30,9 +30,14 @@ export async function POST(req: NextRequest) {
   if (showTo === 'negative' && isPositive) return NextResponse.json({ ok: false, reason: 'not eligible' })
   if (showTo === 'positive' && !isPositive) return NextResponse.json({ ok: false, reason: 'not eligible' })
 
+  const useEn = lang === 'en'
   const offerText = isPositive
-    ? (restaurant.retention_offer_text_positive || restaurant.retention_offer_text)
-    : restaurant.retention_offer_text
+    ? (useEn
+        ? (restaurant.retention_offer_text_positive_en || restaurant.retention_offer_text_positive || restaurant.retention_offer_text_en || restaurant.retention_offer_text)
+        : (restaurant.retention_offer_text_positive || restaurant.retention_offer_text))
+    : (useEn
+        ? (restaurant.retention_offer_text_en || restaurant.retention_offer_text)
+        : restaurant.retention_offer_text)
 
   if (!offerText) return NextResponse.json({ ok: false, reason: 'no offer text' })
 

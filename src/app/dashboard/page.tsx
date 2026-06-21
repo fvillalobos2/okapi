@@ -32,7 +32,9 @@ type Restaurant = {
   retention_active: boolean
   retention_show_to: 'all' | 'positive' | 'negative'
   retention_offer_text: string | null
+  retention_offer_text_en: string | null
   retention_offer_text_positive: string | null
+  retention_offer_text_positive_en: string | null
   retention_valid_days: number
 }
 
@@ -195,8 +197,22 @@ export default function DashboardPage() {
   async function saveConfig() {
     if (!restaurant) return
     setSaving(true)
-    await supabase.from('restaurants').update(form).eq('id', restaurant.id)
-    setRestaurant({ ...restaurant, ...form } as Restaurant)
+    const editable = {
+      name: form.name,
+      manager_email: form.manager_email,
+      wa_number: form.wa_number,
+      slug: form.slug,
+      google_place_id: form.google_place_id,
+      tripadvisor_url: form.tripadvisor_url,
+      opentable_url: form.opentable_url,
+      thefork_url: form.thefork_url,
+      facebook_url: form.facebook_url,
+      yelp_url: form.yelp_url,
+      platforms_active: form.platforms_active,
+      wa_enabled: form.wa_enabled,
+    }
+    await supabase.from('restaurants').update(editable).eq('id', restaurant.id)
+    setRestaurant({ ...restaurant, ...editable } as Restaurant)
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
@@ -677,24 +693,44 @@ export default function DashboardPage() {
               </div>
 
               <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 6 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 8 }}>
                   {restaurant?.retention_show_to === 'all' ? 'Oferta para negativos (1-3 estrellas)' : 'Texto de la oferta'}
                 </label>
-                <input type="text" placeholder="ej: 25% de descuento en tu próxima visita"
-                  value={form.retention_offer_text || ''}
-                  onChange={e => setForm({ ...form, retention_offer_text: e.target.value })}
-                  style={{ width: '100%', padding: '11px 14px', border: '1px solid #ddd', borderRadius: 10, fontSize: 14, boxSizing: 'border-box' }} />
+                <div style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#888', width: 24, flexShrink: 0 }}>ES</span>
+                  <input type="text" placeholder="ej: 25% de descuento en tu próxima visita"
+                    value={form.retention_offer_text || ''}
+                    onChange={e => setForm({ ...form, retention_offer_text: e.target.value })}
+                    style={{ flex: 1, padding: '10px 12px', border: '1px solid #ddd', borderRadius: 10, fontSize: 14, boxSizing: 'border-box' }} />
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#888', width: 24, flexShrink: 0 }}>EN</span>
+                  <input type="text" placeholder="e.g: 25% off your next visit"
+                    value={form.retention_offer_text_en || ''}
+                    onChange={e => setForm({ ...form, retention_offer_text_en: e.target.value })}
+                    style={{ flex: 1, padding: '10px 12px', border: '1px solid #ddd', borderRadius: 10, fontSize: 14, boxSizing: 'border-box' }} />
+                </div>
               </div>
 
               {restaurant?.retention_show_to === 'all' && (
                 <div style={{ marginBottom: 16 }}>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 6 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 8 }}>
                     Oferta para positivos (4-5 estrellas)
                   </label>
-                  <input type="text" placeholder="ej: Postre gratis en tu próxima visita"
-                    value={form.retention_offer_text_positive || ''}
-                    onChange={e => setForm({ ...form, retention_offer_text_positive: e.target.value })}
-                    style={{ width: '100%', padding: '11px 14px', border: '1px solid #ddd', borderRadius: 10, fontSize: 14, boxSizing: 'border-box' }} />
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#888', width: 24, flexShrink: 0 }}>ES</span>
+                    <input type="text" placeholder="ej: Postre gratis en tu próxima visita"
+                      value={form.retention_offer_text_positive || ''}
+                      onChange={e => setForm({ ...form, retention_offer_text_positive: e.target.value })}
+                      style={{ flex: 1, padding: '10px 12px', border: '1px solid #ddd', borderRadius: 10, fontSize: 14, boxSizing: 'border-box' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#888', width: 24, flexShrink: 0 }}>EN</span>
+                    <input type="text" placeholder="e.g: Free dessert on your next visit"
+                      value={form.retention_offer_text_positive_en || ''}
+                      onChange={e => setForm({ ...form, retention_offer_text_positive_en: e.target.value })}
+                      style={{ flex: 1, padding: '10px 12px', border: '1px solid #ddd', borderRadius: 10, fontSize: 14, boxSizing: 'border-box' }} />
+                  </div>
                 </div>
               )}
 
@@ -711,10 +747,12 @@ export default function DashboardPage() {
                 setSaving(true)
                 await supabase.from('restaurants').update({
                   retention_offer_text: form.retention_offer_text,
+                  retention_offer_text_en: form.retention_offer_text_en,
                   retention_offer_text_positive: form.retention_offer_text_positive,
+                  retention_offer_text_positive_en: form.retention_offer_text_positive_en,
                   retention_valid_days: form.retention_valid_days,
                 }).eq('id', restaurant.id)
-                setRestaurant({ ...restaurant, retention_offer_text: form.retention_offer_text || null, retention_offer_text_positive: form.retention_offer_text_positive || null, retention_valid_days: form.retention_valid_days || 14 })
+                setRestaurant({ ...restaurant, retention_offer_text: form.retention_offer_text || null, retention_offer_text_en: form.retention_offer_text_en || null, retention_offer_text_positive: form.retention_offer_text_positive || null, retention_offer_text_positive_en: form.retention_offer_text_positive_en || null, retention_valid_days: form.retention_valid_days || 14 })
                 setSaving(false)
                 setSaved(true)
                 setTimeout(() => setSaved(false), 2500)
