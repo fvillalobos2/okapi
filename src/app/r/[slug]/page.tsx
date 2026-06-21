@@ -213,7 +213,7 @@ export default function ReviewPage() {
   async function handlePlatformClick(platform: string, url: string) {
     saveScans(platform, false).catch(() => {})
     window.open(url, '_blank')
-    const hasOffer = await checkRetentionOffer(formRating)
+    const hasOffer = await checkRetentionOffer(selectedRating || formRating)
     if (!hasOffer) setScreen('thanks')
   }
 
