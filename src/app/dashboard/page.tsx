@@ -305,9 +305,21 @@ function Dashboard() {
     setGoogleLocations([])
   }
 
+  async function restPatch(fields: Record<string, unknown>) {
+    if (!restaurant) return false
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/restaurant', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session!.access_token}` },
+      body: JSON.stringify({ restaurantId: restaurant.id, ...fields }),
+    })
+    return res.ok
+  }
+
   async function handleCancelSubscription() {
     if (!restaurant) return
     if (!confirm(t.dash_cancel_confirm)) return
+    // Owner-only: update via supabase directly (RLS allows owner)
     await supabase.from('restaurants').update({ subscription_status: 'canceled' }).eq('id', restaurant.id)
     setRestaurant({ ...restaurant, subscription_status: 'canceled' })
   }
@@ -315,16 +327,12 @@ function Dashboard() {
   async function handleAutoReplyToggle() {
     if (!restaurant) return
     const isOn = restaurant.auto_reply_enabled
-
-    // Turning ON: if not connected to Google, start OAuth
     if (!isOn && !restaurant.google_account_id) {
       window.location.href = `/api/google/connect?restaurantId=${restaurant.id}`
       return
     }
-
-    // Already connected or turning OFF: just toggle
     setTogglingAutoReply(true)
-    await supabase.from('restaurants').update({ auto_reply_enabled: !isOn }).eq('id', restaurant.id)
+    await restPatch({ auto_reply_enabled: !isOn })
     setRestaurant({ ...restaurant, auto_reply_enabled: !isOn })
     setTogglingAutoReply(false)
   }
@@ -338,11 +346,7 @@ function Dashboard() {
       const slugClean = form.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-|-$/g, '')
       if (slugClean !== form.slug) setForm(f => ({ ...f, slug: slugClean }))
       const { data: existing } = await supabase
-        .from('restaurants')
-        .select('id')
-        .eq('slug', slugClean)
-        .neq('id', restaurant.id)
-        .maybeSingle()
+        .from('restaurants').select('id').eq('slug', slugClean).neq('id', restaurant.id).maybeSingle()
       if (existing) {
         toast(lang === 'en' ? 'That URL is already taken. Choose a different one.' : 'Esa URL ya está en uso. Elegí otra.')
         setSaving(false)
@@ -365,8 +369,8 @@ function Dashboard() {
       wa_enabled: form.wa_enabled,
       custom_categories: form.custom_categories ?? null,
     }
-    const { error } = await supabase.from('restaurants').update(editable).eq('id', restaurant.id)
-    if (error) { toast(lang === 'en' ? 'Failed to save changes. Please try again.' : 'Error al guardar. Intentá de nuevo.'); setSaving(false); return }
+    const ok = await restPatch(editable)
+    if (!ok) { toast(lang === 'en' ? 'Failed to save changes. Please try again.' : 'Error al guardar. Intentá de nuevo.'); setSaving(false); return }
     setRestaurant({ ...restaurant, ...editable } as Restaurant)
     setSaving(false)
     setSaved(true)
@@ -388,7 +392,7 @@ function Dashboard() {
       const { data } = supabase.storage.from('logos').getPublicUrl(path)
       const newLogoUrl = data.publicUrl
       setForm(f => ({ ...f, logo_url: newLogoUrl }))
-      await supabase.from('restaurants').update({ logo_url: newLogoUrl }).eq('id', restaurant.id)
+      await restPatch({ logo_url: newLogoUrl })
       setRestaurant(r => r ? { ...r, logo_url: newLogoUrl } : r)
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
@@ -1131,7 +1135,7 @@ function Dashboard() {
                 <div onClick={async () => {
                   if (!restaurant) return
                   const newVal = !restaurant.retention_active
-                  await supabase.from('restaurants').update({ retention_active: newVal }).eq('id', restaurant.id)
+                  await restPatch({ retention_active: newVal })
                   setRestaurant({ ...restaurant, retention_active: newVal })
                 }} style={{ width: 44, height: 24, borderRadius: 12, background: restaurant?.retention_active ? '#16a34a' : '#ddd', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
                   <div style={{ position: 'absolute', top: 2, left: restaurant?.retention_active ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
@@ -1148,7 +1152,7 @@ function Dashboard() {
                   ].map(opt => (
                     <button key={opt.value} onClick={async () => {
                       if (!restaurant) return
-                      await supabase.from('restaurants').update({ retention_show_to: opt.value }).eq('id', restaurant.id)
+                      await restPatch({ retention_show_to: opt.value })
                       setRestaurant({ ...restaurant, retention_show_to: opt.value as 'all' | 'positive' | 'negative' })
                     }} style={{ flex: 1, padding: '10px 8px', borderRadius: 10, border: `2px solid ${restaurant?.retention_show_to === opt.value ? '#C8102E' : '#ebebeb'}`, background: restaurant?.retention_show_to === opt.value ? '#fef2f2' : '#fff', color: restaurant?.retention_show_to === opt.value ? '#C8102E' : '#666', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                       {opt.label}
@@ -1210,14 +1214,14 @@ function Dashboard() {
               <button onClick={async () => {
                 if (!restaurant) return
                 setSaving(true)
-                const { error: retError } = await supabase.from('restaurants').update({
+                const ok = await restPatch({
                   retention_offer_text: form.retention_offer_text,
                   retention_offer_text_en: form.retention_offer_text_en,
                   retention_offer_text_positive: form.retention_offer_text_positive,
                   retention_offer_text_positive_en: form.retention_offer_text_positive_en,
                   retention_valid_days: form.retention_valid_days,
-                }).eq('id', restaurant.id)
-                if (retError) { toast(lang === 'en' ? 'Failed to save offer. Try again.' : 'Error al guardar la oferta. Intentá de nuevo.'); setSaving(false); return }
+                })
+                if (!ok) { toast(lang === 'en' ? 'Failed to save offer. Try again.' : 'Error al guardar la oferta. Intentá de nuevo.'); setSaving(false); return }
                 setRestaurant({ ...restaurant, retention_offer_text: form.retention_offer_text || null, retention_offer_text_en: form.retention_offer_text_en || null, retention_offer_text_positive: form.retention_offer_text_positive || null, retention_offer_text_positive_en: form.retention_offer_text_positive_en || null, retention_valid_days: form.retention_valid_days || 14 })
                 setSaving(false)
                 setSaved(true)
@@ -1316,8 +1320,13 @@ function Dashboard() {
           ) => {
             const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${restaurant?.slug}?ref=${s.code}`
             const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}&bgcolor=ffffff&color=1a1a1a&margin=6`
-            const table = type === 'staff' ? 'staff_members' : 'locations'
+            const apiRoute = type === 'staff' ? '/api/staff' : '/api/locations'
+            const idKey = type === 'staff' ? 'memberId' : 'locationId'
             const setList = type === 'staff' ? setStaffMembers : setLocations
+            const mutate = async (method: string, body: object) => {
+              const { data: { session } } = await supabase.auth.getSession()
+              return fetch(apiRoute, { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session!.access_token}` }, body: JSON.stringify({ restaurantId: restaurant?.id, ...body }) })
+            }
             return (
               <div key={s.id} style={{ padding: '12px 14px', background: s.active ? '#fff' : '#f7f7f8', border: '1px solid #ebebeb', borderRadius: 10 }}>
                 <div className="dash-member-header" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
@@ -1328,14 +1337,14 @@ function Dashboard() {
                   </div>
                   <div className="dash-member-header-btns" style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
                     <button onClick={async () => {
-                      await supabase.from(table).update({ active: !s.active }).eq('id', s.id)
+                      await mutate('PATCH', { [idKey]: s.id, active: !s.active })
                       setList((prev: any[]) => prev.map((x: any) => x.id === s.id ? { ...x, active: !s.active } : x))
                     }} style={{ padding: '4px 10px', background: 'none', border: '1px solid #ddd', borderRadius: 7, fontSize: 11, fontWeight: 600, color: '#aaa', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                       {s.active ? t.qr_pause : t.qr_activate}
                     </button>
                     <button onClick={async () => {
                       if (!confirm(t.qr_delete_confirm(s.name))) return
-                      await supabase.from(table).update({ deleted_at: new Date().toISOString() }).eq('id', s.id)
+                      await mutate('DELETE', { [idKey]: s.id })
                       setList((prev: any[]) => prev.filter((x: any) => x.id !== s.id))
                     }} style={{ padding: '4px 8px', background: 'none', border: 'none', fontSize: 14, color: '#ddd', cursor: 'pointer' }}>✕</button>
                   </div>
@@ -1436,11 +1445,11 @@ function Dashboard() {
                           .normalize('NFD').replace(/[̀-ͯ]/g, '')
                           .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
                           + '-' + Math.random().toString(36).slice(2, 5)
-                        const { data, error } = await supabase.from('staff_members').insert({
-                          restaurant_id: restaurant.id, name: newStaffName.trim(), code, active: true
-                        }).select().single()
-                        if (error) { toast(lang === 'en' ? 'Could not add collaborator. Try again.' : 'No se pudo agregar el colaborador. Intentá de nuevo.'); setAddingStaff(false); return }
-                        if (data) setStaffMembers(prev => [...prev, data])
+                        const { data: { session } } = await supabase.auth.getSession()
+                        const res = await fetch('/api/staff', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session!.access_token}` }, body: JSON.stringify({ restaurantId: restaurant.id, name: newStaffName.trim(), code }) })
+                        const json = await res.json()
+                        if (!res.ok) { toast(lang === 'en' ? 'Could not add collaborator. Try again.' : 'No se pudo agregar el colaborador. Intentá de nuevo.'); setAddingStaff(false); return }
+                        if (json.member) setStaffMembers(prev => [...prev, json.member])
                         setNewStaffName('')
                         setAddingStaff(false)
                       }} style={{ padding: '10px 16px', background: '#111', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: addingStaff || !newStaffName.trim() ? 'not-allowed' : 'pointer', opacity: !newStaffName.trim() ? 0.4 : 1 }}>
@@ -1472,11 +1481,11 @@ function Dashboard() {
                           .normalize('NFD').replace(/[̀-ͯ]/g, '')
                           .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
                           + '-' + Math.random().toString(36).slice(2, 5)
-                        const { data, error } = await supabase.from('locations').insert({
-                          restaurant_id: restaurant.id, name: newLocationName.trim(), code, active: true
-                        }).select().single()
-                        if (error) { toast(lang === 'en' ? 'Could not add location. Try again.' : 'No se pudo agregar la ubicación. Intentá de nuevo.'); setAddingLocation(false); return }
-                        if (data) setLocations(prev => [...prev, data])
+                        const { data: { session } } = await supabase.auth.getSession()
+                        const res = await fetch('/api/locations', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session!.access_token}` }, body: JSON.stringify({ restaurantId: restaurant.id, name: newLocationName.trim(), code }) })
+                        const json = await res.json()
+                        if (!res.ok) { toast(lang === 'en' ? 'Could not add location. Try again.' : 'No se pudo agregar la ubicación. Intentá de nuevo.'); setAddingLocation(false); return }
+                        if (json.location) setLocations(prev => [...prev, json.location])
                         setNewLocationName('')
                         setAddingLocation(false)
                       }} style={{ padding: '10px 16px', background: '#111', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: addingLocation || !newLocationName.trim() ? 'not-allowed' : 'pointer', opacity: !newLocationName.trim() ? 0.4 : 1 }}>
@@ -1514,7 +1523,7 @@ function Dashboard() {
               <div style={{ padding: '0 20px' }}>
 
                 {/* Perfil */}
-                <Acc id="perfil" title="Perfil" sub="Logo, nombre y URL pública">
+                <Acc id="perfil" title={t.acc_perfil} sub={t.acc_perfil_sub}>
                   <div style={{ marginBottom: 16 }}>
                     <label
                       onDragOver={e => { e.preventDefault(); setLogoDragging(true) }}
@@ -1546,7 +1555,7 @@ function Dashboard() {
                 </Acc>
 
                 {/* Plataformas */}
-                <Acc id="plataformas" title="Plataformas" sub="URLs de reseñas y cuáles mostrar">
+                <Acc id="plataformas" title={t.acc_plataformas} sub={t.acc_plataformas_sub}>
                   {[
                     { label: t.field_google, key: 'google_place_id', placeholder: 'https://g.page/r/...' },
                     { label: t.field_tripadvisor, key: 'tripadvisor_url', placeholder: 'https://tripadvisor.com/...' },
@@ -1586,7 +1595,7 @@ function Dashboard() {
                 </Acc>
 
                 {/* WhatsApp */}
-                <Acc id="whatsapp" title="WhatsApp" sub="Número y activación de seguimiento">
+                <Acc id="whatsapp" title={t.acc_whatsapp} sub={t.acc_whatsapp_sub}>
                   <div style={{ marginBottom: 16 }}>
                     <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 5 }}>{t.field_wa}</label>
                     <input value={form.wa_number || ''} onChange={e => setForm({ ...form, wa_number: e.target.value })} placeholder={t.field_wa_placeholder}
@@ -1600,7 +1609,7 @@ function Dashboard() {
                     <div onClick={async () => {
                       const newVal = !form.wa_enabled
                       setForm({ ...form, wa_enabled: newVal })
-                      if (restaurant) { await supabase.from('restaurants').update({ wa_enabled: newVal }).eq('id', restaurant.id); setRestaurant({ ...restaurant, wa_enabled: newVal }) }
+                      if (restaurant) { await restPatch({ wa_enabled: newVal }); setRestaurant({ ...restaurant, wa_enabled: newVal }) }
                     }} style={{ width: 44, height: 24, borderRadius: 12, background: form.wa_enabled ? '#25D366' : '#d1d5db', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
                       <div style={{ position: 'absolute', top: 2, left: form.wa_enabled ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', transition: 'left 0.2s' }} />
                     </div>
@@ -1608,7 +1617,7 @@ function Dashboard() {
                 </Acc>
 
                 {/* Categorías */}
-                <Acc id="categorias" title="Categorías" sub="Etiquetas del formulario de reseñas">
+                <Acc id="categorias" title={t.acc_categorias} sub={t.acc_categorias_sub}>
                   {(() => {
                     const typeKey = (restaurant as any)?.business_type || 'default'
                     const defaults = DEFAULT_CATEGORIES[typeKey] ?? DEFAULT_CATEGORIES.default
@@ -1659,7 +1668,7 @@ function Dashboard() {
                   const slotsUsed = teamMembers.length + 1
                   const atLimit = slotsUsed >= memberLimit
                   return (
-                    <Acc id="equipo" title="Equipo" sub={`${slotsUsed} de ${memberLimit} usuarios`}>
+                    <Acc id="equipo" title={t.acc_equipo} sub={t.acc_equipo_sub(slotsUsed, memberLimit)}>
                       {teamMembers.length > 0 && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
                           {teamMembers.map(m => (
@@ -1709,7 +1718,7 @@ function Dashboard() {
                 })()}
 
                 {/* Plan */}
-                <Acc id="plan" title="Plan" sub={status === 'active' ? (restaurant!.plan ?? 'Pro') : status === 'trial' ? 'Trial gratuito' : 'Sin plan activo'}>
+                <Acc id="plan" title={t.acc_plan} sub={status === 'active' ? (restaurant!.plan ?? 'Pro') : status === 'trial' ? t.acc_trial_sub : t.acc_no_plan_sub}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>
@@ -1720,7 +1729,7 @@ function Dashboard() {
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      {status === 'active' && (
+                      {status === 'active' && memberRole === null && (
                         <button onClick={handleCancelSubscription} style={{ background: 'none', border: '1px solid #e0e0e0', borderRadius: 8, padding: '5px 12px', fontSize: 12, color: '#aaa', cursor: 'pointer' }}>
                           {t.dash_cancel_sub}
                         </button>
