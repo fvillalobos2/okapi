@@ -387,11 +387,29 @@ function Dashboard() {
   async function saveConfig() {
     if (!restaurant) return
     setSaving(true)
+
+    // Validate slug uniqueness if it changed
+    if (form.slug && form.slug !== restaurant.slug) {
+      const slugClean = form.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-|-$/g, '')
+      if (slugClean !== form.slug) setForm(f => ({ ...f, slug: slugClean }))
+      const { data: existing } = await supabase
+        .from('restaurants')
+        .select('id')
+        .eq('slug', slugClean)
+        .neq('id', restaurant.id)
+        .maybeSingle()
+      if (existing) {
+        toast(lang === 'en' ? 'That URL is already taken. Choose a different one.' : 'Esa URL ya está en uso. Elegí otra.')
+        setSaving(false)
+        return
+      }
+    }
+
     const editable = {
       name: form.name,
       manager_email: form.manager_email,
       wa_number: form.wa_number,
-      slug: form.slug,
+      slug: form.slug?.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-|-$/g, '') || restaurant.slug,
       google_place_id: form.google_place_id,
       tripadvisor_url: form.tripadvisor_url,
       opentable_url: form.opentable_url,
