@@ -69,7 +69,7 @@ export default function OnboardingPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      const { data } = await supabase.from('restaurants').select('id').eq('user_id', user.id).single()
+      const { data } = await supabase.from('restaurants').select('id').eq('user_id', user.id).maybeSingle()
       if (data) setRestaurantId(data.id)
     }
     load()
@@ -146,7 +146,7 @@ export default function OnboardingPage() {
   async function handleSave() {
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user) { setSaving(false); router.push('/login'); return }
 
     const platforms_active = Object.fromEntries(PLATFORMS.map(p => [p.key, activePlatforms.includes(p.key)]))
     const custom_categories = DEFAULT_CATEGORIES[businessType] ?? DEFAULT_CATEGORIES.other
