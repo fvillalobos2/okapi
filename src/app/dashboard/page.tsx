@@ -273,17 +273,26 @@ export default function DashboardPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f7f7f8', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      <style>{`
+        @media (max-width: 480px) {
+          .dash-nav-title { display: none !important; }
+          .dash-nav-upgrade { display: none !important; }
+          .dash-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .dash-qr-btns { flex-wrap: wrap !important; gap: 8px !important; }
+          .dash-analytics-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
 
       {/* Nav */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #ebebeb', padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, position: 'sticky', top: 0, zIndex: 10 }}>
+      <div style={{ background: '#fff', borderBottom: '1px solid #ebebeb', padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {restaurant?.logo_url
             ? <img src={restaurant.logo_url} alt="" style={{ height: 28, width: 'auto' }} />
             : <div style={{ width: 28, height: 28, borderRadius: 6, background: '#C8102E', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff' }}>O</div>
           }
-          <span style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>Okapi Reviews</span>
+          <span className="dash-nav-title" style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>Okapi Reviews</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {status === 'active' && restaurant!.plan && (
             <span style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 20, padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               {restaurant!.plan}
@@ -298,10 +307,10 @@ export default function DashboardPage() {
               }}>{l}</button>
             ))}
           </div>
-          <Link href="/upgrade" style={{ background: status === 'active' ? 'none' : '#C8102E', border: status === 'active' ? '1px solid #e0e0e0' : 'none', borderRadius: 8, padding: '5px 14px', fontSize: 13, cursor: 'pointer', color: status === 'active' ? '#555' : '#fff', textDecoration: 'none', fontWeight: 600 }}>
+          <Link className="dash-nav-upgrade" href="/upgrade" style={{ background: status === 'active' ? 'none' : '#C8102E', border: status === 'active' ? '1px solid #e0e0e0' : 'none', borderRadius: 8, padding: '5px 14px', fontSize: 13, cursor: 'pointer', color: status === 'active' ? '#555' : '#fff', textDecoration: 'none', fontWeight: 600 }}>
             {status === 'active' ? t.dash_plan_btn_active : t.dash_plan_btn_inactive}
           </Link>
-          <button onClick={handleLogout} style={{ background: 'none', border: '1px solid #e0e0e0', borderRadius: 8, padding: '5px 14px', fontSize: 13, cursor: 'pointer', color: '#555' }}>{t.logout}</button>
+          <button onClick={handleLogout} style={{ background: 'none', border: '1px solid #e0e0e0', borderRadius: 8, padding: '5px 12px', fontSize: 13, cursor: 'pointer', color: '#555' }}>{t.logout}</button>
         </div>
       </div>
 
@@ -341,7 +350,7 @@ export default function DashboardPage() {
           <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>{t.dash_review_page}</div>
           <div style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 4 }}>{restaurant?.name}</div>
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 20, wordBreak: 'break-all' }}>{reviewUrl}</div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div className="dash-qr-btns" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <button onClick={copyLink} style={{ padding: '10px 20px', background: copied ? '#16a34a' : '#C8102E', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s' }}>
               {copied ? t.dash_copied : t.dash_copy_link}
             </button>
@@ -369,21 +378,23 @@ export default function DashboardPage() {
           <div style={{ flex: 1, minWidth: 180 }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: '#111', marginBottom: 4 }}>{t.dash_qr_title}</div>
             <div style={{ fontSize: 13, color: '#777', lineHeight: 1.5, marginBottom: 14 }}>{t.dash_qr_desc}</div>
-            <a
-              href={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(reviewUrl)}&bgcolor=ffffff&color=1a1a1a&margin=20`}
-              download={`qr-${restaurant?.slug}.png`}
-              target="_blank"
-              rel="noopener"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', background: '#111', color: '#fff', borderRadius: 10, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
-              {t.dash_download_qr}
-            </a>
-            <a
-              href={`/r/${restaurant?.slug}/print`}
-              target="_blank"
-              rel="noopener"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', background: '#f7f7f8', color: '#444', border: '1px solid #ddd', borderRadius: 10, fontSize: 13, fontWeight: 600, textDecoration: 'none', marginLeft: 8 }}>
-              🖨 PDF para imprimir
-            </a>
+            <div className="dash-qr-btns" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+              <a
+                href={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(reviewUrl)}&bgcolor=ffffff&color=1a1a1a&margin=20`}
+                download={`qr-${restaurant?.slug}.png`}
+                target="_blank"
+                rel="noopener"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', background: '#111', color: '#fff', borderRadius: 10, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+                {t.dash_download_qr}
+              </a>
+              <a
+                href={`/r/${restaurant?.slug}/print`}
+                target="_blank"
+                rel="noopener"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', background: '#f7f7f8', color: '#444', border: '1px solid #ddd', borderRadius: 10, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+                🖨 PDF para imprimir
+              </a>
+            </div>
           </div>
         </div>
 
@@ -472,7 +483,7 @@ export default function DashboardPage() {
               </div>
 
               {/* KPI row */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
+              <div className="dash-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
                 {[
                   { value: totalScans, label: 'Total opiniones', color: '#111', sub: trendPct !== null ? `${trendPct >= 0 ? '+' : ''}${trendPct}% vs mes anterior` : undefined },
                   { value: avg ? `${avg}★` : '—', label: 'Rating promedio', color: '#f59e0b', sub: undefined },

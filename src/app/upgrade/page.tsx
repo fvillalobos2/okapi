@@ -121,6 +121,12 @@ export default function UpgradePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f7f7f8', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      <style>{`
+        @media (max-width: 480px) {
+          .upgrade-name-grid { grid-template-columns: 1fr !important; }
+          .upgrade-plan-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
 
       {/* Nav */}
       <div style={{ background: '#fff', borderBottom: '1px solid #ebebeb', padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, position: 'sticky', top: 0, zIndex: 10 }}>
@@ -154,7 +160,7 @@ export default function UpgradePage() {
 
               {/* Billing info */}
               <div style={{ marginBottom: 20 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                <div className="upgrade-name-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
                   <div>
                     <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Nombre</label>
                     <input type="text" placeholder="Juan" value={firstName} onChange={e => setFirstName(e.target.value)}
@@ -218,7 +224,7 @@ export default function UpgradePage() {
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginBottom: 32 }}>
+            <div className="upgrade-plan-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginBottom: 32 }}>
               {PLANS.map(plan => {
                 const isCurrentPlan = subStatus === 'active' && currentPlan === plan.id
                 const isSelected = selectedPlan === plan.id
