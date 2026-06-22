@@ -112,6 +112,14 @@ function OnboardingContent() {
 
   async function handleNext() {
     if (!validateStep()) return
+    if (step === 1) {
+      // Check slug uniqueness before advancing
+      const { data } = await supabase.from('restaurants').select('id').eq('slug', slug).maybeSingle()
+      if (data && data.id !== restaurantId) {
+        setErrors(e => ({ ...e, name: lang === 'en' ? 'That URL is already taken. Try a different name.' : 'Esa URL ya está en uso. Probá con otro nombre.' }))
+        return
+      }
+    }
     if (step < TOTAL_STEPS - 1) { setStep(s => s + 1); return }
     if (step === TOTAL_STEPS - 1) await handleSave()
   }
