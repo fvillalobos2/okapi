@@ -376,7 +376,11 @@ function Dashboard() {
           .dash-cat-pair > button { align-self: flex-end !important; }
           .dash-cat-header { display: none !important; }
           .dash-member-actions { flex-wrap: wrap !important; gap: 6px !important; }
-          .dash-member-header { flex-wrap: wrap !important; gap: 8px !important; }
+          .dash-member-header { flex-wrap: nowrap !important; gap: 8px !important; }
+          .dash-member-header-btns { flex-direction: column !important; gap: 4px !important; }
+          .dash-add-row { flex-wrap: wrap !important; }
+          .dash-add-row input { min-width: 0 !important; }
+          .dash-add-row button { width: 100% !important; }
         }
       `}</style>
 
@@ -1256,11 +1260,11 @@ function Dashboard() {
                     <div style={{ fontSize: 13, fontWeight: 700, color: s.active ? '#111' : '#aaa' }}>{s.name}</div>
                     <div style={{ fontSize: 11, color: '#bbb', fontFamily: 'monospace' }}>{s.code}</div>
                   </div>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+                  <div className="dash-member-header-btns" style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
                     <button onClick={async () => {
                       await supabase.from(table).update({ active: !s.active }).eq('id', s.id)
                       setList((prev: any[]) => prev.map((x: any) => x.id === s.id ? { ...x, active: !s.active } : x))
-                    }} style={{ padding: '4px 10px', background: 'none', border: '1px solid #ddd', borderRadius: 7, fontSize: 11, fontWeight: 600, color: '#aaa', cursor: 'pointer' }}>
+                    }} style={{ padding: '4px 10px', background: 'none', border: '1px solid #ddd', borderRadius: 7, fontSize: 11, fontWeight: 600, color: '#aaa', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                       {s.active ? t.qr_pause : t.qr_activate}
                     </button>
                     <button onClick={async () => {
@@ -1354,7 +1358,7 @@ function Dashboard() {
                     </div>
                   )}
                   {!staffAtLimit && (
-                    <div style={{ display: 'flex', gap: 8 }}>
+                    <div className="dash-add-row" style={{ display: 'flex', gap: 8 }}>
                       <input type="text" placeholder={t.qr_staff_placeholder}
                         value={newStaffName} onChange={e => setNewStaffName(e.target.value)}
                         onKeyDown={async e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('add-staff-btn')?.click() } }}
@@ -1390,7 +1394,7 @@ function Dashboard() {
                     </div>
                   )}
                   {!locAtLimit && (
-                    <div style={{ display: 'flex', gap: 8 }}>
+                    <div className="dash-add-row" style={{ display: 'flex', gap: 8 }}>
                       <input type="text" placeholder={t.qr_location_placeholder}
                         value={newLocationName} onChange={e => setNewLocationName(e.target.value)}
                         onKeyDown={async e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('add-loc-btn')?.click() } }}
