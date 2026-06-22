@@ -48,6 +48,15 @@ type StaffMember = {
   created_at: string
 }
 
+type TeamMember = {
+  id: string
+  email: string
+  role: 'manager' | 'viewer'
+  invited_at: string
+  accepted_at: string | null
+  user_id: string | null
+}
+
 type Location = {
   id: string
   name: string
@@ -154,6 +163,12 @@ function Dashboard() {
   const [loadingSummary, setLoadingSummary] = useState(false)
   const [impressions, setImpressions] = useState<{ created_at: string }[]>([])
   const [logoDragging, setLogoDragging] = useState(false)
+  const [memberRole, setMemberRole] = useState<'manager' | 'viewer' | null>(null)
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [teamInviteEmail, setTeamInviteEmail] = useState('')
+  const [teamInviteRole, setTeamInviteRole] = useState<'manager' | 'viewer'>('manager')
+  const [inviting, setInviting] = useState(false)
+  const [inviteMsg, setInviteMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -166,7 +181,33 @@ function Dashboard() {
         .eq('user_id', user.id)
         .single()
 
-      if (rest) {
+      // If not owner, check if they're an accepted member
+      let effectiveRest = rest
+      if (!rest) {
+        const { data: membership } = await supabase
+          .from('restaurant_members')
+          .select('restaurant_id, role')
+          .eq('user_id', user.id)
+          .not('accepted_at', 'is', null)
+          .order('accepted_at', { ascending: false })
+          .limit(1)
+          .single()
+
+        if (membership) {
+          const { data: memberRest } = await supabase
+            .from('restaurants')
+            .select('*')
+            .eq('id', membership.restaurant_id)
+            .single()
+          if (memberRest) {
+            effectiveRest = memberRest
+            setMemberRole(membership.role as 'manager' | 'viewer')
+          }
+        }
+      }
+
+      if (effectiveRest) {
+        const rest = effectiveRest
         setRestaurant(rest)
         setForm(rest)
         const { data: scanData } = await supabase
@@ -216,6 +257,67 @@ function Dashboard() {
     }
     load()
   }, [router])
+
+  async function loadTeamMembers() {
+    if (!restaurant || memberRole !== null) return
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    const res = await fetch(`/api/team/members?restaurantId=${restaurant.id}`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+    if (res.ok) {
+      const data = await res.json()
+      setTeamMembers(data.members ?? [])
+    }
+  }
+
+  async function inviteMember(e: React.FormEvent) {
+    e.preventDefault()
+    if (!restaurant || !teamInviteEmail.trim()) return
+    setInviting(true)
+    setInviteMsg(null)
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/team/invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session!.access_token}` },
+      body: JSON.stringify({ email: teamInviteEmail.trim(), role: teamInviteRole, restaurantId: restaurant.id }),
+    })
+    const data = await res.json()
+    setInviting(false)
+    if (!res.ok) {
+      const msg = data.error === 'member_limit'
+        ? `Límite de tu plan (${data.limit} usuarios). Actualizá para agregar más.`
+        : 'No se pudo enviar la invitación.'
+      setInviteMsg({ type: 'err', text: msg })
+      return
+    }
+    setInviteMsg({ type: 'ok', text: `Invitación enviada a ${teamInviteEmail.trim()}` })
+    setTeamInviteEmail('')
+    loadTeamMembers()
+  }
+
+  async function removeMember(memberId: string) {
+    if (!restaurant) return
+    if (!confirm('¿Eliminar este miembro?')) return
+    const { data: { session } } = await supabase.auth.getSession()
+    await fetch('/api/team/members', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session!.access_token}` },
+      body: JSON.stringify({ memberId, restaurantId: restaurant.id }),
+    })
+    setTeamMembers(prev => prev.filter(m => m.id !== memberId))
+  }
+
+  async function updateMemberRole(memberId: string, role: 'manager' | 'viewer') {
+    if (!restaurant) return
+    const { data: { session } } = await supabase.auth.getSession()
+    await fetch('/api/team/members', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session!.access_token}` },
+      body: JSON.stringify({ memberId, role, restaurantId: restaurant.id }),
+    })
+    setTeamMembers(prev => prev.map(m => m.id === memberId ? { ...m, role } : m))
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -501,8 +603,8 @@ function Dashboard() {
 
         {/* Tabs */}
         <div className="dash-main-tabs" style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#ebebeb', borderRadius: 10, padding: 4 }}>
-          {[{ key: 'stats', label: t.dash_stats_tab }, { key: 'retention', label: t.ret_tab }, { key: 'team', label: t.qr_tab }, { key: 'config', label: t.dash_config_tab }].map(tab => (
-            <button key={tab.key} onClick={() => setTab(tab.key as any)}
+          {[{ key: 'stats', label: t.dash_stats_tab }, { key: 'retention', label: t.ret_tab }, { key: 'team', label: t.qr_tab }, ...(memberRole !== 'viewer' ? [{ key: 'config', label: t.dash_config_tab }] : [])].map(tab => (
+            <button key={tab.key} onClick={() => { setTab(tab.key as any); if (tab.key === 'config') loadTeamMembers() }}
               style={{ flex: 1, padding: '9px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, background: activeTab === tab.key ? '#fff' : 'transparent', color: activeTab === tab.key ? '#111' : '#777', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.15s' }}>
               {tab.label}
             </button>
@@ -1571,6 +1673,90 @@ function Dashboard() {
                 </div>
               )
             })()}
+
+            {/* Team members — owner only */}
+            {memberRole === null && (() => {
+              const PLAN_MEMBER_LIMITS: Record<string, number> = { starter: 3, pro: 10, business: 25, trial: 3 }
+              const plan = restaurant!.plan ?? restaurant!.subscription_status ?? 'trial'
+              const memberLimit = PLAN_MEMBER_LIMITS[plan] ?? 3
+              // +1 for owner
+              const slotsUsed = teamMembers.length + 1
+              const atLimit = slotsUsed >= memberLimit
+
+              return (
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>Equipo</div>
+                      <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>{slotsUsed} de {memberLimit} usuarios · incluyéndote a vos</div>
+                    </div>
+                    <button onClick={loadTeamMembers}
+                      style={{ fontSize: 11, color: '#aaa', background: 'none', border: '1px solid #e0e0e0', borderRadius: 7, padding: '4px 10px', cursor: 'pointer' }}>
+                      Actualizar
+                    </button>
+                  </div>
+
+                  {/* Existing members list */}
+                  {teamMembers.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+                      {teamMembers.map(m => (
+                        <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', border: '1px solid #ebebeb', borderRadius: 10, background: m.accepted_at ? '#fff' : '#fafafa' }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.email}</div>
+                            <div style={{ fontSize: 11, color: '#aaa', marginTop: 1 }}>
+                              {m.accepted_at ? 'Activo' : 'Pendiente de aceptar'}
+                            </div>
+                          </div>
+                          <select value={m.role} onChange={e => updateMemberRole(m.id, e.target.value as any)}
+                            style={{ fontSize: 11, border: '1px solid #ddd', borderRadius: 7, padding: '4px 8px', color: '#555', background: '#fff', cursor: 'pointer' }}>
+                            <option value="manager">Manager</option>
+                            <option value="viewer">Viewer</option>
+                          </select>
+                          <button onClick={() => removeMember(m.id)}
+                            style={{ fontSize: 13, color: '#ddd', background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px' }}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Invite form */}
+                  {!atLimit ? (
+                    <form onSubmit={inviteMember}>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <input type="email" value={teamInviteEmail} onChange={e => setTeamInviteEmail(e.target.value)}
+                          placeholder="correo@ejemplo.com"
+                          style={{ flex: 1, minWidth: 160, padding: '10px 12px', border: '1px solid #ddd', borderRadius: 10, fontSize: 13, boxSizing: 'border-box' }} />
+                        <select value={teamInviteRole} onChange={e => setTeamInviteRole(e.target.value as any)}
+                          style={{ padding: '10px 10px', border: '1px solid #ddd', borderRadius: 10, fontSize: 13, color: '#555', background: '#fff', cursor: 'pointer' }}>
+                          <option value="manager">Manager</option>
+                          <option value="viewer">Viewer</option>
+                        </select>
+                        <button type="submit" disabled={inviting || !teamInviteEmail.trim()}
+                          style={{ padding: '10px 16px', background: inviting ? '#aaa' : '#111', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: !teamInviteEmail.trim() ? 0.4 : 1 }}>
+                          {inviting ? 'Enviando…' : 'Invitar'}
+                        </button>
+                      </div>
+                      {inviteMsg && (
+                        <div style={{ marginTop: 8, fontSize: 12, color: inviteMsg.type === 'ok' ? '#16a34a' : '#dc2626' }}>
+                          {inviteMsg.text}
+                        </div>
+                      )}
+                    </form>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 8 }}>
+                      <span style={{ fontSize: 12, color: '#dc2626' }}>Límite de {memberLimit} usuarios en tu plan actual.</span>
+                      <Link href="/upgrade" style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', textDecoration: 'none' }}>Ver planes →</Link>
+                    </div>
+                  )}
+
+                  <div style={{ fontSize: 11, color: '#bbb', marginTop: 10, lineHeight: 1.5 }}>
+                    <strong>Manager:</strong> acceso completo excepto billing · <strong>Viewer:</strong> solo ve estadísticas
+                  </div>
+                </div>
+              )
+            })()}
+
+            <div style={{ height: 1, background: '#f0f0f0', marginBottom: 20 }} />
 
             {/* Plan section */}
             <div style={{ marginBottom: 24, padding: '16px', background: '#f7f7f8', borderRadius: 12, border: '1px solid #ebebeb' }}>
