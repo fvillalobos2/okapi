@@ -12,27 +12,41 @@ export async function GET(req: NextRequest) {
   let restaurant: any = null
   let role: string | null = null
 
-  // Try owner first
-  const { data: ownedRest } = await supabaseAdmin
+  const requestedId = req.nextUrl.searchParams.get('restaurantId')
+
+  // Load all restaurants owned by user
+  const { data: ownedRests } = await supabaseAdmin
     .from('restaurants')
     .select('*')
     .eq('user_id', user.id)
-    .single()
+    .order('created_at', { ascending: true })
 
-  if (ownedRest) {
-    restaurant = ownedRest
+  if (ownedRests && ownedRests.length > 0) {
+    if (requestedId) {
+      restaurant = ownedRests.find((r: any) => r.id === requestedId) ?? ownedRests[0]
+    } else {
+      restaurant = ownedRests[0]
+    }
+    // If user owns multiple, include the list so dashboard can show switcher
+    if (ownedRests.length > 1) {
+      const extraPayload = { ownedRestaurants: ownedRests.map((r: any) => ({ id: r.id, name: r.name, slug: r.slug, logo_url: r.logo_url })) }
+      // will be merged into response below
+      Object.assign(restaurant, { _ownedList: extraPayload.ownedRestaurants })
+    }
   } else {
     // Try as accepted member
-    const { data: membership } = await supabaseAdmin
+    const { data: memberships } = await supabaseAdmin
       .from('restaurant_members')
       .select('restaurant_id, role')
       .eq('user_id', user.id)
       .not('accepted_at', 'is', null)
       .order('accepted_at', { ascending: false })
-      .limit(1)
-      .single()
 
-    if (!membership) return NextResponse.json({ error: 'not_found' }, { status: 404 })
+    if (!memberships || memberships.length === 0) return NextResponse.json({ error: 'not_found' }, { status: 404 })
+
+    const membership = requestedId
+      ? (memberships.find((m: any) => m.restaurant_id === requestedId) ?? memberships[0])
+      : memberships[0]
 
     const { data: memberRest } = await supabaseAdmin
       .from('restaurants')
@@ -46,6 +60,8 @@ export async function GET(req: NextRequest) {
   }
 
   const restId = restaurant.id
+  const ownedRestaurants: any[] | null = restaurant._ownedList ?? null
+  delete restaurant._ownedList
 
   // Load all dashboard data via service role (bypasses RLS for members)
   const [scansRes, impressionsRes, codesRes, staffRes, locRes] = await Promise.all([
@@ -59,6 +75,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     restaurant,
     role,
+    ownedRestaurants,
     scans: scansRes.data ?? [],
     impressions: impressionsRes.data ?? [],
     retentionCodes: codesRes.data ?? [],

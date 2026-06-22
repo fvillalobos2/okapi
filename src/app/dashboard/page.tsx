@@ -168,6 +168,7 @@ function Dashboard() {
   const [impressions, setImpressions] = useState<{ created_at: string }[]>([])
   const [logoDragging, setLogoDragging] = useState(false)
   const [memberRole, setMemberRole] = useState<'manager' | 'viewer' | null>(null)
+  const [ownedRestaurants, setOwnedRestaurants] = useState<{ id: string; name: string; slug: string; logo_url: string | null }[] | null>(null)
   const [openSection, setOpenSection] = useState<string | null>('perfil')
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [teamInviteEmail, setTeamInviteEmail] = useState('')
@@ -175,38 +176,35 @@ function Dashboard() {
   const [inviting, setInviting] = useState(false)
   const [inviteMsg, setInviteMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
 
-  useEffect(() => {
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
+  async function loadRestaurant(restaurantId?: string) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.push('/login'); return }
 
-      const { data: { session } } = await supabase.auth.getSession()
-      const res = await fetch('/api/restaurant', {
-        headers: { Authorization: `Bearer ${session!.access_token}` },
-      })
-      if (!res.ok) {
-        router.push('/onboarding')
-        return
-      }
-      const { restaurant: effectiveRest, role, scans: scanData, impressions: impressionData, retentionCodes: codesData, staffMembers: staffData, locations: locData } = await res.json()
-      if (role) setMemberRole(role)
+    const { data: { session } } = await supabase.auth.getSession()
+    const url = restaurantId ? `/api/restaurant?restaurantId=${restaurantId}` : '/api/restaurant'
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${session!.access_token}` } })
+    if (!res.ok) { router.push('/onboarding'); return }
 
-      if (effectiveRest) {
-        setRestaurant(effectiveRest)
-        setForm(effectiveRest)
-        setScans(scanData || [])
-        setImpressions(impressionData || [])
-        setRetentionCodes(codesData || [])
-        setStaffMembers(staffData || [])
-        setLocations(locData || [])
-      } else {
-        router.push('/onboarding')
-        return
-      }
-      setLoading(false)
+    const { restaurant: effectiveRest, role, ownedRestaurants: owned, scans: scanData, impressions: impressionData, retentionCodes: codesData, staffMembers: staffData, locations: locData } = await res.json()
+    if (role) setMemberRole(role)
+    if (owned) setOwnedRestaurants(owned)
+
+    if (effectiveRest) {
+      setRestaurant(effectiveRest)
+      setForm(effectiveRest)
+      setScans(scanData || [])
+      setImpressions(impressionData || [])
+      setRetentionCodes(codesData || [])
+      setStaffMembers(staffData || [])
+      setLocations(locData || [])
+    } else {
+      router.push('/onboarding')
+      return
     }
-    load()
-  }, [router])
+    setLoading(false)
+  }
+
+  useEffect(() => { loadRestaurant() }, [router])
 
   async function loadTeamMembers() {
     if (!restaurant || memberRole !== null) return
@@ -465,7 +463,16 @@ function Dashboard() {
             ? <img src={restaurant.logo_url} alt="" style={{ height: 28, width: 'auto' }} />
             : <div style={{ width: 28, height: 28, borderRadius: 6, background: '#C8102E', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff' }}>O</div>
           }
-          <span className="dash-nav-title" style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>Okapi Reviews</span>
+          {ownedRestaurants && ownedRestaurants.length > 1 ? (
+            <select value={restaurant?.id ?? ''} onChange={e => { setLoading(true); loadRestaurant(e.target.value) }}
+              style={{ fontWeight: 700, fontSize: 14, color: '#111', border: 'none', background: 'transparent', cursor: 'pointer', outline: 'none', maxWidth: 160 }}>
+              {ownedRestaurants.map(r => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+          ) : (
+            <span className="dash-nav-title" style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>{restaurant?.name ?? 'Okapi Reviews'}</span>
+          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {status === 'active' && restaurant!.plan && (
