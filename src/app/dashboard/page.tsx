@@ -176,36 +176,16 @@ function Dashboard() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
-      const { data: rest } = await supabase
-        .from('restaurants')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
-
-      // If not owner, check if they're an accepted member
-      let effectiveRest = rest
-      if (!rest) {
-        const { data: membership } = await supabase
-          .from('restaurant_members')
-          .select('restaurant_id, role')
-          .eq('user_id', user.id)
-          .not('accepted_at', 'is', null)
-          .order('accepted_at', { ascending: false })
-          .limit(1)
-          .single()
-
-        if (membership) {
-          const { data: memberRest } = await supabase
-            .from('restaurants')
-            .select('*')
-            .eq('id', membership.restaurant_id)
-            .single()
-          if (memberRest) {
-            effectiveRest = memberRest
-            setMemberRole(membership.role as 'manager' | 'viewer')
-          }
-        }
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/restaurant', {
+        headers: { Authorization: `Bearer ${session!.access_token}` },
+      })
+      if (!res.ok) {
+        router.push('/onboarding')
+        return
       }
+      const { restaurant: effectiveRest, role } = await res.json()
+      if (role) setMemberRole(role)
 
       if (effectiveRest) {
         const rest = effectiveRest
