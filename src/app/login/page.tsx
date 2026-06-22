@@ -51,7 +51,7 @@ export default function LoginPage() {
 
   async function handleForgotPassword() {
     if (!email.trim()) { setError(t.err_enter_email_first); return }
-    await supabase.auth.resetPasswordForEmail(email, { redirectTo: 'https://reviews.projectokapi.com/dashboard' })
+    await supabase.auth.resetPasswordForEmail(email, { redirectTo: 'https://reviews.projectokapi.com/reset-password' })
     setSuccess(t.reset_password_success)
     setError('')
   }
