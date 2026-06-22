@@ -123,7 +123,7 @@ export default function Home() {
             La mejor forma de mejorar tu servicio: escuchar a tiempo.
           </h1>
           <p className="hero-sub" style={{ fontSize: 17, color: '#666', lineHeight: 1.75, marginBottom: 40, maxWidth: 480, margin: '0 auto 40px' }}>
-            Cada cliente que sale tiene una opinión. Okapi te la trae antes de que se vaya — para que puedas actuar, no solo reaccionar.
+            Los mejores negocios no esperan las reseñas para mejorar. Actúan antes.
           </p>
           <div className="hero-cta" style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/login" style={{ padding: '13px 30px', background: '#C8102E', color: '#fff', borderRadius: 10, fontSize: 15, fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 20px rgba(200,16,46,0.35)' }}
