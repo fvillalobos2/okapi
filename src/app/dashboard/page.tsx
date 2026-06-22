@@ -372,6 +372,11 @@ function Dashboard() {
           .dash-main-tabs button { font-size: 12px !important; padding: 8px 4px !important; }
           .dash-period-row { flex-wrap: wrap !important; gap: 8px !important; }
           .dash-team-subtab { font-size: 12px !important; padding: 7px 8px !important; }
+          .dash-cat-pair { flex-direction: column !important; gap: 4px !important; }
+          .dash-cat-pair > button { align-self: flex-end !important; }
+          .dash-cat-header { display: none !important; }
+          .dash-member-actions { flex-wrap: wrap !important; gap: 6px !important; }
+          .dash-member-header { flex-wrap: wrap !important; gap: 8px !important; }
         }
       `}</style>
 
@@ -1245,25 +1250,27 @@ function Dashboard() {
             const setList = type === 'staff' ? setStaffMembers : setLocations
             return (
               <div key={s.id} style={{ padding: '12px 14px', background: s.active ? '#fff' : '#f7f7f8', border: '1px solid #ebebeb', borderRadius: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                <div className="dash-member-header" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
                   <img src={qrSrc} alt={s.name} style={{ width: 40, height: 40, borderRadius: 6, flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: s.active ? '#111' : '#aaa' }}>{s.name}</div>
                     <div style={{ fontSize: 11, color: '#bbb', fontFamily: 'monospace' }}>{s.code}</div>
                   </div>
-                  <button onClick={async () => {
-                    await supabase.from(table).update({ active: !s.active }).eq('id', s.id)
-                    setList((prev: any[]) => prev.map((x: any) => x.id === s.id ? { ...x, active: !s.active } : x))
-                  }} style={{ padding: '4px 10px', background: 'none', border: '1px solid #ddd', borderRadius: 7, fontSize: 11, fontWeight: 600, color: '#aaa', cursor: 'pointer' }}>
-                    {s.active ? t.qr_pause : t.qr_activate}
-                  </button>
-                  <button onClick={async () => {
-                    if (!confirm(t.qr_delete_confirm(s.name))) return
-                    await supabase.from(table).update({ deleted_at: new Date().toISOString() }).eq('id', s.id)
-                    setList((prev: any[]) => prev.filter((x: any) => x.id !== s.id))
-                  }} style={{ padding: '4px 8px', background: 'none', border: 'none', fontSize: 14, color: '#ddd', cursor: 'pointer' }}>✕</button>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+                    <button onClick={async () => {
+                      await supabase.from(table).update({ active: !s.active }).eq('id', s.id)
+                      setList((prev: any[]) => prev.map((x: any) => x.id === s.id ? { ...x, active: !s.active } : x))
+                    }} style={{ padding: '4px 10px', background: 'none', border: '1px solid #ddd', borderRadius: 7, fontSize: 11, fontWeight: 600, color: '#aaa', cursor: 'pointer' }}>
+                      {s.active ? t.qr_pause : t.qr_activate}
+                    </button>
+                    <button onClick={async () => {
+                      if (!confirm(t.qr_delete_confirm(s.name))) return
+                      await supabase.from(table).update({ deleted_at: new Date().toISOString() }).eq('id', s.id)
+                      setList((prev: any[]) => prev.filter((x: any) => x.id !== s.id))
+                    }} style={{ padding: '4px 8px', background: 'none', border: 'none', fontSize: 14, color: '#ddd', cursor: 'pointer' }}>✕</button>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <div className="dash-member-actions" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   <button onClick={() => {
                     navigator.clipboard.writeText(url)
                     setCopied({ id: s.id, type: 'link' } as any)
@@ -1530,21 +1537,21 @@ function Dashboard() {
                 <div style={{ marginBottom: 24 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>{t.field_categories_title}</div>
                   <div style={{ fontSize: 12, color: '#aaa', marginBottom: 14, lineHeight: 1.5 }}>{t.field_categories_desc}</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 28px', gap: 6, marginBottom: 8 }}>
+                  <div className="dash-cat-header" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 28px', gap: 6, marginBottom: 8 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t.field_categories_col_es}</div>
                     <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t.field_categories_col_en}</div>
                     <div />
                   </div>
                   {cats.map((cat, i) => (
-                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 28px', gap: 6, marginBottom: 6 }}>
+                    <div key={i} className="dash-cat-pair" style={{ display: 'flex', flexDirection: 'row', gap: 6, marginBottom: 6 }}>
                       <input value={cat.es} onChange={e => { const next = [...cats]; next[i] = { ...next[i], es: e.target.value }; setCats(next) }}
                         placeholder={t.field_categories_placeholder_es}
-                        style={{ border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 10px', fontSize: 13, outline: 'none', color: '#111', boxSizing: 'border-box' }} />
+                        style={{ flex: 1, border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 10px', fontSize: 13, outline: 'none', color: '#111', boxSizing: 'border-box', minWidth: 0 }} />
                       <input value={cat.en} onChange={e => { const next = [...cats]; next[i] = { ...next[i], en: e.target.value }; setCats(next) }}
                         placeholder={t.field_categories_placeholder_en}
-                        style={{ border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 10px', fontSize: 13, outline: 'none', color: '#111', boxSizing: 'border-box' }} />
+                        style={{ flex: 1, border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 10px', fontSize: 13, outline: 'none', color: '#111', boxSizing: 'border-box', minWidth: 0 }} />
                       <button onClick={() => setCats(cats.filter((_, j) => j !== i))}
-                        style={{ background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', fontSize: 16, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                        style={{ background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', fontSize: 16, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, width: 28 }}>✕</button>
                     </div>
                   ))}
                   <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>

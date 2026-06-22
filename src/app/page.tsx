@@ -66,9 +66,34 @@ function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   )
 }
 
+const L = {
+  es: {
+    badge: 'GESTIÓN DE RESEÑAS PARA HOSPITALIDAD',
+    hero: 'La mejor forma de mejorar tu servicio: escuchar a tiempo.',
+    heroSub: 'Los mejores negocios no esperan las reseñas para mejorar. Actúan antes.',
+    cta: 'Empezar gratis',
+    ctaSub: 'Ver demo',
+    navHow: 'Cómo funciona',
+    navPricing: 'Precios',
+    navLogin: 'Login',
+  },
+  en: {
+    badge: 'REVIEW MANAGEMENT FOR HOSPITALITY',
+    hero: 'The best way to improve your service: listen in time.',
+    heroSub: 'The best businesses don\'t wait for reviews to improve. They act first.',
+    cta: 'Start free',
+    ctaSub: 'See demo',
+    navHow: 'How it works',
+    navPricing: 'Pricing',
+    navLogin: 'Login',
+  },
+}
+
 export default function Home() {
   const [hoveredFeature, setHoveredFeature] = useState<string | null>(null)
   const [hoveredPlan, setHoveredPlan] = useState<string | null>(null)
+  const [lang, setLang] = useState<'es' | 'en'>('es')
+  const tx = L[lang]
 
   return (
     <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', color: '#111', background: '#fff', overflowX: 'hidden' }}>
@@ -101,14 +126,19 @@ export default function Home() {
           <span style={{ fontWeight: 700, fontSize: 15, color: '#fff' }}>Okapi Reviews</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <a href="#como-funciona" className="nav-link landing-nav-links" style={{ fontSize: 13, fontWeight: 500, color: '#777', textDecoration: 'none', padding: '7px 14px', borderRadius: 8 }}>Cómo funciona</a>
-          <a href="#pricing" className="nav-link landing-nav-links" style={{ fontSize: 13, fontWeight: 500, color: '#777', textDecoration: 'none', padding: '7px 14px', borderRadius: 8 }}>Precios</a>
+          <a href="#como-funciona" className="nav-link landing-nav-links" style={{ fontSize: 13, fontWeight: 500, color: '#777', textDecoration: 'none', padding: '7px 14px', borderRadius: 8 }}>{tx.navHow}</a>
+          <a href="#pricing" className="nav-link landing-nav-links" style={{ fontSize: 13, fontWeight: 500, color: '#777', textDecoration: 'none', padding: '7px 14px', borderRadius: 8 }}>{tx.navPricing}</a>
           <div className="landing-nav-links" style={{ width: 1, height: 20, background: '#2a2a2a', margin: '0 8px' }} />
-          <Link href="/login" className="nav-link landing-nav-links" style={{ fontSize: 13, fontWeight: 500, color: '#777', textDecoration: 'none', padding: '7px 14px', borderRadius: 8 }}>Login</Link>
+          <Link href="/login" className="nav-link landing-nav-links" style={{ fontSize: 13, fontWeight: 500, color: '#777', textDecoration: 'none', padding: '7px 14px', borderRadius: 8 }}>{tx.navLogin}</Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginRight: 4 }}>
+            {(['es', 'en'] as const).map(l => (
+              <button key={l} onClick={() => setLang(l)} style={{ background: lang === l ? 'rgba(255,255,255,0.12)' : 'transparent', color: lang === l ? '#fff' : '#555', border: 'none', borderRadius: 5, padding: '3px 7px', fontSize: 10, fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase' }}>{l}</button>
+            ))}
+          </div>
           <Link href="/login" style={{ padding: '8px 18px', background: '#C8102E', color: '#fff', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
             onMouseEnter={e => (e.currentTarget.style.background = '#a80d26')}
             onMouseLeave={e => (e.currentTarget.style.background = '#C8102E')}>
-            Empezar gratis
+            {tx.cta}
           </Link>
         </div>
       </nav>
@@ -117,13 +147,13 @@ export default function Home() {
       <section className="landing-pad" style={{ background: '#0f0f0f', padding: '96px 32px 80px', textAlign: 'center' }}>
         <div style={{ maxWidth: 640, margin: '0 auto' }}>
           <div className="hero-title" style={{ display: 'inline-block', padding: '5px 14px', background: '#1e1e1e', border: '1px solid #333', borderRadius: 20, fontSize: 12, fontWeight: 600, color: '#777', marginBottom: 32, letterSpacing: '0.05em' }}>
-            GESTIÓN DE RESEÑAS PARA HOSPITALIDAD
+            {tx.badge}
           </div>
           <h1 className="hero-title" style={{ fontSize: 'clamp(40px, 6vw, 68px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: 22, letterSpacing: '-0.03em' }}>
-            La mejor forma de mejorar tu servicio: escuchar a tiempo.
+            {tx.hero}
           </h1>
           <p className="hero-sub" style={{ fontSize: 17, color: '#666', lineHeight: 1.75, marginBottom: 40, maxWidth: 480, margin: '0 auto 40px' }}>
-            Los mejores negocios no esperan las reseñas para mejorar. Actúan antes.
+            {tx.heroSub}
           </p>
           <div className="hero-cta" style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/login" style={{ padding: '13px 30px', background: '#C8102E', color: '#fff', borderRadius: 10, fontSize: 15, fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 20px rgba(200,16,46,0.35)' }}
