@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { useTranslation } from '@/lib/i18n'
+import { useTranslation, Lang } from '@/lib/i18n'
 
 const PLATFORMS = [
   { key: 'google', label: 'Google', color: '#4285F4', abbr: 'G', description_es: 'La más importante — aparece en búsquedas', description_en: 'Most important — appears in searches' },
@@ -36,7 +36,7 @@ const TOTAL_STEPS = 4 // 3 real steps + success
 
 export default function OnboardingPage() {
   const router = useRouter()
-  const { t, lang } = useTranslation()
+  const { t, lang, setLang } = useTranslation()
   const [step, setStep] = useState(1)
   const [restaurantId, setRestaurantId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -206,7 +206,14 @@ export default function OnboardingPage() {
 
         {step < TOTAL_STEPS && (
           <div style={{ padding: '28px 32px 0' }}>
-            <div style={{ fontSize: 13, color: '#999', marginBottom: 8 }}>{t.ob_step(step, TOTAL_STEPS - 1)}</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <div style={{ fontSize: 13, color: '#999' }}>{t.ob_step(step, TOTAL_STEPS - 1)}</div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {(['es', 'en'] as Lang[]).map(l => (
+                  <button key={l} onClick={() => setLang(l)} style={{ background: lang === l ? '#111' : 'transparent', color: lang === l ? '#fff' : '#aaa', border: 'none', borderRadius: 5, padding: '3px 7px', fontSize: 10, fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase' }}>{l}</button>
+                ))}
+              </div>
+            </div>
             <div style={{ height: 4, background: '#f0f0f0', borderRadius: 4, marginBottom: 28 }}>
               <div style={{ height: 4, background: '#C8102E', borderRadius: 4, width: `${progress}%`, transition: 'width 0.4s ease' }} />
             </div>
