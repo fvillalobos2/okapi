@@ -14,13 +14,14 @@ function generateCode() {
 }
 
 export async function POST(req: NextRequest) {
-  const { restaurantId, stars, email, lang } = await req.json()
-  if (!restaurantId) return NextResponse.json({ error: 'Missing restaurantId' }, { status: 400 })
+  const { restaurantId, slug, stars, email, lang } = await req.json()
+  if (!restaurantId || !slug) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
   const { data: restaurant } = await supabaseAdmin
     .from('restaurants')
-    .select('name, retention_active, retention_offer_text, retention_offer_text_en, retention_offer_text_positive, retention_offer_text_positive_en, retention_valid_days, retention_show_to, logo_url')
+    .select('name, slug, retention_active, retention_offer_text, retention_offer_text_en, retention_offer_text_positive, retention_offer_text_positive_en, retention_valid_days, retention_show_to, logo_url')
     .eq('id', restaurantId)
+    .eq('slug', slug)
     .single()
 
   if (!restaurant?.retention_active) return NextResponse.json({ ok: false, reason: 'no offer' })

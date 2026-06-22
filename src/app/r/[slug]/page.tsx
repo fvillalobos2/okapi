@@ -8,6 +8,7 @@ import { useTranslation, Lang } from '@/lib/i18n'
 type Restaurant = {
   id: string
   name: string
+  slug: string
   logo_url: string | null
   wa_number: string | null
   wa_enabled: boolean
@@ -173,32 +174,28 @@ export default function ReviewPage() {
     notifyManager(true, true)
     saveScans(null, true).catch(() => {})
     const hasOffer = await checkRetentionOffer(formRating)
-    if (hasOffer) {
-      setScreen('offer')
-    } else {
-      setScreen('thanks')
-    }
-    window.location.href = `https://wa.me/${restaurant?.wa_number}?text=${encodeURIComponent(msg)}`
+    setScreen(hasOffer ? 'offer' : 'thanks')
+    // Open WhatsApp after state has rendered
+    setTimeout(() => {
+      window.open(`https://wa.me/${restaurant?.wa_number}?text=${encodeURIComponent(msg)}`, '_blank')
+    }, 300)
   }
 
   async function checkRetentionOffer(stars: number) {
-    console.log('[retention] stars:', stars, 'active:', restaurant?.retention_active, 'showTo:', restaurant?.retention_show_to)
-    if (!restaurant?.retention_active) { console.log('[retention] blocked: not active'); return false }
+    if (!restaurant?.retention_active) return false
     if (!restaurant?.retention_offer_text && !restaurant?.retention_offer_text_positive &&
-        !restaurant?.retention_offer_text_en && !restaurant?.retention_offer_text_positive_en) { console.log('[retention] blocked: no offer text'); return false }
+        !restaurant?.retention_offer_text_en && !restaurant?.retention_offer_text_positive_en) return false
     const showTo = restaurant.retention_show_to
     const isPositive = stars >= 4
-    if (showTo === 'negative' && isPositive) { console.log('[retention] blocked: negative-only offer'); return false }
-    if (showTo === 'positive' && !isPositive) { console.log('[retention] blocked: positive-only offer'); return false }
+    if (showTo === 'negative' && isPositive) return false
+    if (showTo === 'positive' && !isPositive) return false
 
-    console.log('[retention] calling API...')
     const res = await fetch('/api/retention/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ restaurantId: restaurant.id, stars, lang }),
+      body: JSON.stringify({ restaurantId: restaurant.id, slug: restaurant.slug, stars, lang }),
     })
     const data = await res.json()
-    console.log('[retention] API response:', data)
     if (data.ok && data.code) {
       setOfferCode(data.code)
       setOfferText(data.offerText)
@@ -520,7 +517,7 @@ export default function ReviewPage() {
                   await fetch('/api/retention/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ restaurantId: restaurant.id, stars: formRating, email: offerEmail }),
+                    body: JSON.stringify({ restaurantId: restaurant.id, slug: restaurant.slug, stars: formRating, email: offerEmail }),
                   })
                   setOfferEmailSent(true)
                   setSendingOfferEmail(false)

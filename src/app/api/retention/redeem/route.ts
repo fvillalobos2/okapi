@@ -7,8 +7,30 @@ const supabaseAdmin = createClient(
 )
 
 export async function POST(req: NextRequest) {
+  // Verify the requesting user owns the restaurant
+  const authHeader = req.headers.get('authorization')
+  const token = authHeader?.replace('Bearer ', '')
+  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const supabaseUser = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { global: { headers: { Authorization: `Bearer ${token}` } } }
+  )
+  const { data: { user } } = await supabaseUser.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const { code, restaurantId } = await req.json()
   if (!code || !restaurantId) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+
+  // Verify the restaurant belongs to this user
+  const { data: restaurant } = await supabaseAdmin
+    .from('restaurants')
+    .select('id')
+    .eq('id', restaurantId)
+    .eq('user_id', user.id)
+    .single()
+  if (!restaurant) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 
   const { data } = await supabaseAdmin
     .from('retention_codes')
