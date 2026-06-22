@@ -15,24 +15,18 @@ export async function POST(req: NextRequest) {
   const token = authHeader?.replace('Bearer ', '')
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const supabaseUser = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { global: { headers: { Authorization: `Bearer ${token}` } } }
-  )
-  const { data: { user } } = await supabaseUser.auth.getUser()
+  const { data: { user } } = await supabaseAdmin.auth.getUser(token)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { restaurantId, stats, lang } = await req.json()
   if (!restaurantId || !stats) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
-  // Verify ownership
-  const { data: restaurant } = await supabaseAdmin
-    .from('restaurants')
-    .select('id, name')
-    .eq('id', restaurantId)
-    .eq('user_id', user.id)
-    .single()
+  // Verify owner or accepted member
+  const [ownerRes, memberRes] = await Promise.all([
+    supabaseAdmin.from('restaurants').select('id, name').eq('id', restaurantId).eq('user_id', user.id).maybeSingle(),
+    supabaseAdmin.from('restaurant_members').select('id').eq('restaurant_id', restaurantId).eq('user_id', user.id).not('accepted_at', 'is', null).maybeSingle(),
+  ])
+  const restaurant = ownerRes.data ?? (memberRes.data ? (await supabaseAdmin.from('restaurants').select('id, name').eq('id', restaurantId).single()).data : null)
   if (!restaurant) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
 
   const isEs = lang !== 'en'
