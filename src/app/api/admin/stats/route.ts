@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
   // Fetch all restaurants
   const { data: restaurants } = await supabaseAdmin
     .from('restaurants')
-    .select('id, name, plan, subscription_status, trial_ends_at, created_at, subscription_ends_at')
+    .select('id, name, plan, subscription_status, trial_ends_at, created_at, subscription_ends_at, user_id, manager_email')
     .order('created_at', { ascending: false })
 
   if (!restaurants) return NextResponse.json({ error: 'DB error' }, { status: 500 })
@@ -125,6 +125,8 @@ export async function GET(req: NextRequest) {
     plan: r.plan,
     status: r.subscription_status,
     created_at: r.created_at,
+    user_id: r.user_id,
+    manager_email: r.manager_email,
   }))
 
   return NextResponse.json({

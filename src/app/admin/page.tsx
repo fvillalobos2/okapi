@@ -21,7 +21,7 @@ type Stats = {
   retentionRate: number
   qrUsage: number
   avgScansPerRestaurant: number
-  recent: { id: string; name: string; plan: string | null; status: string; created_at: string }[]
+  recent: { id: string; name: string; plan: string | null; status: string; created_at: string; user_id: string; manager_email: string | null }[]
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -43,6 +43,7 @@ export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [impersonating, setImpersonating] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -76,6 +77,23 @@ export default function AdminPage() {
       <div style={{ color: '#C8102E', fontSize: 14 }}>{error}</div>
     </div>
   )
+
+  async function impersonate(email: string, restaurantId: string) {
+    setImpersonating(restaurantId)
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/admin/impersonate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+      body: JSON.stringify({ email }),
+    })
+    const data = await res.json()
+    setImpersonating(null)
+    if (data.url) {
+      window.open(data.url, '_blank')
+    } else {
+      alert(data.error ?? 'Error generating link')
+    }
+  }
 
   if (!stats) return null
 
@@ -147,16 +165,28 @@ export default function AdminPage() {
             Últimos registros
           </div>
           {stats.recent.map((r, i) => (
-            <div key={r.id} style={{ padding: '12px 20px', borderBottom: i < stats.recent.length - 1 ? '1px solid #1e1e1e' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+            <div key={r.id} style={{ padding: '12px 20px', borderBottom: i < stats.recent.length - 1 ? '1px solid #1e1e1e' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#e5e5e5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
-                <div style={{ fontSize: 11, color: '#555', marginTop: 2 }}>{new Date(r.created_at).toLocaleDateString('es-CR', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                <div style={{ fontSize: 11, color: '#555', marginTop: 2 }}>
+                  {new Date(r.created_at).toLocaleDateString('es-CR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  {r.manager_email && <span style={{ marginLeft: 8 }}>{r.manager_email}</span>}
+                </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 {r.plan && (
                   <span style={{ fontSize: 10, fontWeight: 700, color: '#4285F4', background: '#0d1f3c', border: '1px solid #1e3a6e', borderRadius: 20, padding: '2px 8px', textTransform: 'uppercase' }}>{r.plan}</span>
                 )}
                 <span style={{ fontSize: 10, fontWeight: 700, color: STATUS_COLOR[r.status], background: STATUS_BG[r.status] + '22', border: `1px solid ${STATUS_COLOR[r.status]}44`, borderRadius: 20, padding: '2px 8px', textTransform: 'uppercase' }}>{r.status}</span>
+                {r.manager_email && (
+                  <button
+                    onClick={() => impersonate(r.manager_email!, r.id)}
+                    disabled={impersonating === r.id}
+                    style={{ fontSize: 11, fontWeight: 700, color: impersonating === r.id ? '#555' : '#C8102E', background: 'transparent', border: '1px solid #333', borderRadius: 6, padding: '3px 10px', cursor: impersonating === r.id ? 'not-allowed' : 'pointer' }}
+                  >
+                    {impersonating === r.id ? '…' : 'Acceder →'}
+                  </button>
+                )}
               </div>
             </div>
           ))}
