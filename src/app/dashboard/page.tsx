@@ -692,13 +692,24 @@ function Dashboard() {
           const scans7 = scans.filter(s => new Date(s.created_at) >= alert7Start)
 
           if (scans.length === 0) return (
-            <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #ebebeb', padding: '48px 32px', textAlign: 'center' }}>
-              <div style={{ fontSize: 40, marginBottom: 16 }}>📊</div>
-              <div style={{ fontSize: 17, fontWeight: 700, color: '#111', marginBottom: 8 }}>{t.dash_stats_empty_title}</div>
-              <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6, marginBottom: 20, maxWidth: 320, margin: '0 auto 20px' }}>{t.dash_stats_empty_body}</p>
-              <button onClick={() => setTab('team')} style={{ background: '#111', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-                {t.dash_stats_empty_cta}
-              </button>
+            <div>
+              {fImpressions > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 16 }}>
+                  <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #ebebeb', padding: '20px 20px 16px' }}>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: '#111' }}>{fImpressions}</div>
+                    <div style={{ fontSize: 13, color: '#888', marginTop: 4 }}>{lang === 'en' ? 'Impressions' : 'Impresiones'}</div>
+                    <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>{lang === 'en' ? 'Times your review page was opened' : 'Veces que se abrió tu página'}</div>
+                  </div>
+                </div>
+              )}
+              <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #ebebeb', padding: '48px 32px', textAlign: 'center' }}>
+                <div style={{ fontSize: 40, marginBottom: 16 }}>📊</div>
+                <div style={{ fontSize: 17, fontWeight: 700, color: '#111', marginBottom: 8 }}>{t.dash_stats_empty_title}</div>
+                <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6, marginBottom: 20, maxWidth: 320, margin: '0 auto 20px' }}>{t.dash_stats_empty_body}</p>
+                <button onClick={() => setTab('team')} style={{ background: '#111', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                  {t.dash_stats_empty_cta}
+                </button>
+              </div>
             </div>
           )
 
