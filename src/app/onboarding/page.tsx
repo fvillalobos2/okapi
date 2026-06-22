@@ -175,13 +175,14 @@ export default function OnboardingPage() {
     } else {
       const trialEndsAt = new Date()
       trialEndsAt.setDate(trialEndsAt.getDate() + 14)
-      const { error } = await supabase.from('restaurants').insert({
+      const { data: inserted, error } = await supabase.from('restaurants').insert({
         ...payload,
         user_id: user.id,
         trial_ends_at: trialEndsAt.toISOString(),
         subscription_status: 'trial',
-      })
+      }).select('id').single()
       if (error) { setSaveError(error.message); setSaving(false); return }
+      if (inserted) setRestaurantId(inserted.id)
 
       fetch('/api/welcome-email', {
         method: 'POST',
@@ -417,7 +418,7 @@ export default function OnboardingPage() {
                   style={{ display: 'block', padding: 14, background: '#C8102E', color: '#fff', borderRadius: 12, fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>
                   {t.ob_done_view}
                 </a>
-                <button onClick={() => router.push('/dashboard')}
+                <button onClick={() => router.push(restaurantId ? `/dashboard?restaurantId=${restaurantId}` : '/dashboard')}
                   style={{ padding: 14, background: '#fff', color: '#1a1a1a', border: '1.5px solid #e0e0e0', borderRadius: 12, fontWeight: 600, fontSize: 15, cursor: 'pointer' }}>
                   {t.ob_done_dashboard}
                 </button>

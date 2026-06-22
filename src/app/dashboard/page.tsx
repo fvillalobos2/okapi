@@ -1,10 +1,10 @@
 // v2
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { supabase } from '@/lib/supabase'
 import { ToastProvider, useToast } from '@/lib/toast'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslation, Lang } from '@/lib/i18n'
 
@@ -128,11 +128,12 @@ const PLATFORMS = [
 ]
 
 export default function DashboardPage() {
-  return <ToastProvider><Dashboard /></ToastProvider>
+  return <Suspense><ToastProvider><Dashboard /></ToastProvider></Suspense>
 }
 
 function Dashboard() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const toast = useToast()
   const { t, lang, setLang } = useTranslation()
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
@@ -208,7 +209,7 @@ function Dashboard() {
     setLoading(false)
   }
 
-  useEffect(() => { loadRestaurant() }, [router])
+  useEffect(() => { loadRestaurant(searchParams.get('restaurantId') ?? undefined) }, [router])
 
   async function loadTeamMembers() {
     if (!restaurant || memberRole !== null) return
