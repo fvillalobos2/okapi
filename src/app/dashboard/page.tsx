@@ -460,6 +460,29 @@ export default function DashboardPage() {
 
         {/* Stats tab */}
         {activeTab === 'stats' && (() => {
+          // Normalize category strings (stored in any language) to current lang via canonical key
+          const CAT_TO_KEY: Record<string, string> = {
+            'comida': 'cat_food', 'food': 'cat_food',
+            'servicio': 'cat_service', 'service': 'cat_service',
+            'ambiente': 'cat_ambience', 'ambience': 'cat_ambience',
+            'tiempo de espera': 'cat_wait', 'wait time': 'cat_wait',
+            'precio': 'cat_price', 'price': 'cat_price',
+            'limpieza': 'cat_cleanliness', 'cleanliness': 'cat_cleanliness',
+            'otro': 'cat_other', 'other': 'cat_other',
+            'habitación': 'cat_room', 'habitacion': 'cat_room', 'room': 'cat_room',
+            'check-in/out': 'cat_checkin',
+            'amenidades': 'cat_amenities', 'amenities': 'cat_amenities',
+            'ubicación': 'cat_location', 'ubicacion': 'cat_location', 'location': 'cat_location',
+            'bebidas': 'cat_drinks', 'drinks': 'cat_drinks',
+            'música': 'cat_music', 'musica': 'cat_music', 'music': 'cat_music',
+            'calidad': 'cat_quality', 'quality': 'cat_quality',
+            'atención': 'cat_attention', 'atencion': 'cat_attention', 'attention': 'cat_attention',
+          }
+          const normalizeCat = (raw: string): string => {
+            const key = CAT_TO_KEY[raw.toLowerCase().trim()]
+            return key ? (t as any)[key] : raw
+          }
+
           const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
           const HOUR_LABELS = ['12am','2am','4am','6am','8am','10am','12pm','2pm','4pm','6pm','8pm','10pm']
 
@@ -493,10 +516,13 @@ export default function DashboardPage() {
             return { label: `S-${i}`, avg: wavg, count: ws.length }
           }).reverse()
 
-          // Top negative categories
+          // Top negative categories — normalized to current lang
           const catCount: Record<string, number> = {}
           filteredScans.filter(s => s.stars < 4).forEach(s => {
-            (s.feedback_categories || []).forEach(c => { catCount[c] = (catCount[c] || 0) + 1 })
+            (s.feedback_categories || []).forEach(c => {
+              const label = normalizeCat(c)
+              catCount[label] = (catCount[label] || 0) + 1
+            })
           })
           const topCats = Object.entries(catCount).sort((a, b) => b[1] - a[1]).slice(0, 6)
           const maxCat = topCats[0]?.[1] || 1
@@ -715,7 +741,7 @@ export default function DashboardPage() {
                       {s.feedback_categories && s.feedback_categories.length > 0 && (
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
                           {s.feedback_categories.map(c => (
-                            <span key={c} style={{ fontSize: 11, padding: '2px 8px', background: '#fef2f2', color: '#C8102E', borderRadius: 20, fontWeight: 600 }}>{c}</span>
+                            <span key={c} style={{ fontSize: 11, padding: '2px 8px', background: '#fef2f2', color: '#C8102E', borderRadius: 20, fontWeight: 600 }}>{normalizeCat(c)}</span>
                           ))}
                         </div>
                       )}
