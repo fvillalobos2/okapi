@@ -120,10 +120,10 @@ export default function Home() {
             GESTIÓN DE RESEÑAS PARA HOSPITALIDAD
           </div>
           <h1 className="hero-title" style={{ fontSize: 'clamp(40px, 6vw, 68px)', fontWeight: 900, color: '#fff', lineHeight: 1.08, marginBottom: 22, letterSpacing: '-0.03em' }}>
-            Más reseñas positivas.<br />Menos críticas públicas.
+            La mejor forma de mejorar tu servicio: escuchar a tiempo.
           </h1>
           <p className="hero-sub" style={{ fontSize: 17, color: '#666', lineHeight: 1.75, marginBottom: 40, maxWidth: 480, margin: '0 auto 40px' }}>
-            Tu cliente accede vía QR, email o WhatsApp, califica su experiencia y vos decidís qué llega a Google. Los contentos publican una reseña. Los insatisfechos te hablan a vos.
+            Cada cliente que sale tiene una opinión. Okapi te la trae antes de que se vaya — para que puedas actuar, no solo reaccionar.
           </p>
           <div className="hero-cta" style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/login" style={{ padding: '13px 30px', background: '#C8102E', color: '#fff', borderRadius: 10, fontSize: 15, fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 20px rgba(200,16,46,0.35)' }}
