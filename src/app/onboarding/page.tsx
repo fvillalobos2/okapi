@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslation, Lang } from '@/lib/i18n'
+import { Suspense } from 'react'
 
 const PLATFORMS = [
   { key: 'google', label: 'Google', color: '#4285F4', abbr: 'G', description_es: 'La más importante — aparece en búsquedas', description_en: 'Most important — appears in searches' },
@@ -34,8 +35,10 @@ const DEFAULT_CATEGORIES: Record<string, { es: string[]; en: string[] }> = {
 
 const TOTAL_STEPS = 4 // 3 real steps + success
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const isNew = searchParams.get('new') === '1'
   const { t, lang, setLang } = useTranslation()
   const [step, setStep] = useState(1)
   const [restaurantId, setRestaurantId] = useState<string | null>(null)
@@ -69,6 +72,8 @@ export default function OnboardingPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
+      // ?new=1 means adding a new property — skip loading existing restaurant
+      if (isNew) return
       const { data } = await supabase.from('restaurants').select('id').eq('user_id', user.id).maybeSingle()
       if (data) setRestaurantId(data.id)
     }
@@ -451,4 +456,8 @@ export default function OnboardingPage() {
       </div>
     </div>
   )
+}
+
+export default function OnboardingPage() {
+  return <Suspense><OnboardingContent /></Suspense>
 }

@@ -198,10 +198,13 @@ function Dashboard() {
       setRetentionCodes(codesData || [])
       setStaffMembers(staffData || [])
       setLocations(locData || [])
-      // Reset per-property derived state
       setTeamMembers([])
       setAiSummary(null)
       setInviteMsg(null)
+      // Always keep URL in sync so refresh stays on the same property
+      if (!restaurantId && owned && owned.length > 1) {
+        router.replace(`/dashboard?restaurantId=${effectiveRest.id}`)
+      }
     } else {
       router.push('/onboarding')
       return
@@ -497,6 +500,7 @@ function Dashboard() {
           <Link className="dash-nav-upgrade" href="/upgrade" style={{ background: status === 'active' ? 'none' : '#C8102E', border: status === 'active' ? '1px solid #e0e0e0' : 'none', borderRadius: 8, padding: '5px 14px', fontSize: 13, cursor: 'pointer', color: status === 'active' ? '#555' : '#fff', textDecoration: 'none', fontWeight: 600 }}>
             {status === 'active' ? t.dash_plan_btn_active : t.dash_plan_btn_inactive}
           </Link>
+          {memberRole === null && <Link href="/onboarding?new=1" style={{ background: 'none', border: '1px solid #e0e0e0', borderRadius: 8, padding: '5px 12px', fontSize: 13, cursor: 'pointer', color: '#555', textDecoration: 'none', fontWeight: 500 }}>+ {lang === 'en' ? 'Add property' : 'Agregar propiedad'}</Link>}
           <button onClick={handleLogout} style={{ background: 'none', border: '1px solid #e0e0e0', borderRadius: 8, padding: '5px 12px', fontSize: 13, cursor: 'pointer', color: '#555' }}>{t.logout}</button>
         </div>
       </div>
