@@ -101,6 +101,7 @@ type Scan = {
   feedback_categories: string[] | null
   wants_contact: boolean
   contact_name: string | null
+  staff_code: string | null
   created_at: string
 }
 
@@ -660,11 +661,20 @@ function Dashboard() {
                     {loadingSummary ? t.dash_ai_summary_loading : t.dash_ai_summary_btn}
                   </button>
                   <button onClick={() => {
-                    const headers = ['Fecha', 'Estrellas', 'Tipo', 'Plataforma', 'Categorías', 'Comentario', 'Quiere contacto', 'Nombre']
+                    const codeToName = (code: string | null) => {
+                      if (!code) return ''
+                      const staff = staffMembers.find(s => s.code === code)
+                      if (staff) return staff.name
+                      const loc = locations.find(l => l.code === code)
+                      if (loc) return loc.name
+                      return code
+                    }
+                    const headers = ['Fecha', 'Estrellas', 'Tipo', 'Plataforma', 'Colaborador/Ubicación', 'Categorías', 'Comentario', 'Quiere contacto', 'Nombre']
                     const rows = filteredScans.map(s => [
                       new Date(s.created_at).toLocaleString('es-CR'),
                       s.stars, s.stars >= 4 ? 'Positiva' : 'Privada',
                       s.platform_chosen || '',
+                      codeToName(s.staff_code),
                       (s.feedback_categories || []).join(' | '),
                       (s.feedback_text || '').replace(/,/g, ';'),
                       s.wants_contact ? 'Sí' : 'No', s.contact_name || '',
