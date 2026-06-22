@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 type Stats = {
@@ -38,33 +37,54 @@ const STATUS_BG: Record<string, string> = {
   canceled: '#f7f7f8',
 }
 
+const STORAGE_KEY = 'okapi_admin_pw'
+
 export default function AdminPage() {
-  const router = useRouter()
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [impersonating, setImpersonating] = useState<string | null>(null)
+  const [authed, setAuthed] = useState(false)
+  const [pwInput, setPwInput] = useState('')
+  const [pwError, setPwError] = useState('')
+  const [pwLoading, setPwLoading] = useState(false)
 
   useEffect(() => {
-    async function load() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.push('/login'); return }
+    const saved = sessionStorage.getItem(STORAGE_KEY)
+    if (saved) loadStats(saved)
+    else setLoading(false)
+  }, [])
 
-      const res = await fetch('/api/admin/stats', {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      })
-
-      if (!res.ok) {
-        setError(res.status === 403 ? 'Acceso denegado.' : 'Error cargando estadísticas.')
-        setLoading(false)
-        return
-      }
-
-      setStats(await res.json())
+  async function loadStats(pw: string) {
+    setLoading(true)
+    const res = await fetch('/api/admin/stats', {
+      headers: { Authorization: `Bearer ${pw}` },
+    })
+    if (!res.ok) {
+      sessionStorage.removeItem(STORAGE_KEY)
+      setError(res.status === 401 ? 'Contraseña incorrecta.' : 'Error cargando estadísticas.')
       setLoading(false)
+      return
     }
-    load()
-  }, [router])
+    setStats(await res.json())
+    setAuthed(true)
+    setLoading(false)
+  }
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault()
+    setPwError('')
+    setPwLoading(true)
+    const res = await fetch('/api/admin/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pwInput }),
+    })
+    setPwLoading(false)
+    if (!res.ok) { setPwError('Contraseña incorrecta.'); return }
+    sessionStorage.setItem(STORAGE_KEY, pwInput)
+    loadStats(pwInput)
+  }
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f0f0f' }}>
@@ -72,20 +92,38 @@ export default function AdminPage() {
     </div>
   )
 
-  if (error) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f0f0f' }}>
-      <div style={{ color: '#C8102E', fontSize: 14 }}>{error}</div>
+  if (!authed) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f0f0f', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      <form onSubmit={handleLogin} style={{ width: '100%', maxWidth: 340, padding: '0 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: '#C8102E', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 900, color: '#fff' }}>O</div>
+          <span style={{ fontWeight: 700, fontSize: 15, color: '#fff' }}>Okapi Admin</span>
+        </div>
+        <input
+          type="password"
+          value={pwInput}
+          onChange={e => setPwInput(e.target.value)}
+          placeholder="Contraseña de admin"
+          autoFocus
+          style={{ width: '100%', padding: '12px 14px', background: '#1a1a1a', border: `1px solid ${pwError ? '#C8102E' : '#333'}`, borderRadius: 10, fontSize: 14, color: '#fff', boxSizing: 'border-box', marginBottom: 12, outline: 'none' }}
+        />
+        {pwError && <div style={{ fontSize: 12, color: '#C8102E', marginBottom: 12 }}>{pwError}</div>}
+        {error && <div style={{ fontSize: 12, color: '#C8102E', marginBottom: 12 }}>{error}</div>}
+        <button type="submit" disabled={pwLoading}
+          style={{ width: '100%', padding: '12px 0', background: pwLoading ? '#333' : '#C8102E', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: pwLoading ? 'not-allowed' : 'pointer' }}>
+          {pwLoading ? 'Verificando…' : 'Entrar'}
+        </button>
+      </form>
     </div>
   )
 
   async function impersonate(email: string, restaurantId: string) {
-    // Open window immediately (in click context) to avoid popup blocker
+    const pw = sessionStorage.getItem(STORAGE_KEY) ?? ''
     const tab = window.open('', '_blank')
     setImpersonating(restaurantId)
-    const { data: { session } } = await supabase.auth.getSession()
     const res = await fetch('/api/admin/impersonate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${pw}` },
       body: JSON.stringify({ email }),
     })
     const data = await res.json()
