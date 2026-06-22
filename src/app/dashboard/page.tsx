@@ -132,7 +132,7 @@ export default function DashboardPage() {
   const [addingLocation, setAddingLocation] = useState(false)
   const [copiedLocation, setCopiedLocation] = useState<{ id: string; type: 'link' | 'kiosk' } | null>(null)
   const [activeTeamTab, setActiveTeamTab] = useState<'staff' | 'locations'>('staff')
-  const [statsPeriod, setStatsPeriod] = useState<7 | 30 | 0>(30)
+  const [statsPeriod, setStatsPeriod] = useState<7 | 15 | 30>(30)
   const [loading, setLoading] = useState(true)
   const [hoveredBar, setHoveredBar] = useState<{ label: string; pos: number; neg: number; x: number; y: number } | null>(null)
   const [redeemingCode, setRedeemingCode] = useState<string | null>(null)
@@ -513,8 +513,8 @@ export default function DashboardPage() {
 
           // Period filter
           const now = new Date()
-          const periodStart = statsPeriod === 0 ? null : new Date(now.getTime() - statsPeriod * 24 * 60 * 60 * 1000)
-          const filteredScans = periodStart ? scans.filter(s => new Date(s.created_at) >= periodStart) : scans
+          const periodStart = new Date(now.getTime() - statsPeriod * 24 * 60 * 60 * 1000)
+          const filteredScans = scans.filter(s => new Date(s.created_at) >= periodStart!)
 
           // By day of week
           const byDow = Array(7).fill(0).map((_, d) => ({
@@ -560,10 +560,9 @@ export default function DashboardPage() {
           const contactRate = fNegative > 0 ? Math.round((filteredScans.filter(s => s.stars < 4 && s.wants_contact).length / fNegative) * 100) : 0
           const negativeFeed = filteredScans.filter(s => s.stars < 4).slice(0, 15)
 
-          // Period-over-period trend (only meaningful when period is set)
+          // Period-over-period trend
           const trendPct = (() => {
-            if (!periodStart) return null
-            const prevStart = new Date(periodStart.getTime() - statsPeriod * 24 * 60 * 60 * 1000)
+            const prevStart = new Date(periodStart!.getTime() - statsPeriod * 24 * 60 * 60 * 1000)
             const prev = scans.filter(s => { const d = new Date(s.created_at); return d >= prevStart && d < periodStart })
             return prev.length > 0 ? Math.round(((fTotal - prev.length) / prev.length) * 100) : null
           })()
@@ -588,7 +587,7 @@ export default function DashboardPage() {
               {/* Period filter + CSV */}
               <div className="dash-period-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <div style={{ display: 'flex', gap: 4, background: '#ebebeb', borderRadius: 8, padding: 3 }}>
-                  {([{ v: 7, label: '7d' }, { v: 30, label: '30d' }, { v: 0, label: 'Todo' }] as { v: 7|30|0, label: string }[]).map(opt => (
+                  {([{ v: 7, label: '7d' }, { v: 15, label: '15d' }, { v: 30, label: '30d' }] as { v: 7|15|30, label: string }[]).map(opt => (
                     <button key={opt.v} onClick={() => setStatsPeriod(opt.v)}
                       style={{ padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, background: statsPeriod === opt.v ? '#fff' : 'transparent', color: statsPeriod === opt.v ? '#111' : '#888', boxShadow: statsPeriod === opt.v ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.15s' }}>
                       {opt.label}
