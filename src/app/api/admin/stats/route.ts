@@ -74,6 +74,50 @@ export async function GET(req: NextRequest) {
     .select('*', { count: 'exact', head: true })
     .gte('created_at', startOfMonth.toISOString())
 
+  // Impressions
+  const { count: totalImpressions } = await supabaseAdmin
+    .from('impressions')
+    .select('*', { count: 'exact', head: true })
+
+  const { count: impressionsThisMonth } = await supabaseAdmin
+    .from('impressions')
+    .select('*', { count: 'exact', head: true })
+    .gte('created_at', startOfMonth.toISOString())
+
+  // Restaurants with at least 1 scan (active product usage)
+  const { data: restaurantsWithScans } = await supabaseAdmin
+    .from('scans')
+    .select('restaurant_id')
+    .gte('created_at', startOfMonth.toISOString())
+  const activeRestaurants = new Set(restaurantsWithScans?.map(s => s.restaurant_id) ?? []).size
+
+  // Retention activation rate (active plan restaurants with retention_active = true)
+  const { data: retentionActive } = await supabaseAdmin
+    .from('restaurants')
+    .select('id')
+    .eq('retention_active', true)
+    .eq('subscription_status', 'active')
+  const retentionRate = byStatus.active > 0
+    ? Math.round(((retentionActive?.length ?? 0) / byStatus.active) * 100)
+    : 0
+
+  // QR usage (restaurants with at least 1 staff member)
+  const { data: restaurantsWithStaff } = await supabaseAdmin
+    .from('staff_members')
+    .select('restaurant_id')
+    .is('deleted_at', null)
+  const qrUsage = new Set(restaurantsWithStaff?.map(s => s.restaurant_id) ?? []).size
+
+  // Avg scans per active restaurant this month
+  const avgScansPerRestaurant = activeRestaurants > 0
+    ? Math.round((scansThisMonth ?? 0) / activeRestaurants)
+    : 0
+
+  // Conversion rate this month (scans / impressions)
+  const conversionRate = (impressionsThisMonth ?? 0) > 0
+    ? Math.round(((scansThisMonth ?? 0) / (impressionsThisMonth ?? 0)) * 100)
+    : null
+
   // Recent 10 restaurants
   const recent = restaurants.slice(0, 10).map(r => ({
     id: r.id,
@@ -92,6 +136,13 @@ export async function GET(req: NextRequest) {
     churnThisMonth,
     totalScans: totalScans ?? 0,
     scansThisMonth: scansThisMonth ?? 0,
+    totalImpressions: totalImpressions ?? 0,
+    impressionsThisMonth: impressionsThisMonth ?? 0,
+    conversionRate,
+    activeRestaurants,
+    retentionRate,
+    qrUsage,
+    avgScansPerRestaurant,
     recent,
   })
 }

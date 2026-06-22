@@ -14,6 +14,13 @@ type Stats = {
   churnThisMonth: number
   totalScans: number
   scansThisMonth: number
+  totalImpressions: number
+  impressionsThisMonth: number
+  conversionRate: number | null
+  activeRestaurants: number
+  retentionRate: number
+  qrUsage: number
+  avgScansPerRestaurant: number
   recent: { id: string; name: string; plan: string | null; status: string; created_at: string }[]
 }
 
@@ -79,6 +86,12 @@ export default function AdminPage() {
     { label: 'Total registros', value: stats.total, sub: `+${stats.newThisMonth} este mes`, color: '#a855f7' },
     { label: 'Total opiniones', value: stats.totalScans, sub: `${stats.scansThisMonth} este mes`, color: '#06b6d4' },
     { label: 'Churn este mes', value: stats.churnThisMonth, sub: `${stats.byStatus.canceled} cancelados total`, color: '#C8102E' },
+    { label: 'Impresiones', value: stats.totalImpressions, sub: `${stats.impressionsThisMonth} este mes`, color: '#7c3aed' },
+    { label: 'Conversión', value: stats.conversionRate !== null ? `${stats.conversionRate}%` : '—', sub: 'impresiones → opinión', color: '#0891b2' },
+    { label: 'Uso activo', value: stats.activeRestaurants, sub: 'negocios con ≥1 opinión este mes', color: '#16a34a' },
+    { label: 'Retención activada', value: `${stats.retentionRate}%`, sub: 'de clientes activos', color: '#f59e0b' },
+    { label: 'Uso de QR', value: stats.qrUsage, sub: 'negocios con colaboradores', color: '#4285F4' },
+    { label: 'Promedio opiniones', value: stats.avgScansPerRestaurant, sub: 'por negocio activo este mes', color: '#a855f7' },
   ]
 
   return (

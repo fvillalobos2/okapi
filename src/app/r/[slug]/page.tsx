@@ -88,6 +88,14 @@ export default function ReviewPage() {
         .single()
       setRestaurant(data)
       setLoading(false)
+      if (data?.id) {
+        const params = new URLSearchParams(window.location.search)
+        const ref = params.get('ref') || null
+        // Don't count kiosk mode display as an impression
+        if (params.get('kiosk') !== '1') {
+          supabase.from('impressions').insert({ restaurant_id: data.id, staff_code: ref }).then(() => {})
+        }
+      }
     }
     load()
     const params = new URLSearchParams(window.location.search)

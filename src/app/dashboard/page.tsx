@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { ToastProvider, useToast } from '@/lib/toast'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslation, Lang } from '@/lib/i18n'
@@ -113,7 +114,12 @@ const PLATFORMS = [
 ]
 
 export default function DashboardPage() {
+  return <ToastProvider><Dashboard /></ToastProvider>
+}
+
+function Dashboard() {
   const router = useRouter()
+  const toast = useToast()
   const { t, lang, setLang } = useTranslation()
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [googleNotif, setGoogleNotif] = useState<'connected' | 'error' | null>(null)
@@ -145,6 +151,7 @@ export default function DashboardPage() {
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [aiSummary, setAiSummary] = useState<string | null>(null)
   const [loadingSummary, setLoadingSummary] = useState(false)
+  const [impressions, setImpressions] = useState<{ created_at: string }[]>([])
   const [logoDragging, setLogoDragging] = useState(false)
 
   useEffect(() => {
@@ -168,6 +175,14 @@ export default function DashboardPage() {
           .order('created_at', { ascending: false })
           .limit(500)
         setScans(scanData || [])
+
+        const { data: impressionData } = await supabase
+          .from('impressions')
+          .select('created_at')
+          .eq('restaurant_id', rest.id)
+          .order('created_at', { ascending: false })
+          .limit(500)
+        setImpressions(impressionData || [])
 
         const { data: codesData } = await supabase
           .from('retention_codes')
@@ -283,7 +298,8 @@ export default function DashboardPage() {
       wa_enabled: form.wa_enabled,
       custom_categories: form.custom_categories ?? null,
     }
-    await supabase.from('restaurants').update(editable).eq('id', restaurant.id)
+    const { error } = await supabase.from('restaurants').update(editable).eq('id', restaurant.id)
+    if (error) { toast(lang === 'en' ? 'Failed to save changes. Please try again.' : 'Error al guardar. Intentá de nuevo.'); setSaving(false); return }
     setRestaurant({ ...restaurant, ...editable } as Restaurant)
     setSaving(false)
     setSaved(true)
@@ -296,7 +312,7 @@ export default function DashboardPage() {
   }
 
   async function handleLogoUpload(file: File) {
-    if (file.size > 2 * 1024 * 1024) { alert(t.dash_logo_size_error); return }
+    if (file.size > 2 * 1024 * 1024) { toast(t.dash_logo_size_error); return }
     setUploadingLogo(true)
     const ext = file.name.split('.').pop()
     const path = `${Date.now()}.${ext}`
@@ -560,6 +576,10 @@ export default function DashboardPage() {
           const contactRate = fNegative > 0 ? Math.round((filteredScans.filter(s => s.stars < 4 && s.wants_contact).length / fNegative) * 100) : 0
           const negativeFeed = filteredScans.filter(s => s.stars < 4).slice(0, 15)
 
+          // Impressions for the period
+          const fImpressions = impressions.filter(i => new Date(i.created_at) >= periodStart!).length
+          const conversionRate = fImpressions > 0 ? Math.round((fTotal / fImpressions) * 100) : null
+
           // Period-over-period trend
           const trendPct = (() => {
             const prevStart = new Date(periodStart!.getTime() - statsPeriod * 24 * 60 * 60 * 1000)
@@ -684,7 +704,7 @@ export default function DashboardPage() {
                 {[
                   { value: fTotal, label: 'Total opiniones', color: '#111', sub: trendPct !== null ? `${trendPct >= 0 ? '+' : ''}${trendPct}% período anterior` : undefined },
                   { value: fAvg ? `${fAvg}★` : '—', label: 'Rating promedio', color: '#f59e0b', sub: undefined },
-                  { value: `${fPositive}`, label: 'Positivas', color: '#16a34a', sub: fTotal ? `${Math.round((fPositive/fTotal)*100)}%` : undefined },
+                  { value: fImpressions > 0 ? fImpressions : '—', label: 'Impresiones', color: '#7c3aed', sub: conversionRate !== null ? `${conversionRate}% conversión` : undefined },
                   { value: `${contactRate}%`, label: 'Piden contacto', color: '#4285F4', sub: `de ${fNegative} privadas` },
                 ].map(k => (
                   <div key={k.label} style={{ background: '#fff', borderRadius: 14, padding: '16px', border: '1px solid #ebebeb' }}>
@@ -1027,13 +1047,14 @@ export default function DashboardPage() {
               <button onClick={async () => {
                 if (!restaurant) return
                 setSaving(true)
-                await supabase.from('restaurants').update({
+                const { error: retError } = await supabase.from('restaurants').update({
                   retention_offer_text: form.retention_offer_text,
                   retention_offer_text_en: form.retention_offer_text_en,
                   retention_offer_text_positive: form.retention_offer_text_positive,
                   retention_offer_text_positive_en: form.retention_offer_text_positive_en,
                   retention_valid_days: form.retention_valid_days,
                 }).eq('id', restaurant.id)
+                if (retError) { toast(lang === 'en' ? 'Failed to save offer. Try again.' : 'Error al guardar la oferta. Intentá de nuevo.'); setSaving(false); return }
                 setRestaurant({ ...restaurant, retention_offer_text: form.retention_offer_text || null, retention_offer_text_en: form.retention_offer_text_en || null, retention_offer_text_positive: form.retention_offer_text_positive || null, retention_offer_text_positive_en: form.retention_offer_text_positive_en || null, retention_valid_days: form.retention_valid_days || 14 })
                 setSaving(false)
                 setSaved(true)
@@ -1092,6 +1113,10 @@ export default function DashboardPage() {
                           })
                           if (res.ok) {
                             setRetentionCodes(prev => prev.map(x => x.id === c.id ? { ...x, redeemed: true, redeemed_at: new Date().toISOString() } : x))
+                            toast(lang === 'en' ? 'Code marked as redeemed.' : 'Código marcado como canjeado.', 'success')
+                          } else {
+                            const err = await res.json().catch(() => ({}))
+                            toast(err.error || (lang === 'en' ? 'Could not redeem code.' : 'No se pudo canjear el código.'))
                           }
                           setRedeemingCode(null)
                         }} disabled={redeemingCode === c.id}
@@ -1249,7 +1274,7 @@ export default function DashboardPage() {
                         const { data, error } = await supabase.from('staff_members').insert({
                           restaurant_id: restaurant.id, name: newStaffName.trim(), code, active: true
                         }).select().single()
-                        if (error) { alert('Error: ' + error.message); setAddingStaff(false); return }
+                        if (error) { toast(lang === 'en' ? 'Could not add collaborator. Try again.' : 'No se pudo agregar el colaborador. Intentá de nuevo.'); setAddingStaff(false); return }
                         if (data) setStaffMembers(prev => [...prev, data])
                         setNewStaffName('')
                         setAddingStaff(false)
@@ -1285,7 +1310,7 @@ export default function DashboardPage() {
                         const { data, error } = await supabase.from('locations').insert({
                           restaurant_id: restaurant.id, name: newLocationName.trim(), code, active: true
                         }).select().single()
-                        if (error) { alert('Error: ' + error.message); setAddingLocation(false); return }
+                        if (error) { toast(lang === 'en' ? 'Could not add location. Try again.' : 'No se pudo agregar la ubicación. Intentá de nuevo.'); setAddingLocation(false); return }
                         if (data) setLocations(prev => [...prev, data])
                         setNewLocationName('')
                         setAddingLocation(false)
