@@ -46,6 +46,21 @@ type StaffMember = {
   created_at: string
 }
 
+type Location = {
+  id: string
+  name: string
+  code: string
+  active: boolean
+  created_at: string
+}
+
+const PLAN_LIMITS: Record<string, { staff: number; locations: number }> = {
+  starter:  { staff: 3,         locations: 5 },
+  pro:      { staff: 15,        locations: 20 },
+  business: { staff: Infinity,  locations: Infinity },
+  trial:    { staff: 3,         locations: 5 },
+}
+
 type RetentionCode = {
   id: string
   code: string
@@ -91,10 +106,17 @@ export default function DashboardPage() {
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([])
   const [newStaffName, setNewStaffName] = useState('')
   const [addingStaff, setAddingStaff] = useState(false)
+  const [copiedStaff, setCopiedStaff] = useState<{ id: string; type: 'link' | 'kiosk' } | null>(null)
+  const [locations, setLocations] = useState<Location[]>([])
+  const [newLocationName, setNewLocationName] = useState('')
+  const [addingLocation, setAddingLocation] = useState(false)
+  const [copiedLocation, setCopiedLocation] = useState<{ id: string; type: 'link' | 'kiosk' } | null>(null)
+  const [activeTeamTab, setActiveTeamTab] = useState<'staff' | 'locations'>('staff')
+  const [statsPeriod, setStatsPeriod] = useState<7 | 30 | 0>(30)
   const [loading, setLoading] = useState(true)
   const [hoveredBar, setHoveredBar] = useState<{ label: string; pos: number; neg: number; x: number; y: number } | null>(null)
   const [redeemingCode, setRedeemingCode] = useState<string | null>(null)
-  const [activeTab, setTab] = useState<'stats' | 'config' | 'retention'>('stats')
+  const [activeTab, setTab] = useState<'stats' | 'team' | 'config' | 'retention'>('stats')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [form, setForm] = useState<Partial<Restaurant>>({})
@@ -139,6 +161,13 @@ export default function DashboardPage() {
           .eq('restaurant_id', rest.id)
           .order('created_at', { ascending: true })
         setStaffMembers(staffData || [])
+
+        const { data: locData } = await supabase
+          .from('locations')
+          .select('*')
+          .eq('restaurant_id', rest.id)
+          .order('created_at', { ascending: true })
+        setLocations(locData || [])
       } else {
         router.push('/onboarding')
         return
@@ -298,6 +327,9 @@ export default function DashboardPage() {
           .dash-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .dash-qr-btns { flex-wrap: wrap !important; gap: 8px !important; }
           .dash-analytics-grid { grid-template-columns: 1fr !important; }
+          .dash-main-tabs button { font-size: 12px !important; padding: 8px 4px !important; }
+          .dash-period-row { flex-wrap: wrap !important; gap: 8px !important; }
+          .dash-team-subtab { font-size: 12px !important; padding: 7px 8px !important; }
         }
       `}</style>
 
@@ -417,8 +449,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#ebebeb', borderRadius: 10, padding: 4 }}>
-          {[{ key: 'stats', label: t.dash_stats_tab }, { key: 'retention', label: 'Retención' }, { key: 'config', label: t.dash_config_tab }].map(tab => (
+        <div className="dash-main-tabs" style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#ebebeb', borderRadius: 10, padding: 4 }}>
+          {[{ key: 'stats', label: t.dash_stats_tab }, { key: 'retention', label: 'Retención' }, { key: 'team', label: 'QR' }, { key: 'config', label: t.dash_config_tab }].map(tab => (
             <button key={tab.key} onClick={() => setTab(tab.key as any)}
               style={{ flex: 1, padding: '9px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, background: activeTab === tab.key ? '#fff' : 'transparent', color: activeTab === tab.key ? '#111' : '#777', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.15s' }}>
               {tab.label}
@@ -431,23 +463,28 @@ export default function DashboardPage() {
           const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
           const HOUR_LABELS = ['12am','2am','4am','6am','8am','10am','12pm','2pm','4pm','6pm','8pm','10pm']
 
+          // Period filter
+          const now = new Date()
+          const periodStart = statsPeriod === 0 ? null : new Date(now.getTime() - statsPeriod * 24 * 60 * 60 * 1000)
+          const filteredScans = periodStart ? scans.filter(s => new Date(s.created_at) >= periodStart) : scans
+
           // By day of week
           const byDow = Array(7).fill(0).map((_, d) => ({
             label: DAY_NAMES[d],
-            neg: scans.filter(s => new Date(s.created_at).getDay() === d && s.stars < 4).length,
-            pos: scans.filter(s => new Date(s.created_at).getDay() === d && s.stars >= 4).length,
+            neg: filteredScans.filter(s => new Date(s.created_at).getDay() === d && s.stars < 4).length,
+            pos: filteredScans.filter(s => new Date(s.created_at).getDay() === d && s.stars >= 4).length,
           }))
           const maxDow = Math.max(...byDow.map(d => d.neg + d.pos), 1)
 
           // By hour (grouped in 2h buckets)
           const byHour = Array(12).fill(0).map((_, i) => ({
             label: HOUR_LABELS[i],
-            neg: scans.filter(s => { const h = new Date(s.created_at).getHours(); return h >= i*2 && h < i*2+2 && s.stars < 4 }).length,
-            pos: scans.filter(s => { const h = new Date(s.created_at).getHours(); return h >= i*2 && h < i*2+2 && s.stars >= 4 }).length,
+            neg: filteredScans.filter(s => { const h = new Date(s.created_at).getHours(); return h >= i*2 && h < i*2+2 && s.stars < 4 }).length,
+            pos: filteredScans.filter(s => { const h = new Date(s.created_at).getHours(); return h >= i*2 && h < i*2+2 && s.stars >= 4 }).length,
           }))
           const maxHour = Math.max(...byHour.map(h => h.neg + h.pos), 1)
 
-          // Weekly trend (last 8 weeks)
+          // Weekly trend (last 8 weeks) — always uses all scans for context
           const weeks = Array(8).fill(0).map((_, i) => {
             const end = new Date(); end.setDate(end.getDate() - i * 7)
             const start = new Date(end); start.setDate(start.getDate() - 7)
@@ -458,30 +495,47 @@ export default function DashboardPage() {
 
           // Top negative categories
           const catCount: Record<string, number> = {}
-          scans.filter(s => s.stars < 4).forEach(s => {
+          filteredScans.filter(s => s.stars < 4).forEach(s => {
             (s.feedback_categories || []).forEach(c => { catCount[c] = (catCount[c] || 0) + 1 })
           })
           const topCats = Object.entries(catCount).sort((a, b) => b[1] - a[1]).slice(0, 6)
           const maxCat = topCats[0]?.[1] || 1
 
-          // Contact rate
-          const contactRate = negative > 0 ? Math.round((scans.filter(s => s.stars < 4 && s.wants_contact).length / negative) * 100) : 0
-          const negativeFeed = scans.filter(s => s.stars < 4).slice(0, 15)
+          // KPI derived from filteredScans
+          const fTotal = filteredScans.length
+          const fPositive = filteredScans.filter(s => s.stars >= 4).length
+          const fNegative = filteredScans.filter(s => s.stars < 4).length
+          const fAvg = fTotal > 0 ? (filteredScans.reduce((a, s) => a + s.stars, 0) / fTotal).toFixed(1) : null
+          const contactRate = fNegative > 0 ? Math.round((filteredScans.filter(s => s.stars < 4 && s.wants_contact).length / fNegative) * 100) : 0
+          const negativeFeed = filteredScans.filter(s => s.stars < 4).slice(0, 15)
 
-          // Last 30 days vs previous 30
-          const now30 = new Date(); const d30 = new Date(); d30.setDate(d30.getDate() - 30)
-          const d60 = new Date(); d60.setDate(d60.getDate() - 60)
-          const thisMonth = scans.filter(s => new Date(s.created_at) >= d30)
-          const lastMonth = scans.filter(s => { const d = new Date(s.created_at); return d >= d60 && d < d30 })
-          const trendPct = lastMonth.length > 0 ? Math.round(((thisMonth.length - lastMonth.length) / lastMonth.length) * 100) : null
+          // Period-over-period trend (only meaningful when period is set)
+          const trendPct = (() => {
+            if (!periodStart) return null
+            const prevStart = new Date(periodStart.getTime() - statsPeriod * 24 * 60 * 60 * 1000)
+            const prev = scans.filter(s => { const d = new Date(s.created_at); return d >= prevStart && d < periodStart })
+            return prev.length > 0 ? Math.round(((fTotal - prev.length) / prev.length) * 100) : null
+          })()
+
+          // Last 7 days for alert badges
+          const alert7Start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+          const scans7 = scans.filter(s => new Date(s.created_at) >= alert7Start)
 
           return (
             <div>
-              {/* CSV download */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+              {/* Period filter + CSV */}
+              <div className="dash-period-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div style={{ display: 'flex', gap: 4, background: '#ebebeb', borderRadius: 8, padding: 3 }}>
+                  {([{ v: 7, label: '7d' }, { v: 30, label: '30d' }, { v: 0, label: 'Todo' }] as { v: 7|30|0, label: string }[]).map(opt => (
+                    <button key={opt.v} onClick={() => setStatsPeriod(opt.v)}
+                      style={{ padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, background: statsPeriod === opt.v ? '#fff' : 'transparent', color: statsPeriod === opt.v ? '#111' : '#888', boxShadow: statsPeriod === opt.v ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.15s' }}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
                 <button onClick={() => {
                   const headers = ['Fecha', 'Estrellas', 'Tipo', 'Plataforma', 'Categorías', 'Comentario', 'Quiere contacto', 'Nombre']
-                  const rows = scans.map(s => [
+                  const rows = filteredScans.map(s => [
                     new Date(s.created_at).toLocaleString('es-CR'),
                     s.stars, s.stars >= 4 ? 'Positiva' : 'Privada',
                     s.platform_chosen || '',
@@ -495,18 +549,18 @@ export default function DashboardPage() {
                   const a = document.createElement('a')
                   a.href = url; a.download = `opiniones-${restaurant?.slug || 'export'}-${new Date().toISOString().slice(0,10)}.csv`
                   a.click(); URL.revokeObjectURL(url)
-                }} style={{ padding: '9px 18px', background: '#f7f7f8', border: '1px solid #ddd', borderRadius: 10, fontSize: 13, fontWeight: 600, color: '#444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  ⬇ Descargar CSV
+                }} style={{ padding: '7px 14px', background: '#f7f7f8', border: '1px solid #ddd', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  ⬇ CSV
                 </button>
               </div>
 
               {/* KPI row */}
               <div className="dash-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
                 {[
-                  { value: totalScans, label: 'Total opiniones', color: '#111', sub: trendPct !== null ? `${trendPct >= 0 ? '+' : ''}${trendPct}% vs mes anterior` : undefined },
-                  { value: avg ? `${avg}★` : '—', label: 'Rating promedio', color: '#f59e0b', sub: undefined },
-                  { value: `${positive}`, label: 'Positivas', color: '#16a34a', sub: totalScans ? `${Math.round((positive/totalScans)*100)}%` : undefined },
-                  { value: `${contactRate}%`, label: 'Piden contacto', color: '#4285F4', sub: `de ${negative} privadas` },
+                  { value: fTotal, label: 'Total opiniones', color: '#111', sub: trendPct !== null ? `${trendPct >= 0 ? '+' : ''}${trendPct}% período anterior` : undefined },
+                  { value: fAvg ? `${fAvg}★` : '—', label: 'Rating promedio', color: '#f59e0b', sub: undefined },
+                  { value: `${fPositive}`, label: 'Positivas', color: '#16a34a', sub: fTotal ? `${Math.round((fPositive/fTotal)*100)}%` : undefined },
+                  { value: `${contactRate}%`, label: 'Piden contacto', color: '#4285F4', sub: `de ${fNegative} privadas` },
                 ].map(k => (
                   <div key={k.label} style={{ background: '#fff', borderRadius: 14, padding: '16px', border: '1px solid #ebebeb' }}>
                     <div style={{ fontSize: 26, fontWeight: 800, color: k.color, lineHeight: 1, marginBottom: 4 }}>{k.value}</div>
@@ -629,8 +683,8 @@ export default function DashboardPage() {
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 16 }}>{t.dash_platform_clicks}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {PLATFORMS.filter(p => restaurant?.platforms_active?.[p.key]).map(p => {
-                      const count = scans.filter(s => s.platform_chosen === p.key).length
-                      const pct = totalScans > 0 ? Math.round((count / totalScans) * 100) : 0
+                      const count = filteredScans.filter(s => s.platform_chosen === p.key).length
+                      const pct = fTotal > 0 ? Math.round((count / fTotal) * 100) : 0
                       return (
                         <div key={p.key}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -676,28 +730,74 @@ export default function DashboardPage() {
 
               {/* Staff breakdown */}
               {staffMembers.length > 0 && (() => {
-                const staffScans = staffMembers.map(s => {
-                  const ss = scans.filter(x => (x as any).staff_code === s.code)
+                const rows = staffMembers.map(s => {
+                  const ss = filteredScans.filter(x => (x as any).staff_code === s.code)
+                  const ss7 = scans7.filter(x => (x as any).staff_code === s.code)
                   const avg = ss.length ? (ss.reduce((a, b) => a + b.stars, 0) / ss.length).toFixed(1) : '—'
-                  return { ...s, count: ss.length, avg }
+                  const avg7 = ss7.length ? ss7.reduce((a, b) => a + b.stars, 0) / ss7.length : null
+                  const alert = avg7 !== null && avg7 < 3
+                  return { ...s, count: ss.length, avg, alert }
                 }).sort((a, b) => b.count - a.count)
-                const maxCount = Math.max(...staffScans.map(s => s.count), 1)
+                if (!rows.some(r => r.count > 0)) return null
+                const maxCount = Math.max(...rows.map(r => r.count), 1)
                 return (
                   <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb', marginTop: 14 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>Rendimiento por mesero</div>
-                    <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>Scans generados por cada miembro del equipo</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>Rendimiento por colaborador</div>
+                    <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>Scans en el período seleccionado · alerta si promedio &lt; 3★ en últimos 7 días</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      {staffScans.map(s => (
-                        <div key={s.id}>
+                      {rows.filter(r => r.count > 0).map(r => (
+                        <div key={r.id}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, alignItems: 'center' }}>
-                            <span style={{ fontSize: 13, fontWeight: 600, color: s.active ? '#333' : '#aaa' }}>{s.name}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              {r.alert && <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#C8102E', display: 'inline-block', flexShrink: 0 }} title="Promedio bajo en últimos 7 días" />}
+                              <span style={{ fontSize: 13, fontWeight: 600, color: r.active ? '#333' : '#aaa' }}>{r.name}</span>
+                            </div>
                             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                              {s.avg !== '—' && <span style={{ fontSize: 11, color: '#f59e0b', fontWeight: 700 }}>{s.avg}★</span>}
-                              <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{s.count}</span>
+                              {r.avg !== '—' && <span style={{ fontSize: 11, color: r.alert ? '#C8102E' : '#f59e0b', fontWeight: 700 }}>{r.avg}★</span>}
+                              <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{r.count}</span>
                             </div>
                           </div>
                           <div style={{ height: 6, background: '#f0f0f0', borderRadius: 3, overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${(s.count / maxCount) * 100}%`, background: '#bbf7d0', borderRadius: 3 }} />
+                            <div style={{ height: '100%', width: `${(r.count / maxCount) * 100}%`, background: r.alert ? '#fca5a5' : '#bbf7d0', borderRadius: 3 }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* Locations breakdown */}
+              {locations.length > 0 && (() => {
+                const rows = locations.map(loc => {
+                  const ss = filteredScans.filter(x => (x as any).staff_code === loc.code)
+                  const ss7 = scans7.filter(x => (x as any).staff_code === loc.code)
+                  const avg = ss.length ? (ss.reduce((a, b) => a + b.stars, 0) / ss.length).toFixed(1) : '—'
+                  const avg7 = ss7.length ? ss7.reduce((a, b) => a + b.stars, 0) / ss7.length : null
+                  const alert = avg7 !== null && avg7 < 3
+                  return { ...loc, count: ss.length, avg, alert }
+                }).sort((a, b) => b.count - a.count)
+                if (!rows.some(r => r.count > 0)) return null
+                const maxCount = Math.max(...rows.map(r => r.count), 1)
+                return (
+                  <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb', marginTop: 14 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>Rendimiento por mesa</div>
+                    <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>Scans en el período seleccionado · alerta si promedio &lt; 3★ en últimos 7 días</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {rows.filter(r => r.count > 0).map(r => (
+                        <div key={r.id}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              {r.alert && <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#C8102E', display: 'inline-block', flexShrink: 0 }} title="Promedio bajo en últimos 7 días" />}
+                              <span style={{ fontSize: 13, fontWeight: 600, color: r.active ? '#333' : '#aaa' }}>{r.name}</span>
+                            </div>
+                            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                              {r.avg !== '—' && <span style={{ fontSize: 11, color: r.alert ? '#C8102E' : '#f59e0b', fontWeight: 700 }}>{r.avg}★</span>}
+                              <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{r.count}</span>
+                            </div>
+                          </div>
+                          <div style={{ height: 6, background: '#f0f0f0', borderRadius: 3, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${(r.count / maxCount) * 100}%`, background: r.alert ? '#fca5a5' : '#bbf7d0', borderRadius: 3 }} />
                           </div>
                         </div>
                       ))}
@@ -870,6 +970,199 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Team tab */}
+        {activeTab === 'team' && (() => {
+          const plan = restaurant?.plan || 'trial'
+          const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.trial
+          const staffCount = staffMembers.length
+          const locCount = locations.length
+          const staffAtLimit = staffCount >= limits.staff
+          const locAtLimit = locCount >= limits.locations
+          const limitLabel = (used: number, max: number) =>
+            max === Infinity ? `${used} agregados` : `${used} / ${max}`
+
+          const renderMemberCard = (
+            s: StaffMember | Location,
+            type: 'staff' | 'loc',
+            copied: typeof copiedStaff | typeof copiedLocation,
+            setCopied: typeof setCopiedStaff | typeof setCopiedLocation
+          ) => {
+            const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${restaurant?.slug}?ref=${s.code}`
+            const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}&bgcolor=ffffff&color=1a1a1a&margin=6`
+            const table = type === 'staff' ? 'staff_members' : 'locations'
+            const setList = type === 'staff' ? setStaffMembers : setLocations
+            return (
+              <div key={s.id} style={{ padding: '12px 14px', background: s.active ? '#fff' : '#f7f7f8', border: '1px solid #ebebeb', borderRadius: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                  <img src={qrSrc} alt={s.name} style={{ width: 40, height: 40, borderRadius: 6, flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: s.active ? '#111' : '#aaa' }}>{s.name}</div>
+                    <div style={{ fontSize: 11, color: '#bbb', fontFamily: 'monospace' }}>{s.code}</div>
+                  </div>
+                  <button onClick={async () => {
+                    await supabase.from(table).update({ active: !s.active }).eq('id', s.id)
+                    setList((prev: any[]) => prev.map((x: any) => x.id === s.id ? { ...x, active: !s.active } : x))
+                  }} style={{ padding: '4px 10px', background: 'none', border: '1px solid #ddd', borderRadius: 7, fontSize: 11, fontWeight: 600, color: '#aaa', cursor: 'pointer' }}>
+                    {s.active ? 'Pausar' : 'Activar'}
+                  </button>
+                  <button onClick={async () => {
+                    if (!confirm(`¿Eliminar "${s.name}"?`)) return
+                    await supabase.from(table).delete().eq('id', s.id)
+                    setList((prev: any[]) => prev.filter((x: any) => x.id !== s.id))
+                  }} style={{ padding: '4px 8px', background: 'none', border: 'none', fontSize: 14, color: '#ddd', cursor: 'pointer' }}>✕</button>
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <button onClick={() => {
+                    navigator.clipboard.writeText(url)
+                    setCopied({ id: s.id, type: 'link' } as any)
+                    setTimeout(() => setCopied(null), 2000)
+                  }} style={{ padding: '6px 12px', background: copied?.id === s.id && copied.type === 'link' ? '#f0fdf4' : '#f7f7f8', border: `1px solid ${copied?.id === s.id && copied.type === 'link' ? '#bbf7d0' : '#ddd'}`, borderRadius: 7, fontSize: 11, fontWeight: 600, color: copied?.id === s.id && copied.type === 'link' ? '#16a34a' : '#555', cursor: 'pointer' }}>
+                    {copied?.id === s.id && copied.type === 'link' ? '✓ Copiado' : '🔗 Copiar link'}
+                  </button>
+                  <button onClick={() => {
+                    navigator.clipboard.writeText(url + '&kiosk=1')
+                    setCopied({ id: s.id, type: 'kiosk' } as any)
+                    setTimeout(() => setCopied(null), 2000)
+                  }} style={{ padding: '6px 12px', background: copied?.id === s.id && copied.type === 'kiosk' ? '#f0fdf4' : '#f7f7f8', border: `1px solid ${copied?.id === s.id && copied.type === 'kiosk' ? '#bbf7d0' : '#ddd'}`, borderRadius: 7, fontSize: 11, fontWeight: 600, color: copied?.id === s.id && copied.type === 'kiosk' ? '#16a34a' : '#555', cursor: 'pointer' }}>
+                    {copied?.id === s.id && copied.type === 'kiosk' ? '✓ Copiado' : '📺 Modo pantalla'}
+                  </button>
+                  <a href={qrSrc.replace('300x300', '600x600')} download={`qr-${s.code}.png`} target="_blank" rel="noopener"
+                    style={{ padding: '6px 12px', background: '#f7f7f8', border: '1px solid #ddd', borderRadius: 7, fontSize: 11, fontWeight: 600, color: '#555', textDecoration: 'none' }}>
+                    ⬇ QR
+                  </a>
+                </div>
+              </div>
+            )
+          }
+
+          return (
+            <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #ebebeb' }}>
+              {/* Header */}
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#111', marginBottom: 6 }}>QR personalizados</div>
+                <div style={{ fontSize: 13, color: '#888', lineHeight: 1.6 }}>
+                  Asigna un QR único a cada colaborador o mesa. Cuando un cliente lo escanea, su opinión queda vinculada a ese punto — así puedes ver exactamente qué colaborador o área genera más satisfacción, y dónde mejorar.
+                </div>
+              </div>
+              {/* Sub-tabs */}
+              <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: '#f4f4f5', borderRadius: 10, padding: 4 }}>
+                {[
+                  { key: 'staff', label: 'Colaboradores', count: staffCount, limit: limits.staff },
+                  { key: 'locations', label: 'Mesas', count: locCount, limit: limits.locations },
+                ].map(sub => (
+                  <button key={sub.key} onClick={() => setActiveTeamTab(sub.key as any)}
+                    className="dash-team-subtab"
+                    style={{ flex: 1, padding: '8px 12px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, background: activeTeamTab === sub.key ? '#fff' : 'transparent', color: activeTeamTab === sub.key ? '#111' : '#777', boxShadow: activeTeamTab === sub.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    {sub.label}
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 20, background: activeTeamTab === sub.key ? '#f0f0f0' : '#e8e8e8', color: sub.count >= sub.limit && sub.limit !== Infinity ? '#C8102E' : '#666' }}>
+                      {limitLabel(sub.count, sub.limit)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Limit bar */}
+              {(() => {
+                const isStaff = activeTeamTab === 'staff'
+                const used = isStaff ? staffCount : locCount
+                const max = isStaff ? limits.staff : limits.locations
+                const atLimit = isStaff ? staffAtLimit : locAtLimit
+                if (max === Infinity) return null
+                const pct = Math.min((used / max) * 100, 100)
+                return (
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <span style={{ fontSize: 12, color: '#888' }}>{isStaff ? 'Colaboradores' : 'Mesas / Ubicaciones'} usados</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: atLimit ? '#C8102E' : '#333' }}>{used} de {max}</span>
+                    </div>
+                    <div style={{ height: 6, background: '#f0f0f0', borderRadius: 99, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: atLimit ? '#C8102E' : pct > 75 ? '#f59e0b' : '#16a34a', borderRadius: 99, transition: 'width 0.3s' }} />
+                    </div>
+                    {atLimit && (
+                      <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 8 }}>
+                        <span style={{ fontSize: 12, color: '#dc2626' }}>Límite alcanzado en tu plan {plan}</span>
+                        <Link href="/upgrade" style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', textDecoration: 'none' }}>Mejorar plan →</Link>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
+
+              {/* Colaboradores list */}
+              {activeTeamTab === 'staff' && (
+                <>
+                  {staffMembers.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+                      {staffMembers.map(s => renderMemberCard(s, 'staff', copiedStaff, setCopiedStaff))}
+                    </div>
+                  )}
+                  {!staffAtLimit && (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input type="text" placeholder="Ej: Juan, Caja 1, Barra"
+                        value={newStaffName} onChange={e => setNewStaffName(e.target.value)}
+                        onKeyDown={async e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('add-staff-btn')?.click() } }}
+                        style={{ flex: 1, padding: '10px 12px', border: '1px solid #ddd', borderRadius: 10, fontSize: 14, boxSizing: 'border-box' }} />
+                      <button id="add-staff-btn" disabled={addingStaff || !newStaffName.trim()} onClick={async () => {
+                        if (!restaurant || !newStaffName.trim()) return
+                        setAddingStaff(true)
+                        const code = newStaffName.trim().toLowerCase()
+                          .normalize('NFD').replace(/[̀-ͯ]/g, '')
+                          .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+                          + '-' + Math.random().toString(36).slice(2, 5)
+                        const { data, error } = await supabase.from('staff_members').insert({
+                          restaurant_id: restaurant.id, name: newStaffName.trim(), code, active: true
+                        }).select().single()
+                        if (error) { alert('Error: ' + error.message); setAddingStaff(false); return }
+                        if (data) setStaffMembers(prev => [...prev, data])
+                        setNewStaffName('')
+                        setAddingStaff(false)
+                      }} style={{ padding: '10px 16px', background: '#111', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: addingStaff || !newStaffName.trim() ? 'not-allowed' : 'pointer', opacity: !newStaffName.trim() ? 0.4 : 1 }}>
+                        {addingStaff ? '…' : '+ Agregar'}
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Locations list */}
+              {activeTeamTab === 'locations' && (
+                <>
+                  {locations.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+                      {locations.map(loc => renderMemberCard(loc, 'loc', copiedLocation, setCopiedLocation))}
+                    </div>
+                  )}
+                  {!locAtLimit && (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input type="text" placeholder="Ej: Mesa 5, Terraza, Barra"
+                        value={newLocationName} onChange={e => setNewLocationName(e.target.value)}
+                        onKeyDown={async e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('add-loc-btn')?.click() } }}
+                        style={{ flex: 1, padding: '10px 12px', border: '1px solid #ddd', borderRadius: 10, fontSize: 14, boxSizing: 'border-box' }} />
+                      <button id="add-loc-btn" disabled={addingLocation || !newLocationName.trim()} onClick={async () => {
+                        if (!restaurant || !newLocationName.trim()) return
+                        setAddingLocation(true)
+                        const code = newLocationName.trim().toLowerCase()
+                          .normalize('NFD').replace(/[̀-ͯ]/g, '')
+                          .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+                          + '-' + Math.random().toString(36).slice(2, 5)
+                        const { data, error } = await supabase.from('locations').insert({
+                          restaurant_id: restaurant.id, name: newLocationName.trim(), code, active: true
+                        }).select().single()
+                        if (error) { alert('Error: ' + error.message); setAddingLocation(false); return }
+                        if (data) setLocations(prev => [...prev, data])
+                        setNewLocationName('')
+                        setAddingLocation(false)
+                      }} style={{ padding: '10px 16px', background: '#111', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: addingLocation || !newLocationName.trim() ? 'not-allowed' : 'pointer', opacity: !newLocationName.trim() ? 0.4 : 1 }}>
+                        {addingLocation ? '…' : '+ Agregar'}
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )
+        })()}
+
         {/* Config tab */}
         {activeTab === 'config' && (
           <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #ebebeb' }}>
@@ -967,71 +1260,6 @@ export default function DashboardPage() {
                   </div>
                 )
               })()}
-            </div>
-
-            {/* Staff section */}
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ height: 1, background: '#f0f0f0', marginBottom: 20 }} />
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>Equipo</div>
-              <div style={{ fontSize: 12, color: '#aaa', marginBottom: 16 }}>Cada miembro tiene su propio QR para trackear scans individuales.</div>
-
-              {staffMembers.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
-                  {staffMembers.map(s => {
-                    const staffUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${restaurant?.slug}?ref=${s.code}`
-                    const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(staffUrl)}&bgcolor=ffffff&color=1a1a1a&margin=6`
-                    return (
-                      <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: s.active ? '#fff' : '#f7f7f8', border: '1px solid #ebebeb', borderRadius: 10 }}>
-                        <img src={qrSrc} alt={s.name} style={{ width: 40, height: 40, borderRadius: 6, flexShrink: 0 }} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: s.active ? '#111' : '#aaa' }}>{s.name}</div>
-                          <div style={{ fontSize: 11, color: '#bbb', fontFamily: 'monospace' }}>{s.code}</div>
-                        </div>
-                        <a href={qrSrc.replace('300x300', '600x600')} download={`qr-${s.code}.png`} target="_blank" rel="noopener"
-                          style={{ padding: '5px 10px', background: '#f7f7f8', border: '1px solid #ddd', borderRadius: 7, fontSize: 11, fontWeight: 600, color: '#555', textDecoration: 'none' }}>
-                          ⬇ QR
-                        </a>
-                        <button onClick={async () => {
-                          await supabase.from('staff_members').update({ active: !s.active }).eq('id', s.id)
-                          setStaffMembers(prev => prev.map(x => x.id === s.id ? { ...x, active: !s.active } : x))
-                        }} style={{ padding: '5px 10px', background: 'none', border: '1px solid #ddd', borderRadius: 7, fontSize: 11, fontWeight: 600, color: '#aaa', cursor: 'pointer' }}>
-                          {s.active ? 'Pausar' : 'Activar'}
-                        </button>
-                        <button onClick={async () => {
-                          if (!confirm(`¿Eliminar a ${s.name}?`)) return
-                          await supabase.from('staff_members').delete().eq('id', s.id)
-                          setStaffMembers(prev => prev.filter(x => x.id !== s.id))
-                        }} style={{ padding: '5px 8px', background: 'none', border: 'none', fontSize: 14, color: '#ddd', cursor: 'pointer' }}>✕</button>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input type="text" placeholder="Nombre del mesero o puesto"
-                  value={newStaffName}
-                  onChange={e => setNewStaffName(e.target.value)}
-                  onKeyDown={async e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('add-staff-btn')?.click() } }}
-                  style={{ flex: 1, padding: '10px 12px', border: '1px solid #ddd', borderRadius: 10, fontSize: 14, boxSizing: 'border-box' }} />
-                <button id="add-staff-btn" disabled={addingStaff || !newStaffName.trim()} onClick={async () => {
-                  if (!restaurant || !newStaffName.trim()) return
-                  setAddingStaff(true)
-                  const code = newStaffName.trim().toLowerCase()
-                    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-                    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-                    + '-' + Math.random().toString(36).slice(2, 5)
-                  const { data, error } = await supabase.from('staff_members').insert({
-                    restaurant_id: restaurant.id, name: newStaffName.trim(), code, active: true
-                  }).select().single()
-                  if (error) { alert('Error: ' + error.message); setAddingStaff(false); return }
-                  if (data) setStaffMembers(prev => [...prev, data])
-                  setNewStaffName('')
-                  setAddingStaff(false)
-                }} style={{ padding: '10px 16px', background: '#111', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: addingStaff || !newStaffName.trim() ? 'not-allowed' : 'pointer', opacity: !newStaffName.trim() ? 0.4 : 1 }}>
-                  {addingStaff ? '…' : '+ Agregar'}
-                </button>
-              </div>
             </div>
 
             {/* Plan section */}
