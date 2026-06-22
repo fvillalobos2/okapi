@@ -8,6 +8,22 @@ const supabaseAdmin = createClient(
 )
 const resend = new Resend(process.env.RESEND_API_KEY)
 
+// In-memory rate limit: 1 code per IP per restaurant per hour
+const rateLimitMap = new Map<string, number>()
+function isRateLimited(ip: string, restaurantId: string): boolean {
+  const key = `${ip}:${restaurantId}`
+  const last = rateLimitMap.get(key) ?? 0
+  const now = Date.now()
+  if (now - last < 3600_000) return true
+  rateLimitMap.set(key, now)
+  // Prune old entries to prevent unbounded growth
+  if (rateLimitMap.size > 10_000) {
+    const cutoff = now - 3600_000
+    for (const [k, v] of rateLimitMap) if (v < cutoff) rateLimitMap.delete(k)
+  }
+  return false
+}
+
 function generateCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   return 'OK-' + Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
@@ -16,6 +32,12 @@ function generateCode() {
 export async function POST(req: NextRequest) {
   const { restaurantId, slug, stars, email, lang } = await req.json()
   if (!restaurantId || !slug) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+
+  // Skip rate limiting for email resend (email field present = resending existing code)
+  if (!email) {
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? req.headers.get('x-real-ip') ?? 'unknown'
+    if (isRateLimited(ip, restaurantId)) return NextResponse.json({ ok: false, reason: 'rate limited' }, { status: 429 })
+  }
 
   const { data: restaurant } = await supabaseAdmin
     .from('restaurants')

@@ -93,6 +93,9 @@ export default function ReviewPage() {
   }, [slug])
 
   async function saveScans(platformChosen: string | null, wantsContactVal: boolean) {
+    const submitKey = `okapi_submitted_${restaurant?.id}`
+    if (sessionStorage.getItem(submitKey)) return
+    sessionStorage.setItem(submitKey, '1')
     await supabase.from('scans').insert({
       restaurant_id: restaurant?.id,
       stars: formRating || selectedRating,
@@ -125,7 +128,7 @@ export default function ReviewPage() {
     return Object.keys(errs).length === 0
   }
 
-  function notifyManager(wantsContactVal: boolean, keepalive = false) {
+  function notifyManager(wantsContactVal: boolean, keepalive = false, positive = false) {
     if (!restaurant?.manager_email) return
     fetch('/api/notify-feedback', {
       method: 'POST',
@@ -139,6 +142,7 @@ export default function ReviewPage() {
         feedback: experience,
         contactName,
         wantsContact: wantsContactVal,
+        positive,
       }),
     }).catch(() => {})
     // WhatsApp notification to manager
@@ -215,6 +219,7 @@ export default function ReviewPage() {
 
   async function handlePlatformClick(platform: string, url: string) {
     saveScans(platform, false).catch(() => {})
+    notifyManager(false, true, true)
     window.open(url, '_blank')
     const hasOffer = await checkRetentionOffer(selectedRating || formRating)
     setScreen(hasOffer ? 'offer' : 'thanks')

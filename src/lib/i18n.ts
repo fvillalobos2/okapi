@@ -140,6 +140,9 @@ export const translations = {
     dash_plan_free_trial: 'Período de prueba',
     dash_google_connected: '✓ Google conectado — la respuesta automática está activa.',
     dash_google_error: '✗ Error al conectar Google. Intentá de nuevo.',
+    dash_stats_empty_title: 'Todavía no hay opiniones',
+    dash_stats_empty_body: 'Compartí tu QR o link de reseñas para empezar a recopilar feedback.',
+    dash_stats_empty_cta: 'Ir a QR →',
 
     // Retention tab
     ret_tab: 'Retención',
@@ -165,6 +168,7 @@ export const translations = {
     ret_code_redeem: 'Marcar como canjeado',
     ret_code_redeeming: 'Procesando…',
     ret_expires: (d: string) => `Vence ${d}`,
+    ret_redemption_rate: 'tasa de canje',
 
     // Offer screen (review page)
     offer_badge: 'Oferta exclusiva',
@@ -377,6 +381,9 @@ export const translations = {
     dash_plan_free_trial: 'Free trial',
     dash_google_connected: '✓ Google connected — auto-reply is active.',
     dash_google_error: '✗ Error connecting Google. Try again.',
+    dash_stats_empty_title: 'No reviews yet',
+    dash_stats_empty_body: 'Share your QR or review link to start collecting feedback.',
+    dash_stats_empty_cta: 'Go to QR →',
 
     // Retention tab
     ret_tab: 'Retention',
@@ -402,6 +409,7 @@ export const translations = {
     ret_code_redeem: 'Mark as redeemed',
     ret_code_redeeming: 'Processing…',
     ret_expires: (d: string) => `Expires ${d}`,
+    ret_redemption_rate: 'redemption rate',
 
     // Offer screen (review page)
     offer_badge: 'Exclusive offer',

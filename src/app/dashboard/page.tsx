@@ -159,6 +159,7 @@ export default function DashboardPage() {
           .from('staff_members')
           .select('*')
           .eq('restaurant_id', rest.id)
+          .is('deleted_at', null)
           .order('created_at', { ascending: true })
         setStaffMembers(staffData || [])
 
@@ -166,6 +167,7 @@ export default function DashboardPage() {
           .from('locations')
           .select('*')
           .eq('restaurant_id', rest.id)
+          .is('deleted_at', null)
           .order('created_at', { ascending: true })
         setLocations(locData || [])
       } else {
@@ -546,6 +548,17 @@ export default function DashboardPage() {
           // Last 7 days for alert badges
           const alert7Start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
           const scans7 = scans.filter(s => new Date(s.created_at) >= alert7Start)
+
+          if (scans.length === 0) return (
+            <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #ebebeb', padding: '48px 32px', textAlign: 'center' }}>
+              <div style={{ fontSize: 40, marginBottom: 16 }}>📊</div>
+              <div style={{ fontSize: 17, fontWeight: 700, color: '#111', marginBottom: 8 }}>{t.dash_stats_empty_title}</div>
+              <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6, marginBottom: 20, maxWidth: 320, margin: '0 auto 20px' }}>{t.dash_stats_empty_body}</p>
+              <button onClick={() => setTab('team')} style={{ background: '#111', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                {t.dash_stats_empty_cta}
+              </button>
+            </div>
+          )
 
           return (
             <div>
@@ -948,7 +961,19 @@ export default function DashboardPage() {
             <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #ebebeb' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>{t.ret_codes_title}</div>
-                <div style={{ fontSize: 12, color: '#888' }}>{retentionCodes.length} total · {retentionCodes.filter(c => c.redeemed).length} usados</div>
+                {retentionCodes.length > 0 && (() => {
+                  const redeemed = retentionCodes.filter(c => c.redeemed).length
+                  const rate = Math.round((redeemed / retentionCodes.length) * 100)
+                  return (
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 18, fontWeight: 800, color: '#111', lineHeight: 1 }}>{rate}%</div>
+                        <div style={{ fontSize: 11, color: '#aaa' }}>{t.ret_redemption_rate}</div>
+                      </div>
+                      <div style={{ fontSize: 12, color: '#888' }}>{redeemed}/{retentionCodes.length}</div>
+                    </div>
+                  )
+                })()}
               </div>
               {retentionCodes.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '32px 0', color: '#aaa', fontSize: 13 }}>
@@ -1035,7 +1060,7 @@ export default function DashboardPage() {
                   </button>
                   <button onClick={async () => {
                     if (!confirm(t.qr_delete_confirm(s.name))) return
-                    await supabase.from(table).delete().eq('id', s.id)
+                    await supabase.from(table).update({ deleted_at: new Date().toISOString() }).eq('id', s.id)
                     setList((prev: any[]) => prev.filter((x: any) => x.id !== s.id))
                   }} style={{ padding: '4px 8px', background: 'none', border: 'none', fontSize: 14, color: '#ddd', cursor: 'pointer' }}>✕</button>
                 </div>
