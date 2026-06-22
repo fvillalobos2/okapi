@@ -225,6 +225,16 @@ export const translations = {
     field_facebook: 'Facebook URL',
     field_yelp: 'Yelp URL',
 
+    // Custom categories
+    field_categories_title: 'Categorías de feedback',
+    field_categories_desc: 'Se muestran al cliente cuando deja una opinión negativa. Si no configurás ninguna, se usan las categorías por defecto.',
+    field_categories_col_es: 'Español',
+    field_categories_col_en: 'Inglés',
+    field_categories_add: '+ Agregar categoría',
+    field_categories_placeholder_es: 'Ej: Tripulación',
+    field_categories_placeholder_en: 'e.g. Crew',
+    field_categories_reset: 'Restaurar por defecto',
+
     // Upgrade
     upgrade_title: 'Elige tu plan',
     upgrade_subtitle: 'Sin contratos. Cancela cuando quieras.',
@@ -465,6 +475,16 @@ export const translations = {
     field_thefork: 'TheFork URL',
     field_facebook: 'Facebook URL',
     field_yelp: 'Yelp URL',
+
+    // Custom categories
+    field_categories_title: 'Feedback categories',
+    field_categories_desc: 'Shown to the customer when they leave a negative review. If none are set, default categories are used.',
+    field_categories_col_es: 'Spanish',
+    field_categories_col_en: 'English',
+    field_categories_add: '+ Add category',
+    field_categories_placeholder_es: 'e.g. Tripulación',
+    field_categories_placeholder_en: 'e.g. Crew',
+    field_categories_reset: 'Reset to defaults',
 
     // Upgrade
     upgrade_title: 'Choose your plan',

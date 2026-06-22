@@ -21,6 +21,7 @@ type Restaurant = {
   yelp_url: string | null
   platforms_active: Record<string, boolean>
   business_type: string | null
+  custom_categories: { es: string[]; en: string[] } | null
   retention_active: boolean
   retention_show_to: 'all' | 'positive' | 'negative'
   retention_offer_text: string | null
@@ -74,7 +75,9 @@ export default function ReviewPage() {
   const [sendingOfferEmail, setSendingOfferEmail] = useState(false)
 
   const typeKey = restaurant?.business_type || 'default'
-  const categories = (CATEGORIES_BY_TYPE[typeKey] ?? CATEGORIES_BY_TYPE.default)[lang]
+  const categories = restaurant?.custom_categories?.[lang]?.length
+    ? restaurant.custom_categories[lang]
+    : (CATEGORIES_BY_TYPE[typeKey] ?? CATEGORIES_BY_TYPE.default)[lang]
 
   useEffect(() => {
     async function load() {

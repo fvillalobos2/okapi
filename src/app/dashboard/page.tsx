@@ -29,6 +29,7 @@ type Restaurant = {
   auto_reply_enabled: boolean
   google_account_id: string | null
   google_access_token: string | null
+  custom_categories: { es: string[]; en: string[] } | null
   retention_active: boolean
   retention_show_to: 'all' | 'positive' | 'negative'
   retention_offer_text: string | null
@@ -52,6 +53,25 @@ type Location = {
   code: string
   active: boolean
   created_at: string
+}
+
+const DEFAULT_CATEGORIES: Record<string, { es: string[]; en: string[] }> = {
+  restaurant: {
+    es: ['Comida', 'Servicio', 'Ambiente', 'Tiempo de espera', 'Precio', 'Limpieza', 'Otro'],
+    en: ['Food', 'Service', 'Ambience', 'Wait time', 'Price', 'Cleanliness', 'Other'],
+  },
+  hotel: {
+    es: ['Habitación', 'Limpieza', 'Servicio', 'Check-in/out', 'Amenidades', 'Ubicación', 'Otro'],
+    en: ['Room', 'Cleanliness', 'Service', 'Check-in/out', 'Amenities', 'Location', 'Other'],
+  },
+  bar: {
+    es: ['Bebidas', 'Servicio', 'Ambiente', 'Música', 'Precio', 'Limpieza', 'Otro'],
+    en: ['Drinks', 'Service', 'Ambience', 'Music', 'Price', 'Cleanliness', 'Other'],
+  },
+  default: {
+    es: ['Servicio', 'Calidad', 'Precio', 'Ambiente', 'Atención', 'Limpieza', 'Otro'],
+    en: ['Service', 'Quality', 'Price', 'Ambience', 'Attention', 'Cleanliness', 'Other'],
+  },
 }
 
 const PLAN_LIMITS: Record<string, { staff: number; locations: number }> = {
@@ -259,6 +279,7 @@ export default function DashboardPage() {
       yelp_url: form.yelp_url,
       platforms_active: form.platforms_active,
       wa_enabled: form.wa_enabled,
+      custom_categories: form.custom_categories ?? null,
     }
     await supabase.from('restaurants').update(editable).eq('id', restaurant.id)
     setRestaurant({ ...restaurant, ...editable } as Restaurant)
@@ -1312,6 +1333,55 @@ export default function DashboardPage() {
                 )
               })()}
             </div>
+
+            {/* Custom categories */}
+            {(() => {
+              const typeKey = (restaurant as any)?.business_type || 'default'
+              const defaults = DEFAULT_CATEGORIES[typeKey] ?? DEFAULT_CATEGORIES.default
+              const cats: { es: string; en: string }[] = (() => {
+                const custom = form.custom_categories
+                if (custom?.es?.length) {
+                  return custom.es.map((es, i) => ({ es, en: custom.en?.[i] ?? '' }))
+                }
+                return defaults.es.map((es, i) => ({ es, en: defaults.en[i] ?? '' }))
+              })()
+              const setCats = (next: { es: string; en: string }[]) => {
+                setForm(f => ({ ...f, custom_categories: { es: next.map(c => c.es), en: next.map(c => c.en) } }))
+              }
+              return (
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>{t.field_categories_title}</div>
+                  <div style={{ fontSize: 12, color: '#aaa', marginBottom: 14, lineHeight: 1.5 }}>{t.field_categories_desc}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 28px', gap: 6, marginBottom: 8 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t.field_categories_col_es}</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t.field_categories_col_en}</div>
+                    <div />
+                  </div>
+                  {cats.map((cat, i) => (
+                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 28px', gap: 6, marginBottom: 6 }}>
+                      <input value={cat.es} onChange={e => { const next = [...cats]; next[i] = { ...next[i], es: e.target.value }; setCats(next) }}
+                        placeholder={t.field_categories_placeholder_es}
+                        style={{ border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 10px', fontSize: 13, outline: 'none', color: '#111', boxSizing: 'border-box' }} />
+                      <input value={cat.en} onChange={e => { const next = [...cats]; next[i] = { ...next[i], en: e.target.value }; setCats(next) }}
+                        placeholder={t.field_categories_placeholder_en}
+                        style={{ border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 10px', fontSize: 13, outline: 'none', color: '#111', boxSizing: 'border-box' }} />
+                      <button onClick={() => setCats(cats.filter((_, j) => j !== i))}
+                        style={{ background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', fontSize: 16, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                    </div>
+                  ))}
+                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                    <button onClick={() => setCats([...cats, { es: '', en: '' }])}
+                      style={{ flex: 1, padding: '8px 0', border: '1.5px dashed #d1d5db', borderRadius: 8, background: 'none', fontSize: 13, color: '#888', cursor: 'pointer', fontWeight: 600 }}>
+                      {t.field_categories_add}
+                    </button>
+                    <button onClick={() => setForm(f => ({ ...f, custom_categories: null }))}
+                      style={{ padding: '8px 14px', border: '1.5px solid #e5e7eb', borderRadius: 8, background: 'none', fontSize: 12, color: '#aaa', cursor: 'pointer' }}>
+                      {t.field_categories_reset}
+                    </button>
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* Plan section */}
             <div style={{ marginBottom: 24, padding: '16px', background: '#f7f7f8', borderRadius: 12, border: '1px solid #ebebeb' }}>
