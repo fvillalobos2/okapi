@@ -79,6 +79,8 @@ export default function AdminPage() {
   )
 
   async function impersonate(email: string, restaurantId: string) {
+    // Open window immediately (in click context) to avoid popup blocker
+    const tab = window.open('', '_blank')
     setImpersonating(restaurantId)
     const { data: { session } } = await supabase.auth.getSession()
     const res = await fetch('/api/admin/impersonate', {
@@ -88,9 +90,10 @@ export default function AdminPage() {
     })
     const data = await res.json()
     setImpersonating(null)
-    if (data.url) {
-      window.open(data.url, '_blank')
+    if (data.url && tab) {
+      tab.location.href = data.url
     } else {
+      tab?.close()
       alert(data.error ?? 'Error generating link')
     }
   }
