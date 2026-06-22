@@ -450,7 +450,7 @@ export default function DashboardPage() {
 
         {/* Tabs */}
         <div className="dash-main-tabs" style={{ display: 'flex', gap: 4, marginBottom: 20, background: '#ebebeb', borderRadius: 10, padding: 4 }}>
-          {[{ key: 'stats', label: t.dash_stats_tab }, { key: 'retention', label: 'Retención' }, { key: 'team', label: 'QR' }, { key: 'config', label: t.dash_config_tab }].map(tab => (
+          {[{ key: 'stats', label: t.dash_stats_tab }, { key: 'retention', label: t.ret_tab }, { key: 'team', label: t.qr_tab }, { key: 'config', label: t.dash_config_tab }].map(tab => (
             <button key={tab.key} onClick={() => setTab(tab.key as any)}
               style={{ flex: 1, padding: '9px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, background: activeTab === tab.key ? '#fff' : 'transparent', color: activeTab === tab.key ? '#111' : '#777', boxShadow: activeTab === tab.key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.15s' }}>
               {tab.label}
@@ -742,8 +742,8 @@ export default function DashboardPage() {
                 const maxCount = Math.max(...rows.map(r => r.count), 1)
                 return (
                   <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb', marginTop: 14 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>Rendimiento por colaborador</div>
-                    <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>Scans en el período seleccionado · alerta si promedio &lt; 3★ en últimos 7 días</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>{t.stats_collab_title}</div>
+                    <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>{t.stats_collab_sub}</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {rows.filter(r => r.count > 0).map(r => (
                         <div key={r.id}>
@@ -781,8 +781,8 @@ export default function DashboardPage() {
                 const maxCount = Math.max(...rows.map(r => r.count), 1)
                 return (
                   <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb', marginTop: 14 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>Rendimiento por mesa</div>
-                    <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>Scans en el período seleccionado · alerta si promedio &lt; 3★ en últimos 7 días</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>{t.stats_location_title}</div>
+                    <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>{t.stats_location_sub}</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {rows.filter(r => r.count > 0).map(r => (
                         <div key={r.id}>
@@ -816,8 +816,8 @@ export default function DashboardPage() {
             <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #ebebeb', marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>Oferta de retención</div>
-                  <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>Muestra un descuento o regalo al cliente después de dejar su opinión</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>{t.ret_title}</div>
+                  <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{t.ret_subtitle}</div>
                 </div>
                 <div onClick={async () => {
                   if (!restaurant) return
@@ -830,12 +830,12 @@ export default function DashboardPage() {
               </div>
 
               <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 6 }}>¿A quién mostrarle la oferta?</label>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 6 }}>{t.ret_show_to_label}</label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   {[
-                    { value: 'negative', label: 'Solo negativos' },
-                    { value: 'positive', label: 'Solo positivos' },
-                    { value: 'all', label: 'A todos' },
+                    { value: 'negative', label: t.ret_show_negative },
+                    { value: 'positive', label: t.ret_show_positive },
+                    { value: 'all', label: t.ret_show_all },
                   ].map(opt => (
                     <button key={opt.value} onClick={async () => {
                       if (!restaurant) return
@@ -850,7 +850,7 @@ export default function DashboardPage() {
 
               <div style={{ marginBottom: 16 }}>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 8 }}>
-                  {restaurant?.retention_show_to === 'all' ? 'Oferta para negativos (1-3 estrellas)' : 'Texto de la oferta'}
+                  {t.ret_offer_negative_label}
                 </label>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: '#888', width: 24, flexShrink: 0 }}>ES</span>
@@ -871,7 +871,7 @@ export default function DashboardPage() {
               {restaurant?.retention_show_to === 'all' && (
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 8 }}>
-                    Oferta para positivos (4-5 estrellas)
+                    {t.ret_offer_positive_label}
                   </label>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
                     <span style={{ fontSize: 11, fontWeight: 700, color: '#888', width: 24, flexShrink: 0 }}>ES</span>
@@ -891,7 +891,7 @@ export default function DashboardPage() {
               )}
 
               <div style={{ marginBottom: 20 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 6 }}>Validez del código (días)</label>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 6 }}>{t.ret_valid_days_label}</label>
                 <input type="number" min={1} max={365}
                   value={form.retention_valid_days || 14}
                   onChange={e => setForm({ ...form, retention_valid_days: Math.min(365, Math.max(1, Number(e.target.value))) })}
@@ -913,19 +913,19 @@ export default function DashboardPage() {
                 setSaved(true)
                 setTimeout(() => setSaved(false), 2500)
               }} style={{ width: '100%', padding: '12px', background: '#111', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-                {saving ? 'Guardando…' : saved ? '✓ Guardado' : 'Guardar oferta'}
+                {saving ? t.ret_saving : saved ? t.ret_saved : t.ret_save}
               </button>
             </div>
 
             {/* Codes list */}
             <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #ebebeb' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>Códigos generados</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#111' }}>{t.ret_codes_title}</div>
                 <div style={{ fontSize: 12, color: '#888' }}>{retentionCodes.length} total · {retentionCodes.filter(c => c.redeemed).length} usados</div>
               </div>
               {retentionCodes.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '32px 0', color: '#aaa', fontSize: 13 }}>
-                  Aún no se han generado códigos.<br />Se crean automáticamente cuando un cliente ve la oferta.
+                  {t.ret_codes_empty.split('\n').map((line, i) => <span key={i}>{line}{i === 0 && <br />}</span>)}
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -939,8 +939,8 @@ export default function DashboardPage() {
                         <div style={{ fontSize: 11, color: '#bbb' }}>
                           {new Date(c.created_at).toLocaleDateString('es-CR', { day: 'numeric', month: 'short' })}
                           {c.email && ` · ${c.email}`}
-                          {c.expires_at && ` · vence ${new Date(c.expires_at).toLocaleDateString('es-CR', { day: 'numeric', month: 'short' })}`}
-                          {c.redeemed && c.redeemed_at && ` · usado ${new Date(c.redeemed_at).toLocaleDateString('es-CR', { day: 'numeric', month: 'short' })}`}
+                          {c.expires_at && ` · ${t.ret_expires(new Date(c.expires_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'es-CR', { day: 'numeric', month: 'short' }))}`}
+                          {c.redeemed && c.redeemed_at && ` · ${t.ret_code_redeemed.toLowerCase()} ${new Date(c.redeemed_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'es-CR', { day: 'numeric', month: 'short' })}`}
                         </div>
                       </div>
                       {!c.redeemed ? (
@@ -957,10 +957,10 @@ export default function DashboardPage() {
                           setRedeemingCode(null)
                         }} disabled={redeemingCode === c.id}
                           style={{ padding: '6px 14px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                          {redeemingCode === c.id ? '…' : '✓ Marcar usado'}
+                          {redeemingCode === c.id ? t.ret_code_redeeming : t.ret_code_redeem}
                         </button>
                       ) : (
-                        <span style={{ fontSize: 11, color: '#aaa', fontWeight: 600 }}>Usado</span>
+                        <span style={{ fontSize: 11, color: '#aaa', fontWeight: 600 }}>{t.ret_code_redeemed}</span>
                       )}
                     </div>
                   ))}
@@ -1003,10 +1003,10 @@ export default function DashboardPage() {
                     await supabase.from(table).update({ active: !s.active }).eq('id', s.id)
                     setList((prev: any[]) => prev.map((x: any) => x.id === s.id ? { ...x, active: !s.active } : x))
                   }} style={{ padding: '4px 10px', background: 'none', border: '1px solid #ddd', borderRadius: 7, fontSize: 11, fontWeight: 600, color: '#aaa', cursor: 'pointer' }}>
-                    {s.active ? 'Pausar' : 'Activar'}
+                    {s.active ? t.qr_pause : t.qr_activate}
                   </button>
                   <button onClick={async () => {
-                    if (!confirm(`¿Eliminar "${s.name}"?`)) return
+                    if (!confirm(t.qr_delete_confirm(s.name))) return
                     await supabase.from(table).delete().eq('id', s.id)
                     setList((prev: any[]) => prev.filter((x: any) => x.id !== s.id))
                   }} style={{ padding: '4px 8px', background: 'none', border: 'none', fontSize: 14, color: '#ddd', cursor: 'pointer' }}>✕</button>
@@ -1017,14 +1017,14 @@ export default function DashboardPage() {
                     setCopied({ id: s.id, type: 'link' } as any)
                     setTimeout(() => setCopied(null), 2000)
                   }} style={{ padding: '6px 12px', background: copied?.id === s.id && copied.type === 'link' ? '#f0fdf4' : '#f7f7f8', border: `1px solid ${copied?.id === s.id && copied.type === 'link' ? '#bbf7d0' : '#ddd'}`, borderRadius: 7, fontSize: 11, fontWeight: 600, color: copied?.id === s.id && copied.type === 'link' ? '#16a34a' : '#555', cursor: 'pointer' }}>
-                    {copied?.id === s.id && copied.type === 'link' ? '✓ Copiado' : '🔗 Copiar link'}
+                    {copied?.id === s.id && copied.type === 'link' ? t.qr_copied : t.qr_copy_link}
                   </button>
                   <button onClick={() => {
                     navigator.clipboard.writeText(url + '&kiosk=1')
                     setCopied({ id: s.id, type: 'kiosk' } as any)
                     setTimeout(() => setCopied(null), 2000)
                   }} style={{ padding: '6px 12px', background: copied?.id === s.id && copied.type === 'kiosk' ? '#f0fdf4' : '#f7f7f8', border: `1px solid ${copied?.id === s.id && copied.type === 'kiosk' ? '#bbf7d0' : '#ddd'}`, borderRadius: 7, fontSize: 11, fontWeight: 600, color: copied?.id === s.id && copied.type === 'kiosk' ? '#16a34a' : '#555', cursor: 'pointer' }}>
-                    {copied?.id === s.id && copied.type === 'kiosk' ? '✓ Copiado' : '📺 Modo pantalla'}
+                    {copied?.id === s.id && copied.type === 'kiosk' ? t.qr_copied : t.qr_screen_mode}
                   </button>
                   <a href={qrSrc.replace('300x300', '600x600')} download={`qr-${s.code}.png`} target="_blank" rel="noopener"
                     style={{ padding: '6px 12px', background: '#f7f7f8', border: '1px solid #ddd', borderRadius: 7, fontSize: 11, fontWeight: 600, color: '#555', textDecoration: 'none' }}>
@@ -1039,16 +1039,14 @@ export default function DashboardPage() {
             <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #ebebeb' }}>
               {/* Header */}
               <div style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 16, fontWeight: 800, color: '#111', marginBottom: 6 }}>QR personalizados</div>
-                <div style={{ fontSize: 13, color: '#888', lineHeight: 1.6 }}>
-                  Asigna un QR único a cada colaborador o mesa. Cuando un cliente lo escanea, su opinión queda vinculada a ese punto — así puedes ver exactamente qué colaborador o área genera más satisfacción, y dónde mejorar.
-                </div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#111', marginBottom: 6 }}>{t.qr_section_title}</div>
+                <div style={{ fontSize: 13, color: '#888', lineHeight: 1.6 }}>{t.qr_section_desc}</div>
               </div>
               {/* Sub-tabs */}
               <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: '#f4f4f5', borderRadius: 10, padding: 4 }}>
                 {[
-                  { key: 'staff', label: 'Colaboradores', count: staffCount, limit: limits.staff },
-                  { key: 'locations', label: 'Mesas', count: locCount, limit: limits.locations },
+                  { key: 'staff', label: t.qr_staff_tab, count: staffCount, limit: limits.staff },
+                  { key: 'locations', label: t.qr_locations_tab, count: locCount, limit: limits.locations },
                 ].map(sub => (
                   <button key={sub.key} onClick={() => setActiveTeamTab(sub.key as any)}
                     className="dash-team-subtab"
@@ -1072,7 +1070,7 @@ export default function DashboardPage() {
                 return (
                   <div style={{ marginBottom: 20 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <span style={{ fontSize: 12, color: '#888' }}>{isStaff ? 'Colaboradores' : 'Mesas / Ubicaciones'} usados</span>
+                      <span style={{ fontSize: 12, color: '#888' }}>{isStaff ? t.qr_staff_used : t.qr_locations_used}</span>
                       <span style={{ fontSize: 12, fontWeight: 700, color: atLimit ? '#C8102E' : '#333' }}>{used} de {max}</span>
                     </div>
                     <div style={{ height: 6, background: '#f0f0f0', borderRadius: 99, overflow: 'hidden' }}>
@@ -1080,8 +1078,8 @@ export default function DashboardPage() {
                     </div>
                     {atLimit && (
                       <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 8 }}>
-                        <span style={{ fontSize: 12, color: '#dc2626' }}>Límite alcanzado en tu plan {plan}</span>
-                        <Link href="/upgrade" style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', textDecoration: 'none' }}>Mejorar plan →</Link>
+                        <span style={{ fontSize: 12, color: '#dc2626' }}>{t.qr_limit_reached(plan)}</span>
+                        <Link href="/upgrade" style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', textDecoration: 'none' }}>{t.qr_upgrade}</Link>
                       </div>
                     )}
                   </div>
@@ -1098,7 +1096,7 @@ export default function DashboardPage() {
                   )}
                   {!staffAtLimit && (
                     <div style={{ display: 'flex', gap: 8 }}>
-                      <input type="text" placeholder="Ej: Juan, Caja 1, Barra"
+                      <input type="text" placeholder={t.qr_staff_placeholder}
                         value={newStaffName} onChange={e => setNewStaffName(e.target.value)}
                         onKeyDown={async e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('add-staff-btn')?.click() } }}
                         style={{ flex: 1, padding: '10px 12px', border: '1px solid #ddd', borderRadius: 10, fontSize: 14, boxSizing: 'border-box' }} />
@@ -1117,7 +1115,7 @@ export default function DashboardPage() {
                         setNewStaffName('')
                         setAddingStaff(false)
                       }} style={{ padding: '10px 16px', background: '#111', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: addingStaff || !newStaffName.trim() ? 'not-allowed' : 'pointer', opacity: !newStaffName.trim() ? 0.4 : 1 }}>
-                        {addingStaff ? '…' : '+ Agregar'}
+                        {addingStaff ? t.qr_adding : t.qr_add}
                       </button>
                     </div>
                   )}
@@ -1134,7 +1132,7 @@ export default function DashboardPage() {
                   )}
                   {!locAtLimit && (
                     <div style={{ display: 'flex', gap: 8 }}>
-                      <input type="text" placeholder="Ej: Mesa 5, Terraza, Barra"
+                      <input type="text" placeholder={t.qr_location_placeholder}
                         value={newLocationName} onChange={e => setNewLocationName(e.target.value)}
                         onKeyDown={async e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('add-loc-btn')?.click() } }}
                         style={{ flex: 1, padding: '10px 12px', border: '1px solid #ddd', borderRadius: 10, fontSize: 14, boxSizing: 'border-box' }} />
@@ -1153,7 +1151,7 @@ export default function DashboardPage() {
                         setNewLocationName('')
                         setAddingLocation(false)
                       }} style={{ padding: '10px 16px', background: '#111', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: addingLocation || !newLocationName.trim() ? 'not-allowed' : 'pointer', opacity: !newLocationName.trim() ? 0.4 : 1 }}>
-                        {addingLocation ? '…' : '+ Agregar'}
+                        {addingLocation ? t.qr_adding : t.qr_add}
                       </button>
                     </div>
                   )}
