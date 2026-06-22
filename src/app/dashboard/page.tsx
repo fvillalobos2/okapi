@@ -727,33 +727,6 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {/* Recent negative feedback */}
-              <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 16 }}>{t.dash_recent_comments}</div>
-                {negativeFeed.length === 0
-                  ? <div style={{ fontSize: 14, color: '#aaa', textAlign: 'center', padding: '24px 0' }}>{t.dash_no_negative}</div>
-                  : negativeFeed.map(s => (
-                    <div key={s.id} style={{ borderBottom: '1px solid #f5f5f5', paddingBottom: 14, marginBottom: 14 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <span style={{ color: '#f59e0b', fontSize: 15, letterSpacing: 1 }}>{'★'.repeat(s.stars)}{'☆'.repeat(5 - s.stars)}</span>
-                        <span style={{ fontSize: 11, color: '#bbb' }}>{new Date(s.created_at).toLocaleDateString('es-CR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-                      </div>
-                      {s.feedback_categories && s.feedback_categories.length > 0 && (
-                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
-                          {s.feedback_categories.map(c => (
-                            <span key={c} style={{ fontSize: 11, padding: '2px 8px', background: '#fef2f2', color: '#C8102E', borderRadius: 20, fontWeight: 600 }}>{normalizeCat(c)}</span>
-                          ))}
-                        </div>
-                      )}
-                      {s.feedback_text && <div style={{ fontSize: 13, color: '#444', lineHeight: 1.5 }}>{s.feedback_text}</div>}
-                      {s.wants_contact && s.contact_name && (
-                        <div style={{ fontSize: 12, color: '#16a34a', marginTop: 6, fontWeight: 600 }}>{t.dash_wants_contact} {s.contact_name}</div>
-                      )}
-                    </div>
-                  ))
-                }
-              </div>
-
               {/* Staff breakdown */}
               {staffMembers.length > 0 && (() => {
                 const rows = staffMembers.map(s => {
@@ -767,7 +740,7 @@ export default function DashboardPage() {
                 if (!rows.some(r => r.count > 0)) return null
                 const maxCount = Math.max(...rows.map(r => r.count), 1)
                 return (
-                  <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb', marginTop: 14 }}>
+                  <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb', marginBottom: 14 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>{t.stats_collab_title}</div>
                     <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>{t.stats_collab_sub}</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -806,7 +779,7 @@ export default function DashboardPage() {
                 if (!rows.some(r => r.count > 0)) return null
                 const maxCount = Math.max(...rows.map(r => r.count), 1)
                 return (
-                  <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb', marginTop: 14 }}>
+                  <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb', marginBottom: 14 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>{t.stats_location_title}</div>
                     <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>{t.stats_location_sub}</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -831,6 +804,34 @@ export default function DashboardPage() {
                   </div>
                 )
               })()}
+
+              {/* Recent negative feedback */}
+              <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 16 }}>{t.dash_recent_comments}</div>
+                {negativeFeed.length === 0
+                  ? <div style={{ fontSize: 14, color: '#aaa', textAlign: 'center', padding: '24px 0' }}>{t.dash_no_negative}</div>
+                  : negativeFeed.map(s => (
+                    <div key={s.id} style={{ borderBottom: '1px solid #f5f5f5', paddingBottom: 14, marginBottom: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <span style={{ color: '#f59e0b', fontSize: 15, letterSpacing: 1 }}>{'★'.repeat(s.stars)}{'☆'.repeat(5 - s.stars)}</span>
+                        <span style={{ fontSize: 11, color: '#bbb' }}>{new Date(s.created_at).toLocaleDateString('es-CR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      {s.feedback_categories && s.feedback_categories.length > 0 && (
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
+                          {s.feedback_categories.map(c => (
+                            <span key={c} style={{ fontSize: 11, padding: '2px 8px', background: '#fef2f2', color: '#C8102E', borderRadius: 20, fontWeight: 600 }}>{normalizeCat(c)}</span>
+                          ))}
+                        </div>
+                      )}
+                      {s.feedback_text && <div style={{ fontSize: 13, color: '#444', lineHeight: 1.5 }}>{s.feedback_text}</div>}
+                      {s.wants_contact && s.contact_name && (
+                        <div style={{ fontSize: 12, color: '#16a34a', marginTop: 6, fontWeight: 600 }}>{t.dash_wants_contact} {s.contact_name}</div>
+                      )}
+                    </div>
+                  ))
+                }
+              </div>
+
             </div>
           )
         })()}
