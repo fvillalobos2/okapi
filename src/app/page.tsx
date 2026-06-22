@@ -16,47 +16,6 @@ function useScrollReveal() {
   return { ref, visible }
 }
 
-const FAQS = [
-  { q: '¿Necesito instalar algo?', a: 'No. Okapi funciona 100% en el navegador. Vos accedés desde tu computadora y tus clientes desde el celular al escanear el QR. Sin apps, sin descargas.' },
-  { q: '¿Cómo acceden mis clientes a la página de reseñas?', a: 'Hay tres formas: escaneando el código QR que generamos para vos, recibiendo el link directo por email o por WhatsApp. Cualquier canal abre la misma página — sin app, sin registro.' },
-  { q: '¿Qué pasa con los clientes insatisfechos?', a: 'Si alguien califica con 1-3 estrellas, lo llevamos a un formulario privado donde puede contar qué pasó. Vos recibís esa información por email y si quiere contacto directo, se abre WhatsApp automáticamente.' },
-  { q: '¿Puedo conectar múltiples plataformas?', a: 'Sí. Podés activar hasta 6 plataformas: Google, TripAdvisor, OpenTable, TheFork, Facebook y Yelp. Los clientes satisfechos eligen en cuál dejar su reseña.' },
-  { q: '¿Es legal hacer esto?', a: 'Sí. Okapi no altera ni elimina reseñas — simplemente filtra el feedback antes de que llegue a publicarse. Es una práctica común en la industria de hospitalidad.' },
-  { q: '¿Cuánto tarda en estar activo?', a: 'Menos de 5 minutos. Creás tu cuenta, configurás tu negocio con nuestro wizard paso a paso, y ya tenés tu QR listo para imprimir.' },
-  { q: '¿Puedo cancelar cuando quiera?', a: 'Sí, sin contratos ni penalidades. Podés cancelar tu suscripción en cualquier momento desde el dashboard.' },
-]
-
-function FAQ() {
-  const [open, setOpen] = useState<number | null>(null)
-  return (
-    <section className="landing-pad" style={{ padding: '88px 32px', maxWidth: 720, margin: '0 auto' }}>
-      <Reveal>
-        <div style={{ textAlign: 'center', marginBottom: 56 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>FAQ</div>
-          <h2 style={{ fontSize: 'clamp(26px, 3.5vw, 38px)', fontWeight: 800, color: '#111', letterSpacing: '-0.02em' }}>Preguntas frecuentes</h2>
-        </div>
-      </Reveal>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-        {FAQS.map((faq, i) => (
-          <Reveal key={i} delay={i * 40}>
-            <div style={{ borderBottom: '1px solid #ebebeb', overflow: 'hidden' }}>
-              <button
-                onClick={() => setOpen(open === i ? null : i)}
-                style={{ width: '100%', background: 'none', border: 'none', padding: '20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, cursor: 'pointer', textAlign: 'left' }}>
-                <span style={{ fontSize: 15, fontWeight: 600, color: '#111', lineHeight: 1.4 }}>{faq.q}</span>
-                <span style={{ fontSize: 20, color: '#aaa', flexShrink: 0, transform: open === i ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s ease', lineHeight: 1 }}>+</span>
-              </button>
-              <div style={{ maxHeight: open === i ? 200 : 0, overflow: 'hidden', transition: 'max-height 0.35s ease' }}>
-                <p style={{ fontSize: 14, color: '#666', lineHeight: 1.75, paddingBottom: 20, margin: 0 }}>{faq.a}</p>
-              </div>
-            </div>
-          </Reveal>
-        ))}
-      </div>
-    </section>
-  )
-}
-
 function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   const { ref, visible } = useScrollReveal()
   return (
@@ -72,26 +31,225 @@ const L = {
     hero: 'La mejor forma de mejorar tu servicio: escuchar a tiempo.',
     heroSub: 'Los mejores negocios no esperan las reseñas para mejorar. Actúan antes.',
     cta: 'Empezar gratis',
+    ctaArrow: 'Empezar gratis →',
     ctaSub: 'Ver demo',
     navHow: 'Cómo funciona',
     navPricing: 'Precios',
     navLogin: 'Login',
+
+    // Mockup
+    mockRating: '¿Cómo calificarías tu visita?',
+    mockReview: '¿Nos dejás una reseña?',
+    mockNotif: 'Nueva reseña 5★ en Google',
+    mockAgo: 'hace 2 minutos',
+    mockStats: [
+      { l: 'Total', v: '124', c: '#111' },
+      { l: 'Promedio', v: '4.7★', c: '#f59e0b' },
+      { l: 'Positivas', v: '108', c: '#16a34a' },
+      { l: 'Privadas', v: '16', c: '#C8102E' },
+    ],
+    mockClicks: 'Clicks por plataforma',
+    mockAlert: 'Nuevo feedback privado · hace 5 min',
+    mockAlertText: '"El tiempo de espera fue demasiado largo…"',
+
+    // Client logos
+    clientsTitle: 'Negocios que confían en Okapi',
+    clients: [
+      { name: 'Innova Home Center', type: 'Empresa', icon: '🏠' },
+      { name: 'Hotel Fermata', type: 'Hotel', icon: '🏨' },
+      { name: 'Restaurante Fuso', type: 'Restaurante', icon: '🍽️' },
+    ],
+
+    // Stats
+    statsTitle: 'Las reseñas son tu visibilidad en Google',
+    statsSub: 'Google usa las reseñas como señal directa de ranking local. No es opcional.',
+    stats: [
+      { stat: '64%', desc: 'de los clientes googlea el negocio antes de visitarlo' },
+      { stat: '91%', desc: 'evita negocios con menos de 4 estrellas' },
+      { stat: '70%', desc: 'menos clicks si tu rating es menor a 4.0' },
+      { stat: '126%', desc: 'más tráfico para negocios en el Top 3 de Google Maps' },
+    ],
+
+    // How it works
+    howLabel: 'Cómo funciona',
+    howTitle: 'Simple para el cliente. Poderoso para vos.',
+    howSteps: [
+      { n: '01', icon: '📱', t: 'Accede al link', d: 'Escaneando el QR en la mesa, o recibiendo el link directo por correo o WhatsApp. Sin app, sin descarga.', color: '#4285F4' },
+      { n: '02', icon: '⭐', t: 'Califica su visita', d: '4-5★ va a Google. 1-3★ el feedback queda privado para vos.', color: '#f59e0b' },
+      { n: '03', icon: '🔔', t: 'Recibís la alerta', d: 'Email al instante con el detalle. WhatsApp si quiere hablar.', color: '#C8102E' },
+      { n: '04', icon: '📈', t: 'Tu rating sube', d: 'Más reseñas 5★ publicadas. Menos críticas en internet.', color: '#22c55e' },
+    ],
+
+    // Features
+    featLabel: 'Funcionalidades',
+    featTitle: 'Todo incluido desde el primer día',
+    features: [
+      { icon: '🔗', t: '6 plataformas integradas', d: 'Google, TripAdvisor, OpenTable, TheFork, Facebook y Yelp.' },
+      { icon: '💬', t: 'WhatsApp directo', d: 'El manager recibe el mensaje del cliente listo para responder.' },
+      { icon: '📧', t: 'Alertas por email', d: 'Notificación instantánea con categorías y texto del feedback.' },
+      { icon: '📊', t: 'Dashboard con estadísticas', d: 'Rating, clicks por plataforma y historial de comentarios.' },
+      { icon: '📲', t: 'QR en alta resolución', d: 'Listo para imprimir y poner en mesas, menú o entrada.' },
+      { icon: '🏨', t: 'Multi-negocio', d: 'Restaurantes, hoteles y bares con categorías específicas.' },
+    ],
+
+    // Testimonials
+    testLabel: 'Lo que dicen nuestros clientes',
+    testTitle: 'Resultados reales, no promesas',
+    testimonials: [
+      { quote: 'Okapi nos permitió entender qué piensan nuestros clientes antes de que lo publiquen. Ahora respondemos al instante y protegemos nuestra reputación online.', name: 'Innova Home Center', role: 'Empresa · Costa Rica', icon: '🏠' },
+      { quote: 'La diferencia es enorme. Antes no sabíamos qué pensaban los huéspedes hasta leer las reseñas negativas. Ahora lo sabemos al instante y actuamos.', name: 'Hotel Fermata', role: 'Hotel · Costa Rica', icon: '🏨' },
+      { quote: 'En pocas semanas mejoramos nuestro promedio en Google. El QR en las mesas funciona perfecto y el manager recibe las alertas de inmediato.', name: 'Restaurante Fuso', role: 'Restaurante · Costa Rica', icon: '🍽️' },
+    ],
+
+    // Pricing
+    pricingLabel: 'Precios',
+    pricingTitle: 'Sin contratos. Sin sorpresas.',
+    pricingSub: 'Birdeye cobra $299–$599/mes. Nosotros lo hacemos accesible.',
+    pricingPopular: 'MÁS POPULAR',
+    pricingMonth: '/mes',
+    plans: [
+      { id: 'starter', label: 'Starter', price: '$29', sub: 'por local', dark: false, popular: false, cta: '14 días gratis', features: ['1 local', 'Hasta 200 opiniones/mes', 'Google + 1 plataforma', 'Email al manager', 'QR descargable'] },
+      { id: 'pro', label: 'Pro', price: '$59', sub: 'por local', dark: true, popular: true, cta: '14 días gratis', features: ['1 local', 'Opiniones ilimitadas', '6 plataformas', 'WhatsApp + Email', 'Dashboard completo', 'Categorías por negocio'] },
+      { id: 'biz', label: 'Business', price: '$129', sub: 'hasta 5 locales', dark: false, popular: false, cta: 'Hablar con ventas', features: ['Hasta 5 locales', 'Opiniones ilimitadas', '6 plataformas', 'WhatsApp + Email', 'Dashboard multi-local', 'Onboarding asistido', 'Soporte prioritario'] },
+    ],
+
+    // FAQ
+    faqLabel: 'FAQ',
+    faqTitle: 'Preguntas frecuentes',
+    faqs: [
+      { q: '¿Necesito instalar algo?', a: 'No. Okapi funciona 100% en el navegador. Vos accedés desde tu computadora y tus clientes desde el celular al escanear el QR. Sin apps, sin descargas.' },
+      { q: '¿Cómo acceden mis clientes a la página de reseñas?', a: 'Hay tres formas: escaneando el código QR que generamos para vos, recibiendo el link directo por email o por WhatsApp. Cualquier canal abre la misma página — sin app, sin registro.' },
+      { q: '¿Qué pasa con los clientes insatisfechos?', a: 'Si alguien califica con 1-3 estrellas, lo llevamos a un formulario privado donde puede contar qué pasó. Vos recibís esa información por email y si quiere contacto directo, se abre WhatsApp automáticamente.' },
+      { q: '¿Puedo conectar múltiples plataformas?', a: 'Sí. Podés activar hasta 6 plataformas: Google, TripAdvisor, OpenTable, TheFork, Facebook y Yelp. Los clientes satisfechos eligen en cuál dejar su reseña.' },
+      { q: '¿Es legal hacer esto?', a: 'Sí. Okapi no altera ni elimina reseñas — simplemente filtra el feedback antes de que llegue a publicarse. Es una práctica común en la industria de hospitalidad.' },
+      { q: '¿Cuánto tarda en estar activo?', a: 'Menos de 5 minutos. Creás tu cuenta, configurás tu negocio con nuestro wizard paso a paso, y ya tenés tu QR listo para imprimir.' },
+      { q: '¿Puedo cancelar cuando quiera?', a: 'Sí, sin contratos ni penalidades. Podés cancelar tu suscripción en cualquier momento desde el dashboard.' },
+    ],
+
+    // CTA section
+    ctaTitle: 'Empezá hoy. Gratis.',
+    ctaBody: '14 días de prueba. Sin tarjeta de crédito. Activo en 5 minutos.',
+    ctaBtn: 'Crear cuenta gratis →',
+
+    // Footer
+    footerPricing: 'Precios',
+    footerCopy: '© 2026 Okapi Reviews',
   },
   en: {
     badge: 'REVIEW MANAGEMENT FOR HOSPITALITY',
     hero: 'The best way to improve your service: listen in time.',
     heroSub: 'The best businesses don\'t wait for reviews to improve. They act first.',
     cta: 'Start free',
-    ctaSub: 'See demo',
+    ctaArrow: 'Start free →',
+    ctaSub: 'How it works',
     navHow: 'How it works',
     navPricing: 'Pricing',
     navLogin: 'Login',
+
+    // Mockup
+    mockRating: 'How would you rate your visit?',
+    mockReview: 'Leave us a review?',
+    mockNotif: 'New 5★ review on Google',
+    mockAgo: '2 minutes ago',
+    mockStats: [
+      { l: 'Total', v: '124', c: '#111' },
+      { l: 'Average', v: '4.7★', c: '#f59e0b' },
+      { l: 'Positive', v: '108', c: '#16a34a' },
+      { l: 'Private', v: '16', c: '#C8102E' },
+    ],
+    mockClicks: 'Clicks by platform',
+    mockAlert: 'New private feedback · 5 min ago',
+    mockAlertText: '"The wait time was way too long…"',
+
+    // Client logos
+    clientsTitle: 'Businesses that trust Okapi',
+    clients: [
+      { name: 'Innova Home Center', type: 'Business', icon: '🏠' },
+      { name: 'Hotel Fermata', type: 'Hotel', icon: '🏨' },
+      { name: 'Restaurante Fuso', type: 'Restaurant', icon: '🍽️' },
+    ],
+
+    // Stats
+    statsTitle: 'Reviews are your visibility on Google',
+    statsSub: 'Google uses reviews as a direct local ranking signal. It\'s not optional.',
+    stats: [
+      { stat: '64%', desc: 'of customers Google a business before visiting' },
+      { stat: '91%', desc: 'avoid businesses with fewer than 4 stars' },
+      { stat: '70%', desc: 'fewer clicks when your rating is below 4.0' },
+      { stat: '126%', desc: 'more traffic for businesses in Google Maps Top 3' },
+    ],
+
+    // How it works
+    howLabel: 'How it works',
+    howTitle: 'Simple for the customer. Powerful for you.',
+    howSteps: [
+      { n: '01', icon: '📱', t: 'Access the link', d: 'Scan the QR code at the table, or receive the direct link by email or WhatsApp. No app, no download.', color: '#4285F4' },
+      { n: '02', icon: '⭐', t: 'Rate their visit', d: '4-5★ goes to Google. 1-3★ stays private for you.', color: '#f59e0b' },
+      { n: '03', icon: '🔔', t: 'You get the alert', d: 'Instant email with the details. WhatsApp if they want to talk.', color: '#C8102E' },
+      { n: '04', icon: '📈', t: 'Your rating rises', d: 'More 5★ reviews published. Fewer complaints on the internet.', color: '#22c55e' },
+    ],
+
+    // Features
+    featLabel: 'Features',
+    featTitle: 'Everything included from day one',
+    features: [
+      { icon: '🔗', t: '6 integrated platforms', d: 'Google, TripAdvisor, OpenTable, TheFork, Facebook, and Yelp.' },
+      { icon: '💬', t: 'Direct WhatsApp', d: 'The manager receives the customer message ready to reply.' },
+      { icon: '📧', t: 'Email alerts', d: 'Instant notification with categories and feedback text.' },
+      { icon: '📊', t: 'Stats dashboard', d: 'Rating, clicks by platform, and comment history.' },
+      { icon: '📲', t: 'High-res QR code', d: 'Ready to print and place on tables, menus, or entrance.' },
+      { icon: '🏨', t: 'Multi-venue', d: 'Restaurants, hotels, and bars with specific categories.' },
+    ],
+
+    // Testimonials
+    testLabel: 'What our customers say',
+    testTitle: 'Real results, not promises',
+    testimonials: [
+      { quote: 'Okapi let us understand what our customers think before they publish it. Now we respond instantly and protect our online reputation.', name: 'Innova Home Center', role: 'Business · Costa Rica', icon: '🏠' },
+      { quote: 'The difference is huge. Before we didn\'t know what guests thought until we read negative reviews. Now we know instantly and act.', name: 'Hotel Fermata', role: 'Hotel · Costa Rica', icon: '🏨' },
+      { quote: 'In just a few weeks we improved our Google average. The QR on tables works perfectly and the manager gets alerts right away.', name: 'Restaurante Fuso', role: 'Restaurant · Costa Rica', icon: '🍽️' },
+    ],
+
+    // Pricing
+    pricingLabel: 'Pricing',
+    pricingTitle: 'No contracts. No surprises.',
+    pricingSub: 'Birdeye charges $299–$599/mo. We make it accessible.',
+    pricingPopular: 'MOST POPULAR',
+    pricingMonth: '/mo',
+    plans: [
+      { id: 'starter', label: 'Starter', price: '$29', sub: 'per location', dark: false, popular: false, cta: '14-day free trial', features: ['1 location', 'Up to 200 reviews/mo', 'Google + 1 platform', 'Manager email alerts', 'Downloadable QR'] },
+      { id: 'pro', label: 'Pro', price: '$59', sub: 'per location', dark: true, popular: true, cta: '14-day free trial', features: ['1 location', 'Unlimited reviews', '6 platforms', 'WhatsApp + Email', 'Full dashboard', 'Business categories'] },
+      { id: 'biz', label: 'Business', price: '$129', sub: 'up to 5 locations', dark: false, popular: false, cta: 'Talk to sales', features: ['Up to 5 locations', 'Unlimited reviews', '6 platforms', 'WhatsApp + Email', 'Multi-location dashboard', 'Assisted onboarding', 'Priority support'] },
+    ],
+
+    // FAQ
+    faqLabel: 'FAQ',
+    faqTitle: 'Frequently asked questions',
+    faqs: [
+      { q: 'Do I need to install anything?', a: 'No. Okapi works 100% in the browser. You access it from your computer and your customers from their phones by scanning the QR. No apps, no downloads.' },
+      { q: 'How do my customers access the review page?', a: 'Three ways: scanning the QR code we generate for you, receiving the direct link by email or WhatsApp. Any channel opens the same page — no app, no registration.' },
+      { q: 'What happens with unhappy customers?', a: 'If someone rates 1-3 stars, we take them to a private form where they can share what happened. You receive that information by email, and if they want direct contact, WhatsApp opens automatically.' },
+      { q: 'Can I connect multiple platforms?', a: 'Yes. You can activate up to 6 platforms: Google, TripAdvisor, OpenTable, TheFork, Facebook, and Yelp. Satisfied customers choose where to leave their review.' },
+      { q: 'Is this legal?', a: 'Yes. Okapi does not alter or delete reviews — it simply filters feedback before it gets published. This is a common practice in the hospitality industry.' },
+      { q: 'How long until it\'s active?', a: 'Less than 5 minutes. Create your account, set up your business with our step-by-step wizard, and your QR is ready to print.' },
+      { q: 'Can I cancel anytime?', a: 'Yes, no contracts or penalties. You can cancel your subscription at any time from the dashboard.' },
+    ],
+
+    // CTA section
+    ctaTitle: 'Start today. Free.',
+    ctaBody: '14-day trial. No credit card. Active in 5 minutes.',
+    ctaBtn: 'Create free account →',
+
+    // Footer
+    footerPricing: 'Pricing',
+    footerCopy: '© 2026 Okapi Reviews',
   },
 }
 
 export default function Home() {
   const [hoveredFeature, setHoveredFeature] = useState<string | null>(null)
   const [hoveredPlan, setHoveredPlan] = useState<string | null>(null)
+  const [faqOpen, setFaqOpen] = useState<number | null>(null)
   const [lang, setLang] = useState<'es' | 'en'>('es')
   const tx = L[lang]
 
@@ -159,10 +317,10 @@ export default function Home() {
             <Link href="/login" style={{ padding: '13px 30px', background: '#C8102E', color: '#fff', borderRadius: 10, fontSize: 15, fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 20px rgba(200,16,46,0.35)' }}
               onMouseEnter={e => { e.currentTarget.style.background = '#a80d26'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(200,16,46,0.45)' }}
               onMouseLeave={e => { e.currentTarget.style.background = '#C8102E'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(200,16,46,0.35)' }}>
-              Empezar gratis →
+              {tx.ctaArrow}
             </Link>
             <a href="#como-funciona" className="btn-ghost" style={{ padding: '13px 24px', background: 'transparent', color: '#777', border: '1px solid #2a2a2a', borderRadius: 10, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>
-              Cómo funciona
+              {tx.navHow}
             </a>
           </div>
         </div>
@@ -174,13 +332,13 @@ export default function Home() {
               <div style={{ textAlign: 'center', marginBottom: 14 }}>
                 <div style={{ width: 38, height: 38, borderRadius: 10, background: '#C8102E', margin: '0 auto 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🍽️</div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>Fermata Kitchen</div>
-                <div style={{ fontSize: 9, color: '#444', marginTop: 3 }}>¿Cómo calificarías tu visita?</div>
+                <div style={{ fontSize: 9, color: '#444', marginTop: 3 }}>{tx.mockRating}</div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'center', gap: 3, marginBottom: 16 }}>
                 {'★★★★★'.split('').map((s, i) => <span key={i} style={{ fontSize: 20, color: '#f59e0b' }}>{s}</span>)}
               </div>
-              <div style={{ fontSize: 9, color: '#444', textAlign: 'center', marginBottom: 10 }}>¿Nos dejás una reseña?</div>
-              <div style={{ background: '#4285F4', borderRadius: 7, padding: '8px', fontSize: 9, fontWeight: 700, color: '#fff', textAlign: 'center', marginBottom: 6 }}>G  Dejar reseña en Google</div>
+              <div style={{ fontSize: 9, color: '#444', textAlign: 'center', marginBottom: 10 }}>{tx.mockReview}</div>
+              <div style={{ background: '#4285F4', borderRadius: 7, padding: '8px', fontSize: 9, fontWeight: 700, color: '#fff', textAlign: 'center', marginBottom: 6 }}>G  Google</div>
               <div style={{ background: '#00AF87', borderRadius: 7, padding: '8px', fontSize: 9, fontWeight: 700, color: '#fff', textAlign: 'center' }}>TA  TripAdvisor</div>
             </div>
           </div>
@@ -189,8 +347,8 @@ export default function Home() {
             <div className="float-notif" style={{ position: 'absolute', top: -18, right: 16, background: '#fff', borderRadius: 10, padding: '8px 14px', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>★</div>
               <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#111' }}>Nueva reseña 5★ en Google</div>
-                <div style={{ fontSize: 10, color: '#aaa' }}>hace 2 minutos</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#111' }}>{tx.mockNotif}</div>
+                <div style={{ fontSize: 10, color: '#aaa' }}>{tx.mockAgo}</div>
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>
@@ -199,7 +357,7 @@ export default function Home() {
               <div style={{ marginLeft: 'auto', width: 7, height: 7, borderRadius: '50%', background: '#22c55e' }} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }}>
-              {[{ l: 'Total', v: '124', c: '#111' }, { l: 'Promedio', v: '4.7★', c: '#f59e0b' }, { l: 'Positivas', v: '108', c: '#16a34a' }, { l: 'Privadas', v: '16', c: '#C8102E' }].map(s => (
+              {tx.mockStats.map(s => (
                 <div key={s.l} style={{ background: '#f8f8f8', borderRadius: 8, padding: '10px' }}>
                   <div style={{ fontSize: 18, fontWeight: 800, color: s.c }}>{s.v}</div>
                   <div style={{ fontSize: 9, color: '#999', marginTop: 2 }}>{s.l}</div>
@@ -207,7 +365,7 @@ export default function Home() {
               ))}
             </div>
             <div style={{ background: '#f8f8f8', borderRadius: 8, padding: '12px', marginBottom: 10 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, marginBottom: 10 }}>Clicks por plataforma</div>
+              <div style={{ fontSize: 10, fontWeight: 700, marginBottom: 10 }}>{tx.mockClicks}</div>
               {[{ l: 'Google', p: 72, c: '#4285F4' }, { l: 'TripAdvisor', p: 28, c: '#00AF87' }].map(p => (
                 <div key={p.l} style={{ marginBottom: 7 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
@@ -223,24 +381,20 @@ export default function Home() {
             <div style={{ background: '#fef2f2', borderRadius: 8, padding: '10px 12px', border: '1px solid #fecaca', display: 'flex', gap: 10, alignItems: 'center' }}>
               <span style={{ fontSize: 14 }}>⚠️</span>
               <div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: '#C8102E', marginBottom: 3 }}>Nuevo feedback privado · hace 5 min</div>
-                <div style={{ fontSize: 9, color: '#666' }}>"El tiempo de espera fue demasiado largo…"</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: '#C8102E', marginBottom: 3 }}>{tx.mockAlert}</div>
+                <div style={{ fontSize: 9, color: '#666' }}>{tx.mockAlertText}</div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Client logos — credibilidad inmediata */}
+      {/* Client logos */}
       <section className="landing-pad" style={{ background: '#fff', padding: '40px 32px', borderTop: '1px solid #ebebeb', borderBottom: '1px solid #ebebeb' }}>
         <div style={{ maxWidth: 700, margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#bbb', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 20 }}>Negocios que confían en Okapi</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#bbb', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 20 }}>{tx.clientsTitle}</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 12 }}>
-            {[
-              { name: 'Innova Home Center', type: 'Empresa', icon: '🏠' },
-              { name: 'Hotel Fermata', type: 'Hotel', icon: '🏨' },
-              { name: 'Restaurante Fuso', type: 'Restaurante', icon: '🍽️' },
-            ].map(c => (
+            {tx.clients.map(c => (
               <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px', background: '#f7f7f8', borderRadius: 10, border: '1px solid #ebebeb' }}>
                 <span style={{ fontSize: 18 }}>{c.icon}</span>
                 <div>
@@ -253,22 +407,17 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Stats — urgencia */}
+      {/* Stats */}
       <section className="landing-pad" style={{ background: '#f7f7f8', padding: '80px 32px' }}>
         <div style={{ maxWidth: 880, margin: '0 auto' }}>
           <Reveal>
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
-              <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 36px)', fontWeight: 800, color: '#111', letterSpacing: '-0.02em', marginBottom: 10 }}>Las reseñas son tu visibilidad en Google</h2>
-              <p style={{ fontSize: 15, color: '#777', maxWidth: 440, margin: '0 auto' }}>Google usa las reseñas como señal directa de ranking local. No es opcional.</p>
+              <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 36px)', fontWeight: 800, color: '#111', letterSpacing: '-0.02em', marginBottom: 10 }}>{tx.statsTitle}</h2>
+              <p style={{ fontSize: 15, color: '#777', maxWidth: 440, margin: '0 auto' }}>{tx.statsSub}</p>
             </div>
           </Reveal>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
-            {[
-              { stat: '64%', desc: 'de los clientes googlea el negocio antes de visitarlo' },
-              { stat: '91%', desc: 'evita negocios con menos de 4 estrellas' },
-              { stat: '70%', desc: 'menos clicks si tu rating es menor a 4.0' },
-              { stat: '126%', desc: 'más tráfico para negocios en el Top 3 de Google Maps' },
-            ].map((s, i) => (
+            {tx.stats.map((s, i) => (
               <Reveal key={s.stat} delay={i * 80}>
                 <div style={{ background: '#fff', border: '1px solid #ebebeb', borderRadius: 14, padding: '24px 18px', textAlign: 'center', transition: 'transform 0.2s, box-shadow 0.2s' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)' }}
@@ -287,17 +436,12 @@ export default function Home() {
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <Reveal>
             <div style={{ textAlign: 'center', marginBottom: 64 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Cómo funciona</div>
-              <h2 style={{ fontSize: 'clamp(26px, 3.5vw, 38px)', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>Simple para el cliente. Poderoso para vos.</h2>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>{tx.howLabel}</div>
+              <h2 style={{ fontSize: 'clamp(26px, 3.5vw, 38px)', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>{tx.howTitle}</h2>
             </div>
           </Reveal>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2 }}>
-            {[
-              { n: '01', icon: '📱', t: 'Accede al link', d: 'Escaneando el QR en la mesa, o recibiendo el link directo por correo o WhatsApp. Sin app, sin descarga.', color: '#4285F4' },
-              { n: '02', icon: '⭐', t: 'Califica su visita', d: '4-5★ va a Google. 1-3★ el feedback queda privado para vos.', color: '#f59e0b' },
-              { n: '03', icon: '🔔', t: 'Recibís la alerta', d: 'Email al instante con el detalle. WhatsApp si quiere hablar.', color: '#C8102E' },
-              { n: '04', icon: '📈', t: 'Tu rating sube', d: 'Más reseñas 5★ publicadas. Menos críticas en internet.', color: '#22c55e' },
-            ].map((s, i) => (
+            {tx.howSteps.map((s, i) => (
               <Reveal key={s.n} delay={i * 80}>
                 <div className={i > 0 ? 'landing-how-border' : ''} style={{ padding: '36px 28px', borderLeft: i > 0 ? '1px solid #1e1e1e' : 'none', position: 'relative' }}>
                   <div style={{ fontSize: 11, fontWeight: 800, color: s.color, letterSpacing: '0.1em', marginBottom: 20 }}>{s.n}</div>
@@ -317,21 +461,14 @@ export default function Home() {
         <div style={{ maxWidth: 880, margin: '0 auto' }}>
           <Reveal>
             <div style={{ textAlign: 'center', marginBottom: 52 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Funcionalidades</div>
-              <h2 style={{ fontSize: 'clamp(26px, 3.5vw, 38px)', fontWeight: 800, color: '#111', letterSpacing: '-0.02em' }}>Todo incluido desde el primer día</h2>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>{tx.featLabel}</div>
+              <h2 style={{ fontSize: 'clamp(26px, 3.5vw, 38px)', fontWeight: 800, color: '#111', letterSpacing: '-0.02em' }}>{tx.featTitle}</h2>
             </div>
           </Reveal>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 12 }}>
-            {[
-              { icon: '🔗', t: '6 plataformas integradas', d: 'Google, TripAdvisor, OpenTable, TheFork, Facebook y Yelp.' },
-              { icon: '💬', t: 'WhatsApp directo', d: 'El manager recibe el mensaje del cliente listo para responder.' },
-              { icon: '📧', t: 'Alertas por email', d: 'Notificación instantánea con categorías y texto del feedback.' },
-              { icon: '📊', t: 'Dashboard con estadísticas', d: 'Rating, clicks por plataforma y historial de comentarios.' },
-              { icon: '📲', t: 'QR en alta resolución', d: 'Listo para imprimir y poner en mesas, menú o entrada.' },
-              { icon: '🏨', t: 'Multi-negocio', d: 'Restaurantes, hoteles y bares con categorías específicas.' },
-            ].map((f, i) => (
+            {tx.features.map((f, i) => (
               <Reveal key={f.t} delay={i * 60}>
-                <div style={{ background: hoveredFeature === f.t ? '#fff' : '#fff', borderRadius: 12, padding: '20px', border: `1px solid ${hoveredFeature === f.t ? '#d1d5db' : '#ebebeb'}`, display: 'flex', gap: 14, cursor: 'default', transform: hoveredFeature === f.t ? 'translateY(-3px)' : 'none', boxShadow: hoveredFeature === f.t ? '0 6px 20px rgba(0,0,0,0.07)' : 'none', transition: 'all 0.2s ease' }}
+                <div style={{ background: '#fff', borderRadius: 12, padding: '20px', border: `1px solid ${hoveredFeature === f.t ? '#d1d5db' : '#ebebeb'}`, display: 'flex', gap: 14, cursor: 'default', transform: hoveredFeature === f.t ? 'translateY(-3px)' : 'none', boxShadow: hoveredFeature === f.t ? '0 6px 20px rgba(0,0,0,0.07)' : 'none', transition: 'all 0.2s ease' }}
                   onMouseEnter={() => setHoveredFeature(f.t)}
                   onMouseLeave={() => setHoveredFeature(null)}>
                   <span style={{ fontSize: 22, flexShrink: 0 }}>{f.icon}</span>
@@ -351,16 +488,12 @@ export default function Home() {
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <Reveal>
             <div style={{ textAlign: 'center', marginBottom: 52 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Lo que dicen nuestros clientes</div>
-              <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 36px)', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>Resultados reales, no promesas</h2>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>{tx.testLabel}</div>
+              <h2 style={{ fontSize: 'clamp(24px, 3.5vw, 36px)', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>{tx.testTitle}</h2>
             </div>
           </Reveal>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
-            {[
-              { quote: 'Okapi nos permitió entender qué piensan nuestros clientes antes de que lo publiquen. Ahora respondemos al instante y protegemos nuestra reputación online.', name: 'Innova Home Center', role: 'Empresa · Costa Rica', icon: '🏠' },
-              { quote: 'La diferencia es enorme. Antes no sabíamos qué pensaban los huéspedes hasta leer las reseñas negativas. Ahora lo sabemos al instante y actuamos.', name: 'Hotel Fermata', role: 'Hotel · Costa Rica', icon: '🏨' },
-              { quote: 'En pocas semanas mejoramos nuestro promedio en Google. El QR en las mesas funciona perfecto y el manager recibe las alertas de inmediato.', name: 'Restaurante Fuso', role: 'Restaurante · Costa Rica', icon: '🍽️' },
-            ].map((t, i) => (
+            {tx.testimonials.map((t, i) => (
               <Reveal key={i} delay={i * 80}>
                 <div style={{ background: '#161616', borderRadius: 14, padding: '28px', border: '1px solid #2a2a2a', display: 'flex', flexDirection: 'column', gap: 16, height: '100%', boxSizing: 'border-box', transition: 'all 0.2s' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = '#C8102E'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-3px)' }}
@@ -386,26 +519,22 @@ export default function Home() {
         <div style={{ maxWidth: 860, margin: '0 auto' }}>
           <Reveal>
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Precios</div>
-              <h2 style={{ fontSize: 'clamp(26px, 3.5vw, 38px)', fontWeight: 800, color: '#111', letterSpacing: '-0.02em', marginBottom: 10 }}>Sin contratos. Sin sorpresas.</h2>
-              <p style={{ fontSize: 14, color: '#888' }}>Birdeye cobra $299–$599/mes. Nosotros lo hacemos accesible.</p>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>{tx.pricingLabel}</div>
+              <h2 style={{ fontSize: 'clamp(26px, 3.5vw, 38px)', fontWeight: 800, color: '#111', letterSpacing: '-0.02em', marginBottom: 10 }}>{tx.pricingTitle}</h2>
+              <p style={{ fontSize: 14, color: '#888' }}>{tx.pricingSub}</p>
             </div>
           </Reveal>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
-            {[
-              { id: 'starter', label: 'Starter', price: '$29', sub: 'por local', dark: false, popular: false, cta: '14 días gratis', features: ['1 local', 'Hasta 200 opiniones/mes', 'Google + 1 plataforma', 'Email al manager', 'QR descargable'] },
-              { id: 'pro', label: 'Pro', price: '$59', sub: 'por local', dark: true, popular: true, cta: '14 días gratis', features: ['1 local', 'Opiniones ilimitadas', '6 plataformas', 'WhatsApp + Email', 'Dashboard completo', 'Categorías por negocio'] },
-              { id: 'biz', label: 'Business', price: '$129', sub: 'hasta 5 locales', dark: false, popular: false, cta: 'Hablar con ventas', features: ['Hasta 5 locales', 'Opiniones ilimitadas', '6 plataformas', 'WhatsApp + Email', 'Dashboard multi-local', 'Onboarding asistido', 'Soporte prioritario'] },
-            ].map((plan, i) => (
+            {tx.plans.map((plan, i) => (
               <Reveal key={plan.id} delay={i * 80}>
                 <div style={{ background: plan.dark ? '#0f0f0f' : '#fff', borderRadius: 16, padding: '32px 24px', border: plan.popular ? '2px solid #C8102E' : '1px solid #e5e7eb', position: 'relative', height: '100%', boxSizing: 'border-box', transform: hoveredPlan === plan.id && !plan.popular ? 'translateY(-4px)' : 'none', boxShadow: hoveredPlan === plan.id ? '0 12px 32px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s ease' }}
                   onMouseEnter={() => setHoveredPlan(plan.id)}
                   onMouseLeave={() => setHoveredPlan(null)}>
-                  {plan.popular && <div style={{ position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)', background: '#C8102E', color: '#fff', fontSize: 10, fontWeight: 700, padding: '3px 14px', borderRadius: 20, whiteSpace: 'nowrap', letterSpacing: '0.05em' }}>MÁS POPULAR</div>}
+                  {plan.popular && <div style={{ position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)', background: '#C8102E', color: '#fff', fontSize: 10, fontWeight: 700, padding: '3px 14px', borderRadius: 20, whiteSpace: 'nowrap', letterSpacing: '0.05em' }}>{tx.pricingPopular}</div>}
                   <div style={{ fontSize: 13, fontWeight: 600, color: plan.dark ? '#555' : '#888', marginBottom: 16 }}>{plan.label}</div>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
                     <span style={{ fontSize: 40, fontWeight: 900, color: plan.dark ? '#fff' : '#111', letterSpacing: '-0.02em' }}>{plan.price}</span>
-                    <span style={{ fontSize: 13, color: plan.dark ? '#555' : '#aaa' }}>/mes</span>
+                    <span style={{ fontSize: 13, color: plan.dark ? '#555' : '#aaa' }}>{tx.pricingMonth}</span>
                   </div>
                   <div style={{ fontSize: 12, color: plan.dark ? '#444' : '#bbb', marginBottom: 24 }}>{plan.sub}</div>
                   <Link href="/login" style={{ display: 'block', padding: '11px 0', background: plan.popular ? '#C8102E' : plan.dark ? '#1e1e1e' : '#f4f4f5', color: plan.popular ? '#fff' : plan.dark ? '#fff' : '#111', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none', textAlign: 'center', marginBottom: 24 }}
@@ -429,18 +558,42 @@ export default function Home() {
       </section>
 
       {/* FAQ */}
-      <FAQ />
+      <section className="landing-pad" style={{ padding: '88px 32px', maxWidth: 720, margin: '0 auto' }}>
+        <Reveal>
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>{tx.faqLabel}</div>
+            <h2 style={{ fontSize: 'clamp(26px, 3.5vw, 38px)', fontWeight: 800, color: '#111', letterSpacing: '-0.02em' }}>{tx.faqTitle}</h2>
+          </div>
+        </Reveal>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {tx.faqs.map((faq, i) => (
+            <Reveal key={i} delay={i * 40}>
+              <div style={{ borderBottom: '1px solid #ebebeb', overflow: 'hidden' }}>
+                <button
+                  onClick={() => setFaqOpen(faqOpen === i ? null : i)}
+                  style={{ width: '100%', background: 'none', border: 'none', padding: '20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, cursor: 'pointer', textAlign: 'left' }}>
+                  <span style={{ fontSize: 15, fontWeight: 600, color: '#111', lineHeight: 1.4 }}>{faq.q}</span>
+                  <span style={{ fontSize: 20, color: '#aaa', flexShrink: 0, transform: faqOpen === i ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s ease', lineHeight: 1 }}>+</span>
+                </button>
+                <div style={{ maxHeight: faqOpen === i ? 200 : 0, overflow: 'hidden', transition: 'max-height 0.35s ease' }}>
+                  <p style={{ fontSize: 14, color: '#666', lineHeight: 1.75, paddingBottom: 20, margin: 0 }}>{faq.a}</p>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
 
       {/* CTA */}
       <section className="landing-pad" style={{ background: '#0f0f0f', padding: '88px 32px', textAlign: 'center' }}>
         <Reveal>
           <div style={{ maxWidth: 500, margin: '0 auto' }}>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', marginBottom: 14 }}>Empezá hoy. Gratis.</h2>
-            <p style={{ fontSize: 15, color: '#555', lineHeight: 1.7, marginBottom: 36 }}>14 días de prueba. Sin tarjeta de crédito. Activo en 5 minutos.</p>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', marginBottom: 14 }}>{tx.ctaTitle}</h2>
+            <p style={{ fontSize: 15, color: '#555', lineHeight: 1.7, marginBottom: 36 }}>{tx.ctaBody}</p>
             <Link href="/login" style={{ padding: '14px 40px', background: '#C8102E', color: '#fff', borderRadius: 10, fontSize: 16, fontWeight: 700, textDecoration: 'none', display: 'inline-block', boxShadow: '0 4px 20px rgba(200,16,46,0.35)' }}
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(200,16,46,0.45)' }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(200,16,46,0.35)' }}>
-              Crear cuenta gratis →
+              {tx.ctaBtn}
             </Link>
           </div>
         </Reveal>
@@ -452,10 +605,10 @@ export default function Home() {
           <div style={{ width: 22, height: 22, borderRadius: 5, background: '#C8102E', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: '#fff' }}>O</div>
           <span style={{ fontWeight: 700, fontSize: 13, color: '#fff' }}>Okapi Reviews</span>
         </div>
-        <p style={{ fontSize: 12, color: '#3a3a3a', margin: 0 }}>© 2026 Okapi Reviews</p>
+        <p style={{ fontSize: 12, color: '#3a3a3a', margin: 0 }}>{tx.footerCopy}</p>
         <div style={{ display: 'flex', gap: 20 }}>
-          <a href="#pricing" style={{ fontSize: 12, color: '#444', textDecoration: 'none' }}>Precios</a>
-          <Link href="/login" style={{ fontSize: 12, color: '#444', textDecoration: 'none' }}>Login</Link>
+          <a href="#pricing" style={{ fontSize: 12, color: '#444', textDecoration: 'none' }}>{tx.footerPricing}</a>
+          <Link href="/login" style={{ fontSize: 12, color: '#444', textDecoration: 'none' }}>{tx.navLogin}</Link>
         </div>
       </footer>
     </div>
