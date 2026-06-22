@@ -184,51 +184,16 @@ function Dashboard() {
         router.push('/onboarding')
         return
       }
-      const { restaurant: effectiveRest, role } = await res.json()
+      const { restaurant: effectiveRest, role, scans: scanData, impressions: impressionData, retentionCodes: codesData, staffMembers: staffData, locations: locData } = await res.json()
       if (role) setMemberRole(role)
 
       if (effectiveRest) {
-        const rest = effectiveRest
-        setRestaurant(rest)
-        setForm(rest)
-        const { data: scanData } = await supabase
-          .from('scans')
-          .select('*')
-          .eq('restaurant_id', rest.id)
-          .order('created_at', { ascending: false })
-          .limit(500)
+        setRestaurant(effectiveRest)
+        setForm(effectiveRest)
         setScans(scanData || [])
-
-        const { data: impressionData } = await supabase
-          .from('impressions')
-          .select('created_at')
-          .eq('restaurant_id', rest.id)
-          .order('created_at', { ascending: false })
-          .limit(500)
         setImpressions(impressionData || [])
-
-        const { data: codesData } = await supabase
-          .from('retention_codes')
-          .select('*')
-          .eq('restaurant_id', rest.id)
-          .order('created_at', { ascending: false })
-          .limit(100)
         setRetentionCodes(codesData || [])
-
-        const { data: staffData } = await supabase
-          .from('staff_members')
-          .select('*')
-          .eq('restaurant_id', rest.id)
-          .is('deleted_at', null)
-          .order('created_at', { ascending: true })
         setStaffMembers(staffData || [])
-
-        const { data: locData } = await supabase
-          .from('locations')
-          .select('*')
-          .eq('restaurant_id', rest.id)
-          .is('deleted_at', null)
-          .order('created_at', { ascending: true })
         setLocations(locData || [])
       } else {
         router.push('/onboarding')
