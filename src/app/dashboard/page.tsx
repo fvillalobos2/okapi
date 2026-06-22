@@ -164,6 +164,7 @@ function Dashboard() {
   const [impressions, setImpressions] = useState<{ created_at: string }[]>([])
   const [logoDragging, setLogoDragging] = useState(false)
   const [memberRole, setMemberRole] = useState<'manager' | 'viewer' | null>(null)
+  const [openSection, setOpenSection] = useState<string | null>('perfil')
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [teamInviteEmail, setTeamInviteEmail] = useState('')
   const [teamInviteRole, setTeamInviteRole] = useState<'manager' | 'viewer'>('manager')
@@ -1527,267 +1528,259 @@ function Dashboard() {
         })()}
 
         {/* Config tab */}
-        {activeTab === 'config' && (
-          <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #ebebeb' }}>
-
-            {/* Logo upload */}
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 10 }}>{t.dash_logo}</div>
-              <label
-                onDragOver={e => { e.preventDefault(); setLogoDragging(true) }}
-                onDragLeave={() => setLogoDragging(false)}
-                onDrop={e => { e.preventDefault(); setLogoDragging(false); const file = e.dataTransfer.files?.[0]; if (file) handleLogoUpload(file) }}
-                style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px', border: `2px dashed ${logoDragging ? '#C8102E' : '#e0e0e0'}`, borderRadius: 12, cursor: 'pointer', background: logoDragging ? '#fff5f5' : '#fafafa', transition: 'all 0.15s' }}>
-                <div style={{ width: 64, height: 64, borderRadius: 10, background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
-                  {form.logo_url
-                    ? <img src={form.logo_url} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.removeAttribute('style') }} />
-                    : null}
-                  <span style={{ fontSize: 26, display: form.logo_url ? 'none' : 'block' }}>🖼️</span>
-                </div>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>
-                    {uploadingLogo ? t.dash_uploading : form.logo_url ? t.dash_change_logo : t.dash_upload_logo}
+        {activeTab === 'config' && (() => {
+          const Acc = ({ id, title, sub, children }: { id: string; title: string; sub?: string; children: React.ReactNode }) => {
+            const open = openSection === id
+            return (
+              <div style={{ borderBottom: '1px solid #f0f0f0' }}>
+                <button onClick={() => setOpenSection(open ? null : id)}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#111' }}>{title}</div>
+                    {sub && <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{sub}</div>}
                   </div>
-                  <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{t.dash_logo_hint}</div>
-                </div>
-                <input type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }}
-                  onChange={e => { const file = e.target.files?.[0]; if (file) handleLogoUpload(file) }} />
-              </label>
-            </div>
-
-            <div style={{ height: 1, background: '#f0f0f0', marginBottom: 20 }} />
-
-            {/* Fields */}
-            {[
-              { label: t.field_name, key: 'name', placeholder: 'Ej: Fermata Kitchen' },
-              { label: t.field_manager_email, key: 'manager_email', placeholder: 'manager@turestaurante.com' },
-              { label: t.field_wa, key: 'wa_number', placeholder: t.field_wa_placeholder },
-              { label: t.field_slug, key: 'slug', placeholder: 'mi-restaurante' },
-              { label: t.field_google, key: 'google_place_id', placeholder: 'https://g.page/r/...' },
-              { label: t.field_tripadvisor, key: 'tripadvisor_url', placeholder: 'https://tripadvisor.com/...' },
-              // { label: t.field_opentable, key: 'opentable_url', placeholder: 'https://opentable.com/...' },
-              { label: t.field_thefork, key: 'thefork_url', placeholder: 'https://thefork.com/...' },
-              { label: t.field_facebook, key: 'facebook_url', placeholder: 'https://facebook.com/...' },
-              { label: t.field_yelp, key: 'yelp_url', placeholder: 'https://yelp.com/...' },
-            ].map(f => (
-              <div key={f.key} style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 13, fontWeight: 600, color: '#333', display: 'block', marginBottom: 6 }}>{f.label}</label>
-                <input
-                  value={(form as any)[f.key] || ''}
-                  onChange={e => setForm({ ...form, [f.key]: e.target.value })}
-                  placeholder={f.placeholder}
-                  style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '10px 12px', fontSize: 14, outline: 'none', boxSizing: 'border-box', color: '#111', background: '#fff' }}
-                />
+                  <span style={{ fontSize: 12, color: '#bbb', transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }}>▼</span>
+                </button>
+                {open && <div style={{ paddingBottom: 20 }}>{children}</div>}
               </div>
-            ))}
+            )
+          }
 
-            {/* WhatsApp toggle */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderTop: '1px solid #f0f0f0', marginTop: 4, marginBottom: 20 }}>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>{t.dash_wa_toggle}</div>
-                <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{t.dash_wa_toggle_desc}</div>
-              </div>
-              <div onClick={async () => {
-                const newVal = !form.wa_enabled
-                setForm({ ...form, wa_enabled: newVal })
-                if (restaurant) {
-                  await supabase.from('restaurants').update({ wa_enabled: newVal }).eq('id', restaurant.id)
-                  setRestaurant({ ...restaurant, wa_enabled: newVal })
-                }
-              }}
-                style={{ width: 44, height: 24, borderRadius: 12, background: form.wa_enabled ? '#25D366' : '#d1d5db', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
-                <div style={{ position: 'absolute', top: 2, left: form.wa_enabled ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', transition: 'left 0.2s' }} />
-              </div>
-            </div>
+          return (
+            <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #ebebeb', overflow: 'hidden' }}>
+              <div style={{ padding: '0 20px' }}>
 
-            {/* Platforms */}
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>{t.dash_active_platforms}</div>
-              <div style={{ fontSize: 12, color: '#aaa', marginBottom: 12 }}>{t.dash_platforms_hint}</div>
-              {(() => {
-                const urlMap: Record<string, string> = { google: 'google_place_id', tripadvisor: 'tripadvisor_url', thefork: 'thefork_url', facebook: 'facebook_url', yelp: 'yelp_url' }
-                const withUrl = PLATFORMS.filter(p => (form as any)[urlMap[p.key]])
-                if (withUrl.length === 0) return <div style={{ fontSize: 13, color: '#bbb', padding: '12px 0' }}>{t.dash_add_urls}</div>
-                return (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-                    {withUrl.map(p => {
-                      const active = form.platforms_active?.[p.key] ?? false
-                      return (
-                        <div key={p.key} onClick={() => setForm({ ...form, platforms_active: { ...form.platforms_active, [p.key]: !active } })}
-                          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10, border: `2px solid ${active ? p.color : '#e5e7eb'}`, background: active ? `${p.color}10` : '#fafafa', cursor: 'pointer' }}>
-                          <div style={{ width: 10, height: 10, borderRadius: '50%', background: active ? p.color : '#d1d5db', flexShrink: 0 }} />
-                          <span style={{ fontSize: 13, fontWeight: 600, color: active ? p.color : '#888' }}>{p.label}</span>
-                        </div>
-                      )
-                    })}
+                {/* Perfil */}
+                <Acc id="perfil" title="Perfil" sub="Logo, nombre y URL pública">
+                  <div style={{ marginBottom: 16 }}>
+                    <label
+                      onDragOver={e => { e.preventDefault(); setLogoDragging(true) }}
+                      onDragLeave={() => setLogoDragging(false)}
+                      onDrop={e => { e.preventDefault(); setLogoDragging(false); const file = e.dataTransfer.files?.[0]; if (file) handleLogoUpload(file) }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px', border: `2px dashed ${logoDragging ? '#C8102E' : '#e0e0e0'}`, borderRadius: 12, cursor: 'pointer', background: logoDragging ? '#fff5f5' : '#fafafa', transition: 'all 0.15s', marginBottom: 16 }}>
+                      <div style={{ width: 56, height: 56, borderRadius: 10, background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                        {form.logo_url ? <img src={form.logo_url} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={e => { e.currentTarget.style.display = 'none' }} /> : null}
+                        <span style={{ fontSize: 24, display: form.logo_url ? 'none' : 'block' }}>🖼️</span>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>{uploadingLogo ? t.dash_uploading : form.logo_url ? t.dash_change_logo : t.dash_upload_logo}</div>
+                        <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{t.dash_logo_hint}</div>
+                      </div>
+                      <input type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} onChange={e => { const file = e.target.files?.[0]; if (file) handleLogoUpload(file) }} />
+                    </label>
                   </div>
-                )
-              })()}
-            </div>
-
-            {/* Custom categories */}
-            {(() => {
-              const typeKey = (restaurant as any)?.business_type || 'default'
-              const defaults = DEFAULT_CATEGORIES[typeKey] ?? DEFAULT_CATEGORIES.default
-              const cats: { es: string; en: string }[] = (() => {
-                const custom = form.custom_categories
-                if (custom?.es?.length) {
-                  return custom.es.map((es, i) => ({ es, en: custom.en?.[i] ?? '' }))
-                }
-                return defaults.es.map((es, i) => ({ es, en: defaults.en[i] ?? '' }))
-              })()
-              const setCats = (next: { es: string; en: string }[]) => {
-                setForm(f => ({ ...f, custom_categories: { es: next.map(c => c.es), en: next.map(c => c.en) } }))
-              }
-              return (
-                <div style={{ marginBottom: 24 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>{t.field_categories_title}</div>
-                  <div style={{ fontSize: 12, color: '#aaa', marginBottom: 14, lineHeight: 1.5 }}>{t.field_categories_desc}</div>
-                  <div className="dash-cat-header" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 28px', gap: 6, marginBottom: 8 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t.field_categories_col_es}</div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t.field_categories_col_en}</div>
-                    <div />
-                  </div>
-                  {cats.map((cat, i) => (
-                    <div key={i} className="dash-cat-pair" style={{ display: 'flex', flexDirection: 'row', gap: 6, marginBottom: 6 }}>
-                      <input value={cat.es} onChange={e => { const next = [...cats]; next[i] = { ...next[i], es: e.target.value }; setCats(next) }}
-                        placeholder={t.field_categories_placeholder_es}
-                        style={{ flex: 1, border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 10px', fontSize: 13, outline: 'none', color: '#111', boxSizing: 'border-box', minWidth: 0 }} />
-                      <input value={cat.en} onChange={e => { const next = [...cats]; next[i] = { ...next[i], en: e.target.value }; setCats(next) }}
-                        placeholder={t.field_categories_placeholder_en}
-                        style={{ flex: 1, border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 10px', fontSize: 13, outline: 'none', color: '#111', boxSizing: 'border-box', minWidth: 0 }} />
-                      <button onClick={() => setCats(cats.filter((_, j) => j !== i))}
-                        style={{ background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', fontSize: 16, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, width: 28 }}>✕</button>
+                  {[
+                    { label: t.field_name, key: 'name', placeholder: 'Ej: Fermata Kitchen' },
+                    { label: t.field_manager_email, key: 'manager_email', placeholder: 'manager@turestaurante.com' },
+                    { label: t.field_slug, key: 'slug', placeholder: 'mi-restaurante' },
+                  ].map(f => (
+                    <div key={f.key} style={{ marginBottom: 14 }}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 5 }}>{f.label}</label>
+                      <input value={(form as any)[f.key] || ''} onChange={e => setForm({ ...form, [f.key]: e.target.value })} placeholder={f.placeholder}
+                        style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '10px 12px', fontSize: 14, outline: 'none', boxSizing: 'border-box', color: '#111', background: '#fff' }} />
                     </div>
                   ))}
-                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                    <button onClick={() => setCats([...cats, { es: '', en: '' }])}
-                      style={{ flex: 1, padding: '8px 0', border: '1.5px dashed #d1d5db', borderRadius: 8, background: 'none', fontSize: 13, color: '#888', cursor: 'pointer', fontWeight: 600 }}>
-                      {t.field_categories_add}
-                    </button>
-                    <button onClick={() => setForm(f => ({ ...f, custom_categories: null }))}
-                      style={{ padding: '8px 14px', border: '1.5px solid #e5e7eb', borderRadius: 8, background: 'none', fontSize: 12, color: '#aaa', cursor: 'pointer' }}>
-                      {t.field_categories_reset}
-                    </button>
-                  </div>
-                </div>
-              )
-            })()}
+                </Acc>
 
-            {/* Team members — owner only */}
-            {memberRole === null && (() => {
-              const PLAN_MEMBER_LIMITS: Record<string, number> = { starter: 3, pro: 10, business: 25, trial: 3 }
-              const plan = restaurant!.plan ?? restaurant!.subscription_status ?? 'trial'
-              const memberLimit = PLAN_MEMBER_LIMITS[plan] ?? 3
-              // +1 for owner
-              const slotsUsed = teamMembers.length + 1
-              const atLimit = slotsUsed >= memberLimit
-
-              return (
-                <div style={{ marginBottom: 24 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>Equipo</div>
-                      <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>{slotsUsed} de {memberLimit} usuarios · incluyéndote a vos</div>
+                {/* Plataformas */}
+                <Acc id="plataformas" title="Plataformas" sub="URLs de reseñas y cuáles mostrar">
+                  {[
+                    { label: t.field_google, key: 'google_place_id', placeholder: 'https://g.page/r/...' },
+                    { label: t.field_tripadvisor, key: 'tripadvisor_url', placeholder: 'https://tripadvisor.com/...' },
+                    { label: t.field_thefork, key: 'thefork_url', placeholder: 'https://thefork.com/...' },
+                    { label: t.field_facebook, key: 'facebook_url', placeholder: 'https://facebook.com/...' },
+                    { label: t.field_yelp, key: 'yelp_url', placeholder: 'https://yelp.com/...' },
+                  ].map(f => (
+                    <div key={f.key} style={{ marginBottom: 14 }}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 5 }}>{f.label}</label>
+                      <input value={(form as any)[f.key] || ''} onChange={e => setForm({ ...form, [f.key]: e.target.value })} placeholder={f.placeholder}
+                        style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '10px 12px', fontSize: 14, outline: 'none', boxSizing: 'border-box', color: '#111', background: '#fff' }} />
                     </div>
-                    <button onClick={loadTeamMembers}
-                      style={{ fontSize: 11, color: '#aaa', background: 'none', border: '1px solid #e0e0e0', borderRadius: 7, padding: '4px 10px', cursor: 'pointer' }}>
-                      Actualizar
-                    </button>
-                  </div>
-
-                  {/* Existing members list */}
-                  {teamMembers.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
-                      {teamMembers.map(m => (
-                        <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', border: '1px solid #ebebeb', borderRadius: 10, background: m.accepted_at ? '#fff' : '#fafafa' }}>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.email}</div>
-                            <div style={{ fontSize: 11, color: '#aaa', marginTop: 1 }}>
-                              {m.accepted_at ? 'Activo' : 'Pendiente de aceptar'}
-                            </div>
-                          </div>
-                          <select value={m.role} onChange={e => updateMemberRole(m.id, e.target.value as any)}
-                            style={{ fontSize: 11, border: '1px solid #ddd', borderRadius: 7, padding: '4px 8px', color: '#555', background: '#fff', cursor: 'pointer' }}>
-                            <option value="manager">Manager</option>
-                            <option value="viewer">Viewer</option>
-                          </select>
-                          <button onClick={() => removeMember(m.id)}
-                            style={{ fontSize: 13, color: '#ddd', background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px' }}>✕</button>
+                  ))}
+                  <div style={{ marginTop: 4 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 8 }}>{t.dash_active_platforms}</div>
+                    <div style={{ fontSize: 12, color: '#aaa', marginBottom: 10 }}>{t.dash_platforms_hint}</div>
+                    {(() => {
+                      const urlMap: Record<string, string> = { google: 'google_place_id', tripadvisor: 'tripadvisor_url', thefork: 'thefork_url', facebook: 'facebook_url', yelp: 'yelp_url' }
+                      const withUrl = PLATFORMS.filter(p => (form as any)[urlMap[p.key]])
+                      if (withUrl.length === 0) return <div style={{ fontSize: 13, color: '#bbb', padding: '8px 0' }}>{t.dash_add_urls}</div>
+                      return (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                          {withUrl.map(p => {
+                            const active = form.platforms_active?.[p.key] ?? false
+                            return (
+                              <div key={p.key} onClick={() => setForm({ ...form, platforms_active: { ...form.platforms_active, [p.key]: !active } })}
+                                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10, border: `2px solid ${active ? p.color : '#e5e7eb'}`, background: active ? `${p.color}10` : '#fafafa', cursor: 'pointer' }}>
+                                <div style={{ width: 10, height: 10, borderRadius: '50%', background: active ? p.color : '#d1d5db', flexShrink: 0 }} />
+                                <span style={{ fontSize: 13, fontWeight: 600, color: active ? p.color : '#888' }}>{p.label}</span>
+                              </div>
+                            )
+                          })}
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      )
+                    })()}
+                  </div>
+                </Acc>
 
-                  {/* Invite form */}
-                  {!atLimit ? (
-                    <form onSubmit={inviteMember}>
-                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        <input type="email" value={teamInviteEmail} onChange={e => setTeamInviteEmail(e.target.value)}
-                          placeholder="correo@ejemplo.com"
-                          style={{ flex: 1, minWidth: 160, padding: '10px 12px', border: '1px solid #ddd', borderRadius: 10, fontSize: 13, boxSizing: 'border-box' }} />
-                        <select value={teamInviteRole} onChange={e => setTeamInviteRole(e.target.value as any)}
-                          style={{ padding: '10px 10px', border: '1px solid #ddd', borderRadius: 10, fontSize: 13, color: '#555', background: '#fff', cursor: 'pointer' }}>
-                          <option value="manager">Manager</option>
-                          <option value="viewer">Viewer</option>
-                        </select>
-                        <button type="submit" disabled={inviting || !teamInviteEmail.trim()}
-                          style={{ padding: '10px 16px', background: inviting ? '#aaa' : '#111', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: !teamInviteEmail.trim() ? 0.4 : 1 }}>
-                          {inviting ? 'Enviando…' : 'Invitar'}
-                        </button>
-                      </div>
-                      {inviteMsg && (
-                        <div style={{ marginTop: 8, fontSize: 12, color: inviteMsg.type === 'ok' ? '#16a34a' : '#dc2626' }}>
-                          {inviteMsg.text}
+                {/* WhatsApp */}
+                <Acc id="whatsapp" title="WhatsApp" sub="Número y activación de seguimiento">
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 5 }}>{t.field_wa}</label>
+                    <input value={form.wa_number || ''} onChange={e => setForm({ ...form, wa_number: e.target.value })} placeholder={t.field_wa_placeholder}
+                      style={{ width: '100%', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '10px 12px', fontSize: 14, outline: 'none', boxSizing: 'border-box', color: '#111', background: '#fff' }} />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderTop: '1px solid #f4f4f5' }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>{t.dash_wa_toggle}</div>
+                      <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{t.dash_wa_toggle_desc}</div>
+                    </div>
+                    <div onClick={async () => {
+                      const newVal = !form.wa_enabled
+                      setForm({ ...form, wa_enabled: newVal })
+                      if (restaurant) { await supabase.from('restaurants').update({ wa_enabled: newVal }).eq('id', restaurant.id); setRestaurant({ ...restaurant, wa_enabled: newVal }) }
+                    }} style={{ width: 44, height: 24, borderRadius: 12, background: form.wa_enabled ? '#25D366' : '#d1d5db', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                      <div style={{ position: 'absolute', top: 2, left: form.wa_enabled ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', transition: 'left 0.2s' }} />
+                    </div>
+                  </div>
+                </Acc>
+
+                {/* Categorías */}
+                <Acc id="categorias" title="Categorías" sub="Etiquetas del formulario de reseñas">
+                  {(() => {
+                    const typeKey = (restaurant as any)?.business_type || 'default'
+                    const defaults = DEFAULT_CATEGORIES[typeKey] ?? DEFAULT_CATEGORIES.default
+                    const cats: { es: string; en: string }[] = (() => {
+                      const custom = form.custom_categories
+                      if (custom?.es?.length) return custom.es.map((es, i) => ({ es, en: custom.en?.[i] ?? '' }))
+                      return defaults.es.map((es, i) => ({ es, en: defaults.en[i] ?? '' }))
+                    })()
+                    const setCats = (next: { es: string; en: string }[]) => setForm(f => ({ ...f, custom_categories: { es: next.map(c => c.es), en: next.map(c => c.en) } }))
+                    return (
+                      <>
+                        <div style={{ fontSize: 12, color: '#aaa', marginBottom: 14, lineHeight: 1.5 }}>{t.field_categories_desc}</div>
+                        <div className="dash-cat-header" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 28px', gap: 6, marginBottom: 8 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t.field_categories_col_es}</div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t.field_categories_col_en}</div>
+                          <div />
+                        </div>
+                        {cats.map((cat, i) => (
+                          <div key={i} className="dash-cat-pair" style={{ display: 'flex', flexDirection: 'row', gap: 6, marginBottom: 6 }}>
+                            <input value={cat.es} onChange={e => { const next = [...cats]; next[i] = { ...next[i], es: e.target.value }; setCats(next) }} placeholder={t.field_categories_placeholder_es}
+                              style={{ flex: 1, border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 10px', fontSize: 13, outline: 'none', color: '#111', boxSizing: 'border-box', minWidth: 0 }} />
+                            <input value={cat.en} onChange={e => { const next = [...cats]; next[i] = { ...next[i], en: e.target.value }; setCats(next) }} placeholder={t.field_categories_placeholder_en}
+                              style={{ flex: 1, border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 10px', fontSize: 13, outline: 'none', color: '#111', boxSizing: 'border-box', minWidth: 0 }} />
+                            <button onClick={() => setCats(cats.filter((_, j) => j !== i))}
+                              style={{ background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', fontSize: 16, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, width: 28 }}>✕</button>
+                          </div>
+                        ))}
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                          <button onClick={() => setCats([...cats, { es: '', en: '' }])}
+                            style={{ flex: 1, padding: '8px 0', border: '1.5px dashed #d1d5db', borderRadius: 8, background: 'none', fontSize: 13, color: '#888', cursor: 'pointer', fontWeight: 600 }}>
+                            {t.field_categories_add}
+                          </button>
+                          <button onClick={() => setForm(f => ({ ...f, custom_categories: null }))}
+                            style={{ padding: '8px 14px', border: '1.5px solid #e5e7eb', borderRadius: 8, background: 'none', fontSize: 12, color: '#aaa', cursor: 'pointer' }}>
+                            {t.field_categories_reset}
+                          </button>
+                        </div>
+                      </>
+                    )
+                  })()}
+                </Acc>
+
+                {/* Equipo — owner only */}
+                {memberRole === null && (() => {
+                  const PLAN_MEMBER_LIMITS: Record<string, number> = { starter: 3, pro: 10, business: 25, trial: 3 }
+                  const plan = restaurant!.plan ?? restaurant!.subscription_status ?? 'trial'
+                  const memberLimit = PLAN_MEMBER_LIMITS[plan] ?? 3
+                  const slotsUsed = teamMembers.length + 1
+                  const atLimit = slotsUsed >= memberLimit
+                  return (
+                    <Acc id="equipo" title="Equipo" sub={`${slotsUsed} de ${memberLimit} usuarios`}>
+                      {teamMembers.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+                          {teamMembers.map(m => (
+                            <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', border: '1px solid #ebebeb', borderRadius: 10, background: m.accepted_at ? '#fff' : '#fafafa' }}>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 13, fontWeight: 600, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.email}</div>
+                                <div style={{ fontSize: 11, color: '#aaa', marginTop: 1 }}>{m.accepted_at ? 'Activo' : 'Pendiente'}</div>
+                              </div>
+                              <select value={m.role} onChange={e => updateMemberRole(m.id, e.target.value as any)}
+                                style={{ fontSize: 11, border: '1px solid #ddd', borderRadius: 7, padding: '4px 8px', color: '#555', background: '#fff', cursor: 'pointer' }}>
+                                <option value="manager">Manager</option>
+                                <option value="viewer">Viewer</option>
+                              </select>
+                              <button onClick={() => removeMember(m.id)} style={{ fontSize: 13, color: '#ddd', background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px' }}>✕</button>
+                            </div>
+                          ))}
                         </div>
                       )}
-                    </form>
-                  ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 8 }}>
-                      <span style={{ fontSize: 12, color: '#dc2626' }}>Límite de {memberLimit} usuarios en tu plan actual.</span>
-                      <Link href="/upgrade" style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', textDecoration: 'none' }}>Ver planes →</Link>
+                      {!atLimit ? (
+                        <form onSubmit={inviteMember}>
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            <input type="email" value={teamInviteEmail} onChange={e => setTeamInviteEmail(e.target.value)} placeholder="correo@ejemplo.com"
+                              style={{ flex: 1, minWidth: 140, padding: '10px 12px', border: '1px solid #ddd', borderRadius: 10, fontSize: 13, boxSizing: 'border-box' }} />
+                            <select value={teamInviteRole} onChange={e => setTeamInviteRole(e.target.value as any)}
+                              style={{ padding: '10px 8px', border: '1px solid #ddd', borderRadius: 10, fontSize: 13, color: '#555', background: '#fff', cursor: 'pointer' }}>
+                              <option value="manager">Manager</option>
+                              <option value="viewer">Viewer</option>
+                            </select>
+                            <button type="submit" disabled={inviting || !teamInviteEmail.trim()}
+                              style={{ padding: '10px 16px', background: inviting ? '#aaa' : '#111', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: !teamInviteEmail.trim() ? 0.4 : 1 }}>
+                              {inviting ? 'Enviando…' : 'Invitar'}
+                            </button>
+                          </div>
+                          {inviteMsg && <div style={{ marginTop: 8, fontSize: 12, color: inviteMsg.type === 'ok' ? '#16a34a' : '#dc2626' }}>{inviteMsg.text}</div>}
+                        </form>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 8 }}>
+                          <span style={{ fontSize: 12, color: '#dc2626' }}>Límite de {memberLimit} usuarios en tu plan.</span>
+                          <Link href="/upgrade" style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', textDecoration: 'none' }}>Ver planes →</Link>
+                        </div>
+                      )}
+                      <div style={{ fontSize: 11, color: '#bbb', marginTop: 10, lineHeight: 1.5 }}>
+                        <strong>Manager:</strong> acceso completo excepto billing · <strong>Viewer:</strong> solo ve estadísticas
+                      </div>
+                    </Acc>
+                  )
+                })()}
+
+                {/* Plan */}
+                <Acc id="plan" title="Plan" sub={status === 'active' ? (restaurant!.plan ?? 'Pro') : status === 'trial' ? 'Trial gratuito' : 'Sin plan activo'}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>
+                        {status === 'active' ? (restaurant!.plan ? restaurant!.plan.charAt(0).toUpperCase() + restaurant!.plan.slice(1) : 'Pro') : status === 'trial' ? t.dash_plan_trial : t.dash_plan_none}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>
+                        {status === 'active' && subEnd ? t.dash_plan_renews(subEnd.toLocaleDateString(lang === 'en' ? 'en-US' : 'es-CR')) : status === 'trial' ? t.dash_plan_free_trial : ''}
+                      </div>
                     </div>
-                  )}
-
-                  <div style={{ fontSize: 11, color: '#bbb', marginTop: 10, lineHeight: 1.5 }}>
-                    <strong>Manager:</strong> acceso completo excepto billing · <strong>Viewer:</strong> solo ve estadísticas
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      {status === 'active' && (
+                        <button onClick={handleCancelSubscription} style={{ background: 'none', border: '1px solid #e0e0e0', borderRadius: 8, padding: '5px 12px', fontSize: 12, color: '#aaa', cursor: 'pointer' }}>
+                          {t.dash_cancel_sub}
+                        </button>
+                      )}
+                      <Link href="/upgrade" style={{ background: '#111', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none' }}>
+                        {status === 'active' ? t.dash_change_plan : t.dash_see_plans}
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              )
-            })()}
+                </Acc>
 
-            <div style={{ height: 1, background: '#f0f0f0', marginBottom: 20 }} />
+              </div>
 
-            {/* Plan section */}
-            <div style={{ marginBottom: 24, padding: '16px', background: '#f7f7f8', borderRadius: 12, border: '1px solid #ebebeb' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>
-                    {status === 'active' ? (restaurant!.plan ? restaurant!.plan.charAt(0).toUpperCase() + restaurant!.plan.slice(1) : 'Pro') : status === 'trial' ? t.dash_plan_trial : t.dash_plan_none}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>
-                    {status === 'active' && subEnd ? t.dash_plan_renews(subEnd.toLocaleDateString(lang === 'en' ? 'en-US' : 'es-CR')) : status === 'trial' ? t.dash_plan_free_trial : ''}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  {status === 'active' && (
-                    <button onClick={handleCancelSubscription} style={{ background: 'none', border: '1px solid #e0e0e0', borderRadius: 8, padding: '5px 12px', fontSize: 12, color: '#aaa', cursor: 'pointer' }}>
-                      {t.dash_cancel_sub}
-                    </button>
-                  )}
-                  <Link href="/upgrade" style={{ background: '#111', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none' }}>
-                    {status === 'active' ? t.dash_change_plan : t.dash_see_plans}
-                  </Link>
-                </div>
+              {/* Save button — always visible */}
+              <div style={{ padding: '16px 20px', borderTop: '1px solid #f0f0f0' }}>
+                <button onClick={saveConfig} disabled={saving}
+                  style={{ width: '100%', padding: '13px 0', background: saving ? '#aaa' : saved ? '#16a34a' : '#C8102E', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', transition: 'background 0.2s' }}>
+                  {saving ? t.saving : saved ? t.saved : t.save}
+                </button>
               </div>
             </div>
-
-            <button onClick={saveConfig} disabled={saving}
-              style={{ width: '100%', padding: '13px 0', background: saving ? '#aaa' : saved ? '#16a34a' : '#C8102E', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', transition: 'background 0.2s' }}>
-              {saving ? t.saving : saved ? t.saved : t.save}
-            </button>
-          </div>
-        )}
+          )
+        })()}
       </div>
     </div>
   )
