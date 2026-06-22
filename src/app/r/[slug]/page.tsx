@@ -140,7 +140,7 @@ export default function ReviewPage() {
         contactName,
         wantsContact: wantsContactVal,
       }),
-    })
+    }).catch(() => {})
     // WhatsApp notification to manager
     if (restaurant?.wa_enabled && restaurant?.wa_number) {
       fetch('/api/notify/manager', {
@@ -154,7 +154,7 @@ export default function ReviewPage() {
           feedbackText: experience,
           contactName: wantsContactVal ? contactName : null,
         }),
-      })
+      }).catch(() => {})
     }
   }
 
@@ -439,15 +439,13 @@ export default function ReviewPage() {
           <div style={{ padding: '28px 24px' }}>
             <div style={{ textAlign: 'center', marginBottom: 24 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#C8102E', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
-                {lang === 'en' ? 'Exclusive offer' : 'Oferta exclusiva'}
+                {t.offer_badge}
               </div>
               <div style={{ fontSize: 20, fontWeight: 800, color: '#111', marginBottom: 6 }}>
-                {lang === 'en' ? 'We appreciate your honesty' : 'Valoramos tu opinión'}
+                {t.offer_title}
               </div>
               <div style={{ fontSize: 13, color: '#888', lineHeight: 1.5 }}>
-                {lang === 'en'
-                  ? `${restaurant?.name} has a special offer for you`
-                  : `${restaurant?.name} tiene una oferta especial para vos`}
+                {t.offer_subtitle(restaurant?.name ?? '')}
               </div>
             </div>
 
@@ -476,14 +474,14 @@ export default function ReviewPage() {
               </div>
               <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px dashed rgba(255,255,255,0.15)', borderRadius: 12, padding: '18px 20px', marginBottom: 16 }}>
                 <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 10 }}>
-                  {lang === 'en' ? 'Your code' : 'Tu código'}
+                  {t.offer_your_code}
                 </div>
                 <div style={{ fontSize: 30, fontWeight: 900, color: '#fff', letterSpacing: 6, fontFamily: 'monospace' }}>
                   {offerCode}
                 </div>
               </div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.02em' }}>
-                {lang === 'en' ? `Valid for ${offerValidDays} days · Present at checkout` : `Válido por ${offerValidDays} días · Presentá al momento de pagar`}
+                {t.offer_valid(offerValidDays)}
               </div>
             </div>
 
@@ -499,16 +497,16 @@ export default function ReviewPage() {
                   a.click()
                 })
               }).catch(() => {
-                alert(lang === 'en' ? 'Take a screenshot to save your code.' : 'Tomá una captura de pantalla para guardar tu código.')
+                alert(t.offer_screenshot_fallback)
               })
             }} style={{ width: '100%', padding: '13px', background: '#111', color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 10 }}>
-              {lang === 'en' ? 'Save as image' : 'Guardar como imagen'}
+              {t.offer_save_image}
             </button>
 
             {/* Email option */}
             {!offerEmailSent ? (
               <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-                <input type="email" placeholder={lang === 'en' ? 'Send to my email (optional)' : 'Enviármelo al email (opcional)'}
+                <input type="email" placeholder={t.offer_email_placeholder}
                   value={offerEmail} onChange={e => setOfferEmail(e.target.value)}
                   style={{ flex: 1, padding: '11px 14px', border: '1px solid #ddd', borderRadius: 10, fontSize: 13, outline: 'none' }} />
                 <button onClick={async () => {
@@ -523,18 +521,18 @@ export default function ReviewPage() {
                   setSendingOfferEmail(false)
                 }} disabled={sendingOfferEmail || !offerEmail}
                   style={{ padding: '11px 16px', background: offerEmail ? '#C8102E' : '#f0f0f0', color: offerEmail ? '#fff' : '#aaa', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: offerEmail ? 'pointer' : 'default' }}>
-                  {sendingOfferEmail ? '…' : lang === 'en' ? 'Send' : 'Enviar'}
+                  {sendingOfferEmail ? '…' : t.offer_email_send}
                 </button>
               </div>
             ) : (
               <div style={{ textAlign: 'center', fontSize: 13, color: '#16a34a', fontWeight: 600, marginBottom: 16 }}>
-                ✓ {lang === 'en' ? 'Sent to your email' : 'Enviado a tu email'}
+                {t.offer_email_sent}
               </div>
             )}
 
             <button onClick={() => setScreen('thanks')}
               style={{ width: '100%', padding: '11px', background: 'transparent', color: '#aaa', border: 'none', fontSize: 13, cursor: 'pointer' }}>
-              {lang === 'en' ? 'Continue' : 'Continuar'} →
+              {t.offer_continue}
             </button>
           </div>
         )}

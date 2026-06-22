@@ -10,6 +10,7 @@ const supabaseAdmin = createClient(
 export async function POST(req: NextRequest) {
   try {
     const { restaurantId, stars, categories, feedbackText, contactName } = await req.json()
+    if (!restaurantId) return NextResponse.json({ ok: false, error: 'Missing restaurantId' }, { status: 400 })
 
     const { data: restaurant } = await supabaseAdmin
       .from('restaurants')

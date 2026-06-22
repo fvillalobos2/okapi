@@ -296,7 +296,7 @@ export default function DashboardPage() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f7f7f8' }}>
-      <div style={{ fontSize: 14, color: '#888' }}>Cargando…</div>
+      <div style={{ fontSize: 14, color: '#888' }}>{t.loading}</div>
     </div>
   )
 
@@ -387,7 +387,7 @@ export default function DashboardPage() {
 
       {googleNotif && (
         <div style={{ background: googleNotif === 'connected' ? '#f0fdf4' : '#fef2f2', borderBottom: `1px solid ${googleNotif === 'connected' ? '#bbf7d0' : '#fecaca'}`, padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: googleNotif === 'connected' ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
-          {googleNotif === 'connected' ? (lang === 'en' ? '✓ Google connected — auto-reply is active.' : '✓ Google conectado — la respuesta automática está activa.') : (lang === 'en' ? '✗ Error connecting Google. Try again.' : '✗ Error al conectar Google. Intentá de nuevo.')}
+          {googleNotif === 'connected' ? t.dash_google_connected : t.dash_google_error}
         </div>
       )}
 
@@ -1293,10 +1293,10 @@ export default function DashboardPage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>
-                    {status === 'active' ? (restaurant!.plan ? restaurant!.plan.charAt(0).toUpperCase() + restaurant!.plan.slice(1) : 'Pro') : status === 'trial' ? (lang === 'en' ? 'Trial' : 'Prueba') : (lang === 'en' ? 'No active plan' : 'Sin plan activo')}
+                    {status === 'active' ? (restaurant!.plan ? restaurant!.plan.charAt(0).toUpperCase() + restaurant!.plan.slice(1) : 'Pro') : status === 'trial' ? t.dash_plan_trial : t.dash_plan_none}
                   </div>
                   <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>
-                    {status === 'active' && subEnd ? (lang === 'en' ? `Renews ${subEnd.toLocaleDateString('en-US')}` : `Renueva ${subEnd.toLocaleDateString('es-CR')}`) : status === 'trial' ? (lang === 'en' ? 'Free trial' : 'Período de prueba') : ''}
+                    {status === 'active' && subEnd ? t.dash_plan_renews(subEnd.toLocaleDateString(lang === 'en' ? 'en-US' : 'es-CR')) : status === 'trial' ? t.dash_plan_free_trial : ''}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -1306,7 +1306,7 @@ export default function DashboardPage() {
                     </button>
                   )}
                   <Link href="/upgrade" style={{ background: '#111', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none' }}>
-                    {status === 'active' ? (lang === 'en' ? 'Change plan' : 'Cambiar plan') : (lang === 'en' ? 'See plans' : 'Ver planes')}
+                    {status === 'active' ? t.dash_change_plan : t.dash_see_plans}
                   </Link>
                 </div>
               </div>

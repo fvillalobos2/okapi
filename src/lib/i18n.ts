@@ -133,6 +133,13 @@ export const translations = {
     dash_reactivate: 'Reactivar',
     dash_see_plans: 'Ver planes',
     dash_upgrade: 'Actualizar →',
+    dash_change_plan: 'Cambiar plan',
+    dash_plan_trial: 'Prueba',
+    dash_plan_none: 'Sin plan activo',
+    dash_plan_renews: (date: string) => `Renueva ${date}`,
+    dash_plan_free_trial: 'Período de prueba',
+    dash_google_connected: '✓ Google conectado — la respuesta automática está activa.',
+    dash_google_error: '✗ Error al conectar Google. Intentá de nuevo.',
 
     // Retention tab
     ret_tab: 'Retención',
@@ -158,6 +165,19 @@ export const translations = {
     ret_code_redeem: 'Marcar como canjeado',
     ret_code_redeeming: 'Procesando…',
     ret_expires: (d: string) => `Vence ${d}`,
+
+    // Offer screen (review page)
+    offer_badge: 'Oferta exclusiva',
+    offer_title: 'Valoramos tu opinión',
+    offer_subtitle: (name: string) => `${name} tiene una oferta especial para vos`,
+    offer_your_code: 'Tu código',
+    offer_valid: (days: number) => `Válido por ${days} días · Presentá al momento de pagar`,
+    offer_save_image: 'Guardar como imagen',
+    offer_email_placeholder: 'Enviármelo al email (opcional)',
+    offer_email_send: 'Enviar',
+    offer_email_sent: '✓ Enviado a tu email',
+    offer_continue: 'Continuar →',
+    offer_screenshot_fallback: 'Tomá una captura de pantalla para guardar tu código.',
 
     // Stats tab extras
     stats_period_label: 'Período',
@@ -350,6 +370,13 @@ export const translations = {
     dash_reactivate: 'Reactivate',
     dash_see_plans: 'See plans',
     dash_upgrade: 'Upgrade →',
+    dash_change_plan: 'Change plan',
+    dash_plan_trial: 'Trial',
+    dash_plan_none: 'No active plan',
+    dash_plan_renews: (date: string) => `Renews ${date}`,
+    dash_plan_free_trial: 'Free trial',
+    dash_google_connected: '✓ Google connected — auto-reply is active.',
+    dash_google_error: '✗ Error connecting Google. Try again.',
 
     // Retention tab
     ret_tab: 'Retention',
@@ -375,6 +402,19 @@ export const translations = {
     ret_code_redeem: 'Mark as redeemed',
     ret_code_redeeming: 'Processing…',
     ret_expires: (d: string) => `Expires ${d}`,
+
+    // Offer screen (review page)
+    offer_badge: 'Exclusive offer',
+    offer_title: 'We appreciate your honesty',
+    offer_subtitle: (name: string) => `${name} has a special offer for you`,
+    offer_your_code: 'Your code',
+    offer_valid: (days: number) => `Valid for ${days} days · Present at checkout`,
+    offer_save_image: 'Save as image',
+    offer_email_placeholder: 'Send to my email (optional)',
+    offer_email_send: 'Send',
+    offer_email_sent: '✓ Sent to your email',
+    offer_continue: 'Continue →',
+    offer_screenshot_fallback: 'Take a screenshot to save your code.',
 
     // Stats tab extras
     stats_period_label: 'Period',
