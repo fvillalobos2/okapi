@@ -888,36 +888,55 @@ function Dashboard() {
 
               {/* Staff breakdown */}
               {staffMembers.length > 0 && (() => {
+                const fImprByCode = impressions.filter(i => new Date(i.created_at) >= periodStart!)
                 const rows = staffMembers.map(s => {
                   const ss = filteredScans.filter(x => (x as any).staff_code === s.code)
                   const ss7 = scans7.filter(x => (x as any).staff_code === s.code)
                   const avg = ss.length ? (ss.reduce((a, b) => a + b.stars, 0) / ss.length).toFixed(1) : '—'
                   const avg7 = ss7.length ? ss7.reduce((a, b) => a + b.stars, 0) / ss7.length : null
                   const alert = avg7 !== null && avg7 < 3
-                  return { ...s, count: ss.length, avg, alert }
+                  const impr = fImprByCode.filter(i => (i as any).staff_code === s.code).length
+                  const rate = impr > 0 ? Math.round((ss.length / impr) * 100) : null
+                  return { ...s, count: ss.length, avg, alert, impr, rate }
                 }).sort((a, b) => b.count - a.count)
                 if (!rows.some(r => r.count > 0)) return null
                 const maxCount = Math.max(...rows.map(r => r.count), 1)
+                const hasImpr = rows.some(r => r.impr > 0)
                 return (
                   <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb', marginBottom: 14 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>{t.stats_collab_title}</div>
                     <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>{t.stats_collab_sub}</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                       {rows.filter(r => r.count > 0).map(r => (
                         <div key={r.id}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              {r.alert && <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#C8102E', display: 'inline-block', flexShrink: 0 }} title="Promedio bajo en últimos 7 días" />}
+                              {r.alert && <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#C8102E', display: 'inline-block', flexShrink: 0 }} />}
                               <span style={{ fontSize: 13, fontWeight: 600, color: r.active ? '#333' : '#aaa' }}>{r.name}</span>
                             </div>
-                            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                              {hasImpr && r.impr > 0 && (
+                                <span style={{ fontSize: 10, color: '#9e9e9e' }}>{r.impr} imp.</span>
+                              )}
+                              {r.rate !== null && (
+                                <span style={{ fontSize: 11, color: '#7c3aed', fontWeight: 700 }}>{r.rate}%</span>
+                              )}
                               {r.avg !== '—' && <span style={{ fontSize: 11, color: r.alert ? '#C8102E' : '#f59e0b', fontWeight: 700 }}>{r.avg}★</span>}
                               <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{r.count}</span>
                             </div>
                           </div>
-                          <div style={{ height: 6, background: '#f0f0f0', borderRadius: 3, overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${(r.count / maxCount) * 100}%`, background: r.alert ? '#fca5a5' : '#bbf7d0', borderRadius: 3 }} />
+                          <div style={{ height: 6, background: '#f0f0f0', borderRadius: 3, overflow: 'hidden', position: 'relative' }}>
+                            {hasImpr && r.impr > 0 && (
+                              <div style={{ position: 'absolute', height: '100%', width: `${(r.impr / Math.max(...rows.map(x => x.impr), 1)) * 100}%`, background: '#ede9fe', borderRadius: 3 }} />
+                            )}
+                            <div style={{ position: 'absolute', height: '100%', width: `${(r.count / maxCount) * 100}%`, background: r.alert ? '#fca5a5' : '#bbf7d0', borderRadius: 3 }} />
                           </div>
+                          {hasImpr && r.impr > 0 && (
+                            <div style={{ display: 'flex', gap: 12, marginTop: 3 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: '#bbb' }}><div style={{ width: 8, height: 4, borderRadius: 2, background: '#ede9fe' }} />{lang === 'en' ? 'Impressions' : 'Impresiones'}</div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: '#bbb' }}><div style={{ width: 8, height: 4, borderRadius: 2, background: '#bbf7d0' }} />{lang === 'en' ? 'Reviews' : 'Opiniones'}</div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -927,36 +946,55 @@ function Dashboard() {
 
               {/* Locations breakdown */}
               {locations.length > 0 && (() => {
+                const fImprByCode = impressions.filter(i => new Date(i.created_at) >= periodStart!)
                 const rows = locations.map(loc => {
                   const ss = filteredScans.filter(x => (x as any).staff_code === loc.code)
                   const ss7 = scans7.filter(x => (x as any).staff_code === loc.code)
                   const avg = ss.length ? (ss.reduce((a, b) => a + b.stars, 0) / ss.length).toFixed(1) : '—'
                   const avg7 = ss7.length ? ss7.reduce((a, b) => a + b.stars, 0) / ss7.length : null
                   const alert = avg7 !== null && avg7 < 3
-                  return { ...loc, count: ss.length, avg, alert }
+                  const impr = fImprByCode.filter(i => (i as any).staff_code === loc.code).length
+                  const rate = impr > 0 ? Math.round((ss.length / impr) * 100) : null
+                  return { ...loc, count: ss.length, avg, alert, impr, rate }
                 }).sort((a, b) => b.count - a.count)
                 if (!rows.some(r => r.count > 0)) return null
                 const maxCount = Math.max(...rows.map(r => r.count), 1)
+                const hasImpr = rows.some(r => r.impr > 0)
                 return (
                   <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb', marginBottom: 14 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>{t.stats_location_title}</div>
                     <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>{t.stats_location_sub}</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                       {rows.filter(r => r.count > 0).map(r => (
                         <div key={r.id}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              {r.alert && <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#C8102E', display: 'inline-block', flexShrink: 0 }} title="Promedio bajo en últimos 7 días" />}
+                              {r.alert && <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#C8102E', display: 'inline-block', flexShrink: 0 }} />}
                               <span style={{ fontSize: 13, fontWeight: 600, color: r.active ? '#333' : '#aaa' }}>{r.name}</span>
                             </div>
-                            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                              {hasImpr && r.impr > 0 && (
+                                <span style={{ fontSize: 10, color: '#9e9e9e' }}>{r.impr} imp.</span>
+                              )}
+                              {r.rate !== null && (
+                                <span style={{ fontSize: 11, color: '#7c3aed', fontWeight: 700 }}>{r.rate}%</span>
+                              )}
                               {r.avg !== '—' && <span style={{ fontSize: 11, color: r.alert ? '#C8102E' : '#f59e0b', fontWeight: 700 }}>{r.avg}★</span>}
                               <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{r.count}</span>
                             </div>
                           </div>
-                          <div style={{ height: 6, background: '#f0f0f0', borderRadius: 3, overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${(r.count / maxCount) * 100}%`, background: r.alert ? '#fca5a5' : '#bbf7d0', borderRadius: 3 }} />
+                          <div style={{ height: 6, background: '#f0f0f0', borderRadius: 3, overflow: 'hidden', position: 'relative' }}>
+                            {hasImpr && r.impr > 0 && (
+                              <div style={{ position: 'absolute', height: '100%', width: `${(r.impr / Math.max(...rows.map(x => x.impr), 1)) * 100}%`, background: '#ede9fe', borderRadius: 3 }} />
+                            )}
+                            <div style={{ position: 'absolute', height: '100%', width: `${(r.count / maxCount) * 100}%`, background: r.alert ? '#fca5a5' : '#bbf7d0', borderRadius: 3 }} />
                           </div>
+                          {hasImpr && r.impr > 0 && (
+                            <div style={{ display: 'flex', gap: 12, marginTop: 3 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: '#bbb' }}><div style={{ width: 8, height: 4, borderRadius: 2, background: '#ede9fe' }} />{lang === 'en' ? 'Impressions' : 'Impresiones'}</div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: '#bbb' }}><div style={{ width: 8, height: 4, borderRadius: 2, background: '#bbf7d0' }} />{lang === 'en' ? 'Reviews' : 'Opiniones'}</div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
