@@ -702,18 +702,58 @@ function Dashboard() {
               {/* KPI row */}
               <div className="dash-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
                 {[
-                  { value: fTotal, label: 'Total opiniones', color: '#111', sub: trendPct !== null ? `${trendPct >= 0 ? '+' : ''}${trendPct}% período anterior` : undefined },
-                  { value: fAvg ? `${fAvg}★` : '—', label: 'Rating promedio', color: '#f59e0b', sub: undefined },
-                  { value: fImpressions > 0 ? fImpressions : '—', label: 'Impresiones', color: '#7c3aed', sub: conversionRate !== null ? `${conversionRate}% conversión` : undefined },
-                  { value: `${contactRate}%`, label: 'Piden contacto', color: '#4285F4', sub: `de ${fNegative} privadas` },
+                  { value: fTotal, label: lang === 'en' ? 'Total reviews' : 'Total opiniones', color: '#111',
+                    hint: lang === 'en' ? 'Surveys completed in period' : 'Encuestas completadas en el período',
+                    sub: trendPct !== null ? `${trendPct >= 0 ? '+' : ''}${trendPct}% ${lang === 'en' ? 'vs prev. period' : 'período anterior'}` : undefined },
+                  { value: fAvg ? `${fAvg}★` : '—', label: lang === 'en' ? 'Avg rating' : 'Rating promedio', color: '#f59e0b',
+                    hint: lang === 'en' ? 'Average score out of 5 stars' : 'Promedio de estrellas sobre 5', sub: undefined },
+                  { value: fImpressions > 0 ? fImpressions : '—', label: lang === 'en' ? 'Impressions' : 'Impresiones', color: '#7c3aed',
+                    hint: lang === 'en' ? 'Times your review page was opened' : 'Veces que se abrió tu página de reseñas',
+                    sub: conversionRate !== null ? `${conversionRate}% ${lang === 'en' ? 'conversion' : 'conversión'}` : undefined },
+                  { value: `${contactRate}%`, label: lang === 'en' ? 'Request contact' : 'Piden contacto', color: '#4285F4',
+                    hint: lang === 'en' ? '% of private reviews requesting follow-up' : '% de clientes privados que pidieron seguimiento',
+                    sub: `${lang === 'en' ? 'of' : 'de'} ${fNegative} ${lang === 'en' ? 'private' : 'privadas'}` },
                 ].map(k => (
                   <div key={k.label} style={{ background: '#fff', borderRadius: 14, padding: '16px', border: '1px solid #ebebeb' }}>
                     <div style={{ fontSize: 26, fontWeight: 800, color: k.color, lineHeight: 1, marginBottom: 4 }}>{k.value}</div>
                     <div style={{ fontSize: 11, color: '#888', fontWeight: 600 }}>{k.label}</div>
-                    {k.sub && <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>{k.sub}</div>}
+                    {k.hint && <div style={{ fontSize: 10, color: '#ccc', marginTop: 2, lineHeight: 1.4 }}>{k.hint}</div>}
+                    {k.sub && <div style={{ fontSize: 11, color: '#aaa', marginTop: 3, fontWeight: 600 }}>{k.sub}</div>}
                   </div>
                 ))}
               </div>
+
+              {/* Conversion funnel */}
+              {fImpressions > 0 && (
+                <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb', marginBottom: 14 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>{lang === 'en' ? 'Conversion funnel' : 'Embudo de conversión'}</div>
+                  <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>{lang === 'en' ? 'From page view to completed review' : 'Desde la apertura hasta la opinión completada'}</div>
+                  {[
+                    { label: lang === 'en' ? 'Impressions' : 'Impresiones', count: fImpressions, color: '#7c3aed', hint: lang === 'en' ? 'Opened review page' : 'Abrieron la página' },
+                    { label: lang === 'en' ? 'Reviews' : 'Opiniones', count: fTotal, color: '#111', hint: lang === 'en' ? 'Completed the survey' : 'Completaron la encuesta' },
+                    { label: lang === 'en' ? 'Positive (→ Google)' : 'Positivas (→ Google)', count: fPositive, color: '#16a34a', hint: lang === 'en' ? 'Directed to public platform' : 'Dirigidas a plataforma pública' },
+                  ].map((step, i, arr) => {
+                    const pct = i === 0 ? 100 : Math.round((step.count / arr[0].count) * 100)
+                    return (
+                      <div key={step.label} style={{ marginBottom: 12 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, alignItems: 'center' }}>
+                          <div>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>{step.label}</span>
+                            <span style={{ fontSize: 10, color: '#ccc', marginLeft: 6 }}>{step.hint}</span>
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            {i > 0 && <span style={{ fontSize: 11, color: '#bbb', fontWeight: 600 }}>{pct}%</span>}
+                            <span style={{ fontSize: 13, fontWeight: 800, color: step.color }}>{step.count}</span>
+                          </div>
+                        </div>
+                        <div style={{ height: 8, background: '#f0f0f0', borderRadius: 4, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: step.color, borderRadius: 4, opacity: 0.75 }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
 
               {/* Day of week */}
               <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb', marginBottom: 14 }}>

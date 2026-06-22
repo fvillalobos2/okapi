@@ -80,25 +80,34 @@ export default function AdminPage() {
   if (!stats) return null
 
   const kpis = [
-    { label: 'MRR estimado', value: `$${stats.monthlyRevenue}`, sub: 'USD/mes', color: '#16a34a' },
+    { label: 'MRR estimado', value: `$${stats.monthlyRevenue}`, sub: 'USD/mes · suma de planes activos', color: '#16a34a' },
     { label: 'Clientes activos', value: stats.byStatus.active, sub: `${stats.byPlan.starter} starter · ${stats.byPlan.pro} pro · ${stats.byPlan.business} business`, color: '#4285F4' },
-    { label: 'En trial', value: stats.byStatus.trial, sub: 'período gratuito', color: '#f59e0b' },
-    { label: 'Total registros', value: stats.total, sub: `+${stats.newThisMonth} este mes`, color: '#a855f7' },
-    { label: 'Total opiniones', value: stats.totalScans, sub: `${stats.scansThisMonth} este mes`, color: '#06b6d4' },
-    { label: 'Churn este mes', value: stats.churnThisMonth, sub: `${stats.byStatus.canceled} cancelados total`, color: '#C8102E' },
-    { label: 'Impresiones', value: stats.totalImpressions, sub: `${stats.impressionsThisMonth} este mes`, color: '#7c3aed' },
-    { label: 'Conversión', value: stats.conversionRate !== null ? `${stats.conversionRate}%` : '—', sub: 'impresiones → opinión', color: '#0891b2' },
-    { label: 'Uso activo', value: stats.activeRestaurants, sub: 'negocios con ≥1 opinión este mes', color: '#16a34a' },
-    { label: 'Retención activada', value: `${stats.retentionRate}%`, sub: 'de clientes activos', color: '#f59e0b' },
-    { label: 'Uso de QR', value: stats.qrUsage, sub: 'negocios con colaboradores', color: '#4285F4' },
-    { label: 'Promedio opiniones', value: stats.avgScansPerRestaurant, sub: 'por negocio activo este mes', color: '#a855f7' },
+    { label: 'En trial', value: stats.byStatus.trial, sub: 'período gratuito activo', color: '#f59e0b' },
+    { label: 'Total registros', value: stats.total, sub: `+${stats.newThisMonth} este mes · todos los estados`, color: '#a855f7' },
+    { label: 'Total opiniones', value: stats.totalScans, sub: `${stats.scansThisMonth} este mes · suma histórica`, color: '#06b6d4' },
+    { label: 'Churn este mes', value: stats.churnThisMonth, sub: `${stats.byStatus.canceled} cancelados total · cancelaciones nuevas`, color: '#C8102E' },
+    { label: 'Impresiones', value: stats.totalImpressions, sub: `${stats.impressionsThisMonth} este mes · aperturas de página de reseñas`, color: '#7c3aed' },
+    { label: 'Conversión global', value: stats.conversionRate !== null ? `${stats.conversionRate}%` : '—', sub: 'impresiones → opinión completada este mes', color: '#0891b2' },
+    { label: 'Uso activo', value: stats.activeRestaurants, sub: 'negocios con ≥1 opinión este mes · clientes realmente usando el producto', color: '#16a34a' },
+    { label: 'Retención activada', value: `${stats.retentionRate}%`, sub: 'de clientes activos con cupones encendidos', color: '#f59e0b' },
+    { label: 'Uso de QR personal', value: stats.qrUsage, sub: 'negocios con ≥1 colaborador en QR', color: '#4285F4' },
+    { label: 'Promedio opiniones', value: stats.avgScansPerRestaurant, sub: 'por negocio con actividad este mes', color: '#a855f7' },
   ]
 
   return (
     <div style={{ minHeight: '100vh', background: '#0f0f0f', fontFamily: 'system-ui, -apple-system, sans-serif', color: '#fff' }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .admin-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .admin-status-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .admin-nav-pad { padding: 0 16px !important; }
+          .admin-content-pad { padding: 20px 16px !important; }
+          .admin-kpi-value { font-size: 28px !important; }
+        }
+      `}</style>
 
       {/* Nav */}
-      <div style={{ borderBottom: '1px solid #222', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="admin-nav-pad" style={{ borderBottom: '1px solid #222', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>Okapi Admin</div>
           <span style={{ fontSize: 10, fontWeight: 700, color: '#C8102E', background: '#2a0a0f', border: '1px solid #C8102E', borderRadius: 20, padding: '2px 8px', textTransform: 'uppercase' }}>Owner</span>
@@ -106,21 +115,21 @@ export default function AdminPage() {
         <Link href="/dashboard" style={{ fontSize: 13, color: '#666', textDecoration: 'none' }}>← Dashboard</Link>
       </div>
 
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '32px 20px' }}>
+      <div className="admin-content-pad" style={{ maxWidth: 960, margin: '0 auto', padding: '32px 20px' }}>
 
         {/* KPI grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 32 }}>
+        <div className="admin-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 32 }}>
           {kpis.map(k => (
             <div key={k.label} style={{ background: '#1a1a1a', border: '1px solid #222', borderRadius: 14, padding: '20px 22px' }}>
               <div style={{ fontSize: 12, color: '#666', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>{k.label}</div>
-              <div style={{ fontSize: 36, fontWeight: 900, color: k.color, lineHeight: 1, marginBottom: 6 }}>{k.value}</div>
+              <div className="admin-kpi-value" style={{ fontSize: 36, fontWeight: 900, color: k.color, lineHeight: 1, marginBottom: 6 }}>{k.value}</div>
               <div style={{ fontSize: 12, color: '#555' }}>{k.sub}</div>
             </div>
           ))}
         </div>
 
         {/* Status breakdown */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 32 }}>
+        <div className="admin-status-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 32 }}>
           {Object.entries(stats.byStatus).map(([status, count]) => (
             <div key={status} style={{ background: '#1a1a1a', border: '1px solid #222', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
