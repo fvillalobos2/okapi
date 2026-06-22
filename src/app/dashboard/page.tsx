@@ -1021,9 +1021,10 @@ export default function DashboardPage() {
                     .normalize('NFD').replace(/[̀-ͯ]/g, '')
                     .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
                     + '-' + Math.random().toString(36).slice(2, 5)
-                  const { data } = await supabase.from('staff_members').insert({
+                  const { data, error } = await supabase.from('staff_members').insert({
                     restaurant_id: restaurant.id, name: newStaffName.trim(), code, active: true
                   }).select().single()
+                  if (error) { alert('Error: ' + error.message); setAddingStaff(false); return }
                   if (data) setStaffMembers(prev => [...prev, data])
                   setNewStaffName('')
                   setAddingStaff(false)
