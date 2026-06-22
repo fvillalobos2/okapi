@@ -143,6 +143,8 @@ export default function DashboardPage() {
   const [copied, setCopied] = useState(false)
   const [copiedKiosk, setCopiedKiosk] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [aiSummary, setAiSummary] = useState<string | null>(null)
+  const [loadingSummary, setLoadingSummary] = useState(false)
   const [logoDragging, setLogoDragging] = useState(false)
 
   useEffect(() => {
@@ -593,26 +595,90 @@ export default function DashboardPage() {
                     </button>
                   ))}
                 </div>
-                <button onClick={() => {
-                  const headers = ['Fecha', 'Estrellas', 'Tipo', 'Plataforma', 'Categorías', 'Comentario', 'Quiere contacto', 'Nombre']
-                  const rows = filteredScans.map(s => [
-                    new Date(s.created_at).toLocaleString('es-CR'),
-                    s.stars, s.stars >= 4 ? 'Positiva' : 'Privada',
-                    s.platform_chosen || '',
-                    (s.feedback_categories || []).join(' | '),
-                    (s.feedback_text || '').replace(/,/g, ';'),
-                    s.wants_contact ? 'Sí' : 'No', s.contact_name || '',
-                  ])
-                  const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n')
-                  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
-                  const url = URL.createObjectURL(blob)
-                  const a = document.createElement('a')
-                  a.href = url; a.download = `opiniones-${restaurant?.slug || 'export'}-${new Date().toISOString().slice(0,10)}.csv`
-                  a.click(); URL.revokeObjectURL(url)
-                }} style={{ padding: '7px 14px', background: '#f7f7f8', border: '1px solid #ddd', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
-                  ⬇ CSV
-                </button>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button onClick={async () => {
+                    setAiSummary(null)
+                    setLoadingSummary(true)
+                    try {
+                      const { data: { session } } = await supabase.auth.getSession()
+                      const collabBreakdown = staffMembers.map(s => {
+                        const ss = filteredScans.filter((x: any) => x.staff_code === s.code)
+                        return ss.length ? { name: s.name, avg: parseFloat((ss.reduce((a, x) => a + x.stars, 0) / ss.length).toFixed(1)) } : null
+                      }).filter(Boolean)
+                      const locationBreakdown = locations.map(l => {
+                        const ss = filteredScans.filter((x: any) => x.staff_code === l.code)
+                        return ss.length ? { name: l.name, avg: parseFloat((ss.reduce((a, x) => a + x.stars, 0) / ss.length).toFixed(1)) } : null
+                      }).filter(Boolean)
+                      const res = await fetch('/api/ai/summary', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+                        body: JSON.stringify({
+                          restaurantId: restaurant?.id,
+                          lang,
+                          stats: {
+                            total: fTotal,
+                            avg: fAvg,
+                            positive: fPositive,
+                            negative: fNegative,
+                            positivePct: fTotal ? Math.round((fPositive / fTotal) * 100) : 0,
+                            negativePct: fTotal ? Math.round((fNegative / fTotal) * 100) : 0,
+                            trend: trendPct,
+                            topCats,
+                            contactRate,
+                            collabBreakdown,
+                            locationBreakdown,
+                          },
+                        }),
+                      })
+                      const data = await res.json()
+                      setAiSummary(data.summary ?? t.dash_ai_summary_error)
+                    } catch {
+                      setAiSummary(t.dash_ai_summary_error)
+                    } finally {
+                      setLoadingSummary(false)
+                    }
+                  }} disabled={loadingSummary} style={{ padding: '7px 14px', background: loadingSummary ? '#f7f7f8' : '#111', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, color: loadingSummary ? '#aaa' : '#fff', cursor: loadingSummary ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    {loadingSummary ? t.dash_ai_summary_loading : t.dash_ai_summary_btn}
+                  </button>
+                  <button onClick={() => {
+                    const headers = ['Fecha', 'Estrellas', 'Tipo', 'Plataforma', 'Categorías', 'Comentario', 'Quiere contacto', 'Nombre']
+                    const rows = filteredScans.map(s => [
+                      new Date(s.created_at).toLocaleString('es-CR'),
+                      s.stars, s.stars >= 4 ? 'Positiva' : 'Privada',
+                      s.platform_chosen || '',
+                      (s.feedback_categories || []).join(' | '),
+                      (s.feedback_text || '').replace(/,/g, ';'),
+                      s.wants_contact ? 'Sí' : 'No', s.contact_name || '',
+                    ])
+                    const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n')
+                    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+                    const url = URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.href = url; a.download = `opiniones-${restaurant?.slug || 'export'}-${new Date().toISOString().slice(0,10)}.csv`
+                    a.click(); URL.revokeObjectURL(url)
+                  }} style={{ padding: '7px 14px', background: '#f7f7f8', border: '1px solid #ddd', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    ⬇ CSV
+                  </button>
+                </div>
               </div>
+
+              {/* AI Summary card */}
+              {(aiSummary || loadingSummary) && (
+                <div style={{ background: '#111', borderRadius: 14, padding: '20px 22px', marginBottom: 16, position: 'relative' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>✦ IA</span>
+                    <button onClick={() => setAiSummary(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: 16, padding: 0, lineHeight: 1 }}>✕</button>
+                  </div>
+                  {loadingSummary
+                    ? <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#C8102E', animation: 'pulse 1s infinite' }} />
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#C8102E', animation: 'pulse 1s 0.2s infinite' }} />
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#C8102E', animation: 'pulse 1s 0.4s infinite' }} />
+                      </div>
+                    : <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, margin: 0 }}>{aiSummary}</p>
+                  }
+                </div>
+              )}
 
               {/* KPI row */}
               <div className="dash-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
