@@ -29,7 +29,7 @@ const FAQS = [
 function FAQ() {
   const [open, setOpen] = useState<number | null>(null)
   return (
-    <section style={{ padding: '88px 32px', maxWidth: 720, margin: '0 auto' }}>
+    <section className="landing-pad" style={{ padding: '88px 32px', maxWidth: 720, margin: '0 auto' }}>
       <Reveal>
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#C8102E', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>FAQ</div>
@@ -84,19 +84,27 @@ export default function Home() {
         .nav-link:hover { color: #fff !important; }
         .btn-ghost:hover { background: rgba(255,255,255,0.1) !important; color: #fff !important; }
         a, button { transition: all 0.18s ease; }
+        @media (max-width: 520px) {
+          .landing-nav-links { display: none !important; }
+          .landing-hero-mock { grid-template-columns: 1fr !important; }
+          .landing-hero-phone { display: none !important; }
+          .landing-pad { padding-left: 20px !important; padding-right: 20px !important; }
+          .landing-how-border { border-left: none !important; border-top: 1px solid #1e1e1e; }
+          .landing-footer { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
+        }
       `}</style>
 
       {/* Nav */}
-      <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(10,10,10,0.92)', backdropFilter: 'blur(16px)', borderBottom: '1px solid #1e1e1e', padding: '0 32px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(10,10,10,0.92)', backdropFilter: 'blur(16px)', borderBottom: '1px solid #1e1e1e', padding: '0 20px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 32, height: 32, borderRadius: 8, background: '#C8102E', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 900, color: '#fff' }}>O</div>
           <span style={{ fontWeight: 700, fontSize: 15, color: '#fff' }}>Okapi Reviews</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <a href="#como-funciona" className="nav-link" style={{ fontSize: 13, fontWeight: 500, color: '#777', textDecoration: 'none', padding: '7px 14px', borderRadius: 8 }}>Cómo funciona</a>
-          <a href="#pricing" className="nav-link" style={{ fontSize: 13, fontWeight: 500, color: '#777', textDecoration: 'none', padding: '7px 14px', borderRadius: 8 }}>Precios</a>
-          <div style={{ width: 1, height: 20, background: '#2a2a2a', margin: '0 8px' }} />
-          <Link href="/login" className="nav-link" style={{ fontSize: 13, fontWeight: 500, color: '#777', textDecoration: 'none', padding: '7px 14px', borderRadius: 8 }}>Login</Link>
+          <a href="#como-funciona" className="nav-link landing-nav-links" style={{ fontSize: 13, fontWeight: 500, color: '#777', textDecoration: 'none', padding: '7px 14px', borderRadius: 8 }}>Cómo funciona</a>
+          <a href="#pricing" className="nav-link landing-nav-links" style={{ fontSize: 13, fontWeight: 500, color: '#777', textDecoration: 'none', padding: '7px 14px', borderRadius: 8 }}>Precios</a>
+          <div className="landing-nav-links" style={{ width: 1, height: 20, background: '#2a2a2a', margin: '0 8px' }} />
+          <Link href="/login" className="nav-link landing-nav-links" style={{ fontSize: 13, fontWeight: 500, color: '#777', textDecoration: 'none', padding: '7px 14px', borderRadius: 8 }}>Login</Link>
           <Link href="/login" style={{ padding: '8px 18px', background: '#C8102E', color: '#fff', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
             onMouseEnter={e => (e.currentTarget.style.background = '#a80d26')}
             onMouseLeave={e => (e.currentTarget.style.background = '#C8102E')}>
@@ -106,7 +114,7 @@ export default function Home() {
       </nav>
 
       {/* Hero */}
-      <section style={{ background: '#0f0f0f', padding: '96px 32px 80px', textAlign: 'center' }}>
+      <section className="landing-pad" style={{ background: '#0f0f0f', padding: '96px 32px 80px', textAlign: 'center' }}>
         <div style={{ maxWidth: 640, margin: '0 auto' }}>
           <div className="hero-title" style={{ display: 'inline-block', padding: '5px 14px', background: '#1e1e1e', border: '1px solid #333', borderRadius: 20, fontSize: 12, fontWeight: 600, color: '#777', marginBottom: 32, letterSpacing: '0.05em' }}>
             GESTIÓN DE RESEÑAS PARA HOSPITALIDAD
@@ -130,8 +138,8 @@ export default function Home() {
         </div>
 
         {/* Mockup */}
-        <div className="hero-mock" style={{ maxWidth: 860, margin: '64px auto 0', display: 'grid', gridTemplateColumns: '1fr 1.8fr', gap: 16, alignItems: 'end' }}>
-          <div style={{ background: '#1a1a1a', borderRadius: 28, padding: '14px 10px', border: '5px solid #222', boxShadow: '0 32px 64px rgba(0,0,0,0.6)', maxWidth: 200, margin: '0 auto', width: '100%' }}>
+        <div className="hero-mock landing-hero-mock" style={{ maxWidth: 860, margin: '64px auto 0', display: 'grid', gridTemplateColumns: '1fr 1.8fr', gap: 16, alignItems: 'end' }}>
+          <div className="landing-hero-phone" style={{ background: '#1a1a1a', borderRadius: 28, padding: '14px 10px', border: '5px solid #222', boxShadow: '0 32px 64px rgba(0,0,0,0.6)', maxWidth: 200, margin: '0 auto', width: '100%' }}>
             <div style={{ background: '#0f0f0f', borderRadius: 20, padding: '18px 14px' }}>
               <div style={{ textAlign: 'center', marginBottom: 14 }}>
                 <div style={{ width: 38, height: 38, borderRadius: 10, background: '#C8102E', margin: '0 auto 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🍽️</div>
@@ -194,7 +202,7 @@ export default function Home() {
       </section>
 
       {/* Client logos — credibilidad inmediata */}
-      <section style={{ background: '#fff', padding: '40px 32px', borderTop: '1px solid #ebebeb', borderBottom: '1px solid #ebebeb' }}>
+      <section className="landing-pad" style={{ background: '#fff', padding: '40px 32px', borderTop: '1px solid #ebebeb', borderBottom: '1px solid #ebebeb' }}>
         <div style={{ maxWidth: 700, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#bbb', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 20 }}>Negocios que confían en Okapi</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 12 }}>
@@ -216,7 +224,7 @@ export default function Home() {
       </section>
 
       {/* Stats — urgencia */}
-      <section style={{ background: '#f7f7f8', padding: '80px 32px' }}>
+      <section className="landing-pad" style={{ background: '#f7f7f8', padding: '80px 32px' }}>
         <div style={{ maxWidth: 880, margin: '0 auto' }}>
           <Reveal>
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
@@ -245,7 +253,7 @@ export default function Home() {
       </section>
 
       {/* How it works */}
-      <section id="como-funciona" style={{ background: '#0f0f0f', padding: '88px 32px' }}>
+      <section id="como-funciona" className="landing-pad" style={{ background: '#0f0f0f', padding: '88px 32px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <Reveal>
             <div style={{ textAlign: 'center', marginBottom: 64 }}>
@@ -261,7 +269,7 @@ export default function Home() {
               { n: '04', icon: '📈', t: 'Tu rating sube', d: 'Más reseñas 5★ publicadas. Menos críticas en internet.', color: '#22c55e' },
             ].map((s, i) => (
               <Reveal key={s.n} delay={i * 80}>
-                <div style={{ padding: '36px 28px', borderLeft: i > 0 ? '1px solid #1e1e1e' : 'none', position: 'relative' }}>
+                <div className={i > 0 ? 'landing-how-border' : ''} style={{ padding: '36px 28px', borderLeft: i > 0 ? '1px solid #1e1e1e' : 'none', position: 'relative' }}>
                   <div style={{ fontSize: 11, fontWeight: 800, color: s.color, letterSpacing: '0.1em', marginBottom: 20 }}>{s.n}</div>
                   <div style={{ width: 48, height: 48, borderRadius: 14, background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 20, border: `1px solid #2a2a2a` }}>{s.icon}</div>
                   <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 10 }}>{s.t}</div>
@@ -275,7 +283,7 @@ export default function Home() {
       </section>
 
       {/* Features */}
-      <section style={{ background: '#f7f7f8', padding: '88px 32px', borderTop: '1px solid #ebebeb' }}>
+      <section className="landing-pad" style={{ background: '#f7f7f8', padding: '88px 32px', borderTop: '1px solid #ebebeb' }}>
         <div style={{ maxWidth: 880, margin: '0 auto' }}>
           <Reveal>
             <div style={{ textAlign: 'center', marginBottom: 52 }}>
@@ -309,7 +317,7 @@ export default function Home() {
       </section>
 
       {/* Testimonials */}
-      <section style={{ background: '#0f0f0f', padding: '88px 32px' }}>
+      <section className="landing-pad" style={{ background: '#0f0f0f', padding: '88px 32px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <Reveal>
             <div style={{ textAlign: 'center', marginBottom: 52 }}>
@@ -344,7 +352,7 @@ export default function Home() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" style={{ padding: '88px 32px' }}>
+      <section id="pricing" className="landing-pad" style={{ padding: '88px 32px' }}>
         <div style={{ maxWidth: 860, margin: '0 auto' }}>
           <Reveal>
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
@@ -394,7 +402,7 @@ export default function Home() {
       <FAQ />
 
       {/* CTA */}
-      <section style={{ background: '#0f0f0f', padding: '88px 32px', textAlign: 'center' }}>
+      <section className="landing-pad" style={{ background: '#0f0f0f', padding: '88px 32px', textAlign: 'center' }}>
         <Reveal>
           <div style={{ maxWidth: 500, margin: '0 auto' }}>
             <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', marginBottom: 14 }}>Empezá hoy. Gratis.</h2>
@@ -409,7 +417,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer style={{ background: '#0a0a0a', borderTop: '1px solid #1a1a1a', padding: '28px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+      <footer className="landing-pad landing-footer" style={{ background: '#0a0a0a', borderTop: '1px solid #1a1a1a', padding: '28px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 22, height: 22, borderRadius: 5, background: '#C8102E', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: '#fff' }}>O</div>
           <span style={{ fontWeight: 700, fontSize: 13, color: '#fff' }}>Okapi Reviews</span>
