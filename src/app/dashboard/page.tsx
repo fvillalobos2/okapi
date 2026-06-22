@@ -38,6 +38,14 @@ type Restaurant = {
   retention_valid_days: number
 }
 
+type StaffMember = {
+  id: string
+  name: string
+  code: string
+  active: boolean
+  created_at: string
+}
+
 type RetentionCode = {
   id: string
   code: string
@@ -80,6 +88,9 @@ export default function DashboardPage() {
   const [loadingLocations, setLoadingLocations] = useState(false)
   const [scans, setScans] = useState<Scan[]>([])
   const [retentionCodes, setRetentionCodes] = useState<RetentionCode[]>([])
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([])
+  const [newStaffName, setNewStaffName] = useState('')
+  const [addingStaff, setAddingStaff] = useState(false)
   const [loading, setLoading] = useState(true)
   const [hoveredBar, setHoveredBar] = useState<{ label: string; pos: number; neg: number; x: number; y: number } | null>(null)
   const [redeemingCode, setRedeemingCode] = useState<string | null>(null)
@@ -121,6 +132,13 @@ export default function DashboardPage() {
           .order('created_at', { ascending: false })
           .limit(100)
         setRetentionCodes(codesData || [])
+
+        const { data: staffData } = await supabase
+          .from('staff_members')
+          .select('*')
+          .eq('restaurant_id', rest.id)
+          .order('created_at', { ascending: true })
+        setStaffMembers(staffData || [])
       } else {
         router.push('/onboarding')
         return
@@ -655,6 +673,38 @@ export default function DashboardPage() {
                   ))
                 }
               </div>
+
+              {/* Staff breakdown */}
+              {staffMembers.length > 0 && (() => {
+                const staffScans = staffMembers.map(s => {
+                  const ss = scans.filter(x => (x as any).staff_code === s.code)
+                  const avg = ss.length ? (ss.reduce((a, b) => a + b.stars, 0) / ss.length).toFixed(1) : '—'
+                  return { ...s, count: ss.length, avg }
+                }).sort((a, b) => b.count - a.count)
+                const maxCount = Math.max(...staffScans.map(s => s.count), 1)
+                return (
+                  <div style={{ background: '#fff', borderRadius: 14, padding: '20px', border: '1px solid #ebebeb', marginTop: 14 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>Rendimiento por mesero</div>
+                    <div style={{ fontSize: 11, color: '#aaa', marginBottom: 16 }}>Scans generados por cada miembro del equipo</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {staffScans.map(s => (
+                        <div key={s.id}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, alignItems: 'center' }}>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: s.active ? '#333' : '#aaa' }}>{s.name}</span>
+                            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                              {s.avg !== '—' && <span style={{ fontSize: 11, color: '#f59e0b', fontWeight: 700 }}>{s.avg}★</span>}
+                              <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{s.count}</span>
+                            </div>
+                          </div>
+                          <div style={{ height: 6, background: '#f0f0f0', borderRadius: 3, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${(s.count / maxCount) * 100}%`, background: '#bbf7d0', borderRadius: 3 }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
           )
         })()}
@@ -917,6 +967,70 @@ export default function DashboardPage() {
                   </div>
                 )
               })()}
+            </div>
+
+            {/* Staff section */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ height: 1, background: '#f0f0f0', marginBottom: 20 }} />
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 4 }}>Equipo</div>
+              <div style={{ fontSize: 12, color: '#aaa', marginBottom: 16 }}>Cada miembro tiene su propio QR para trackear scans individuales.</div>
+
+              {staffMembers.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+                  {staffMembers.map(s => {
+                    const staffUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${restaurant?.slug}?ref=${s.code}`
+                    const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(staffUrl)}&bgcolor=ffffff&color=1a1a1a&margin=6`
+                    return (
+                      <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: s.active ? '#fff' : '#f7f7f8', border: '1px solid #ebebeb', borderRadius: 10 }}>
+                        <img src={qrSrc} alt={s.name} style={{ width: 40, height: 40, borderRadius: 6, flexShrink: 0 }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: s.active ? '#111' : '#aaa' }}>{s.name}</div>
+                          <div style={{ fontSize: 11, color: '#bbb', fontFamily: 'monospace' }}>{s.code}</div>
+                        </div>
+                        <a href={qrSrc.replace('300x300', '600x600')} download={`qr-${s.code}.png`} target="_blank" rel="noopener"
+                          style={{ padding: '5px 10px', background: '#f7f7f8', border: '1px solid #ddd', borderRadius: 7, fontSize: 11, fontWeight: 600, color: '#555', textDecoration: 'none' }}>
+                          ⬇ QR
+                        </a>
+                        <button onClick={async () => {
+                          await supabase.from('staff_members').update({ active: !s.active }).eq('id', s.id)
+                          setStaffMembers(prev => prev.map(x => x.id === s.id ? { ...x, active: !s.active } : x))
+                        }} style={{ padding: '5px 10px', background: 'none', border: '1px solid #ddd', borderRadius: 7, fontSize: 11, fontWeight: 600, color: '#aaa', cursor: 'pointer' }}>
+                          {s.active ? 'Pausar' : 'Activar'}
+                        </button>
+                        <button onClick={async () => {
+                          if (!confirm(`¿Eliminar a ${s.name}?`)) return
+                          await supabase.from('staff_members').delete().eq('id', s.id)
+                          setStaffMembers(prev => prev.filter(x => x.id !== s.id))
+                        }} style={{ padding: '5px 8px', background: 'none', border: 'none', fontSize: 14, color: '#ddd', cursor: 'pointer' }}>✕</button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input type="text" placeholder="Nombre del mesero o puesto"
+                  value={newStaffName}
+                  onChange={e => setNewStaffName(e.target.value)}
+                  onKeyDown={async e => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('add-staff-btn')?.click() } }}
+                  style={{ flex: 1, padding: '10px 12px', border: '1px solid #ddd', borderRadius: 10, fontSize: 14, boxSizing: 'border-box' }} />
+                <button id="add-staff-btn" disabled={addingStaff || !newStaffName.trim()} onClick={async () => {
+                  if (!restaurant || !newStaffName.trim()) return
+                  setAddingStaff(true)
+                  const code = newStaffName.trim().toLowerCase()
+                    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+                    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+                    + '-' + Math.random().toString(36).slice(2, 5)
+                  const { data } = await supabase.from('staff_members').insert({
+                    restaurant_id: restaurant.id, name: newStaffName.trim(), code, active: true
+                  }).select().single()
+                  if (data) setStaffMembers(prev => [...prev, data])
+                  setNewStaffName('')
+                  setAddingStaff(false)
+                }} style={{ padding: '10px 16px', background: '#111', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: addingStaff || !newStaffName.trim() ? 'not-allowed' : 'pointer', opacity: !newStaffName.trim() ? 0.4 : 1 }}>
+                  {addingStaff ? '…' : '+ Agregar'}
+                </button>
+              </div>
             </div>
 
             {/* Plan section */}

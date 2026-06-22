@@ -86,7 +86,9 @@ export default function ReviewPage() {
       setLoading(false)
     }
     load()
-    setKioskMode(new URLSearchParams(window.location.search).get('kiosk') === '1')
+    const params = new URLSearchParams(window.location.search)
+    setKioskMode(params.get('kiosk') === '1')
+    if (params.get('ref')) sessionStorage.setItem('okapi_ref', params.get('ref')!)
   }, [slug])
 
   async function saveScans(platformChosen: string | null, wantsContactVal: boolean) {
@@ -97,6 +99,7 @@ export default function ReviewPage() {
       feedback_categories: selectedChips,
       feedback_text: experience,
       wants_contact: wantsContactVal,
+      staff_code: sessionStorage.getItem('okapi_ref') || null,
       contact_name: contactName,
     })
   }
