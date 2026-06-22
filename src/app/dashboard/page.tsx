@@ -186,7 +186,7 @@ function Dashboard() {
     if (!res.ok) { router.push('/onboarding'); return }
 
     const { restaurant: effectiveRest, role, ownedRestaurants: owned, scans: scanData, impressions: impressionData, retentionCodes: codesData, staffMembers: staffData, locations: locData } = await res.json()
-    if (role) setMemberRole(role)
+    setMemberRole(role ?? null)
     if (owned) setOwnedRestaurants(owned)
 
     if (effectiveRest) {
@@ -197,6 +197,10 @@ function Dashboard() {
       setRetentionCodes(codesData || [])
       setStaffMembers(staffData || [])
       setLocations(locData || [])
+      // Reset per-property derived state
+      setTeamMembers([])
+      setAiSummary(null)
+      setInviteMsg(null)
     } else {
       router.push('/onboarding')
       return
