@@ -921,6 +921,17 @@ def get_provider_messages(booking_id: str) -> list:
         return []
 
 
+def mark_provider_verified(provider_number: str, business_id: Optional[str] = None):
+    """Mark provider as WhatsApp-verified when they initiate a message to us."""
+    b = _bid(business_id)
+    if not b:
+        return
+    try:
+        _sb().table('providers').update({'whatsapp_verified': True}).eq('whatsapp_number', provider_number).eq('business_id', b).execute()
+    except Exception as e:
+        print(f'  ⚠ mark_provider_verified: {e}')
+
+
 def get_booking_id_by_provider(provider_number: str,
                                 business_id: Optional[str] = None) -> Optional[str]:
     """Return the latest pending booking ID for a provider number."""

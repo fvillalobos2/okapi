@@ -882,6 +882,9 @@ def handle_inbound(from_number: str, body: str,
     # ── Is this a provider? ───────────────────────────────────────────────────
     provider_location = get_provider_location(from_number, business)
     if provider_location:
+        # Auto-verify: provider wrote to us → WhatsApp window is open
+        store.mark_provider_verified(from_number, bid)
+
         pending = store.get_pending_quote(from_number, bid)
         if pending:
             booking_id = store.get_booking_id_by_provider(from_number, bid)
