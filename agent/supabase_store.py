@@ -896,6 +896,114 @@ def mark_provider_followup_sent(provider_number: str, business_id: Optional[str]
         print(f'  ⚠ mark_provider_followup_sent: {e}')
 
 
+# ─── PROVIDER MESSAGE THREAD ─────────────────────────────────────────────────
+
+def log_provider_message(booking_id: str, role: str, text: str,
+                         business_id: Optional[str] = None):
+    """Append a message to the provider_messages JSONB array on a booking."""
+    try:
+        r = _sb().table('bookings').select('provider_messages').eq('id', booking_id).limit(1).execute()
+        if not r.data:
+            return
+        msgs = r.data[0].get('provider_messages') or []
+        msgs.append({'role': role, 'text': text, 'ts': datetime.utcnow().isoformat()})
+        _sb().table('bookings').update({'provider_messages': msgs}).eq('id', booking_id).execute()
+    except Exception as e:
+        print(f'  ⚠ log_provider_message: {e}')
+
+
+def get_provider_messages(booking_id: str) -> list:
+    try:
+        r = _sb().table('bookings').select('provider_messages').eq('id', booking_id).limit(1).execute()
+        return (r.data[0].get('provider_messages') or []) if r.data else []
+    except Exception as e:
+        print(f'  ⚠ get_provider_messages: {e}')
+        return []
+
+
+def get_booking_id_by_provider(provider_number: str,
+                                business_id: Optional[str] = None) -> Optional[str]:
+    """Return the latest pending booking ID for a provider number."""
+    b = _bid(business_id)
+    if not b:
+        return None
+    try:
+        r = (_sb().table('bookings').select('id')
+             .eq('business_id', b)
+             .eq('provider_number', provider_number)
+             .eq('payment_status', 'pending')
+             .order('created_at', desc=True)
+             .limit(1).execute())
+        return r.data[0]['id'] if r.data else None
+    except Exception as e:
+        print(f'  ⚠ get_booking_id_by_provider: {e}')
+        return None
+
+
+# ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
+
+def create_notification(business_id: Optional[str], ntype: str,
+                        title: str, body: str,
+                        booking_id: Optional[str] = None,
+                        lead_phone: Optional[str] = None):
+    b = _bid(business_id)
+    if not b:
+        return
+    try:
+        _sb().table('notifications').insert({
+            'business_id': b,
+            'type':        ntype,
+            'title':       title,
+            'body':        body,
+            'booking_id':  booking_id,
+            'lead_phone':  lead_phone,
+        }).execute()
+    except Exception as e:
+        print(f'  ⚠ create_notification: {e}')
+
+
+def get_notifications(business_id: Optional[str] = None,
+                      unread_only: bool = False, limit: int = 50) -> list:
+    b = _bid(business_id)
+    if not b:
+        return []
+    try:
+        q = (_sb().table('notifications').select('*')
+             .eq('business_id', b)
+             .order('created_at', desc=True)
+             .limit(limit))
+        if unread_only:
+            q = q.is_('read_at', 'null')
+        return q.execute().data or []
+    except Exception as e:
+        print(f'  ⚠ get_notifications: {e}')
+        return []
+
+
+def get_unread_count(business_id: Optional[str] = None) -> int:
+    b = _bid(business_id)
+    if not b:
+        return 0
+    try:
+        r = (_sb().table('notifications').select('id', count='exact')
+             .eq('business_id', b).is_('read_at', 'null').execute())
+        return r.count or 0
+    except Exception as e:
+        print(f'  ⚠ get_unread_count: {e}')
+        return 0
+
+
+def mark_all_notifications_read(business_id: Optional[str] = None):
+    b = _bid(business_id)
+    if not b:
+        return
+    try:
+        now = datetime.utcnow().isoformat()
+        _sb().table('notifications').update({'read_at': now}).eq('business_id', b).is_('read_at', 'null').execute()
+    except Exception as e:
+        print(f'  ⚠ mark_all_notifications_read: {e}')
+
+
 # ─── HOURS HELPER (matches original agent.py interface) ──────────────────────
 
 def _hours_old(entry: dict) -> float:

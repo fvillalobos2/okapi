@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+{% block title %}Notifications — Okapi{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+{% set active = 'notifications' %}
+
+{% block content %}
+<div class="card" style="max-width:720px">
+  {% if not notifications %}
+  <p class="text-muted" style="text-align:center;padding:32px 0">No notifications yet.</p>
+  {% else %}
+  <div style="display:flex;flex-direction:column;gap:2px">
+    {% for n in notifications %}
+    {% set icon = {
+      'human_needed':   '🆘',
+      'counter_offer':  '💼',
+      'no_provider':    '⚠️',
+      'provider_quoted':'✅',
+    }.get(n.type, '🔔') %}
+    {% set color = {
+      'human_needed':  'var(--danger)',
+      'counter_offer': 'var(--warning)',
+      'no_provider':   'var(--warning)',
+    }.get(n.type, 'var(--info)') %}
+    <div style="display:flex;gap:14px;align-items:flex-start;padding:14px;border-radius:8px;
+                background:{% if not n.read_at %}var(--surface2){% else %}transparent{% endif %};
+                border-left:3px solid {{ color }};margin-bottom:4px">
+      <div style="font-size:22px;flex-shrink:0">{{ icon }}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:13px">{{ n.title }}</div>
+        <div style="color:var(--muted);font-size:12px;margin-top:3px">{{ n.body }}</div>
+        <div style="display:flex;gap:12px;margin-top:6px;font-size:11px;color:var(--muted)">
+          <span>{{ (n.created_at or '')[:16].replace('T',' ') }}</span>
+          {% if n.lead_phone %}
+          <a href="/leads/{{ n.lead_phone.replace('whatsapp:','') }}" style="color:var(--accent)">View lead</a>
+          {% endif %}
+          {% if n.booking_id %}
+          <a href="/bookings/{{ n.booking_id }}" style="color:var(--accent)">View booking</a>
+          {% endif %}
+        </div>
+      </div>
+      {% if not n.read_at %}
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:4px"></div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

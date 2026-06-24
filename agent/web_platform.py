@@ -119,7 +119,9 @@ def bookings():
 def booking_detail(booking_id: str):
     biz  = _current_biz()
     item = store.get_booking_by_id(booking_id)
+    provider_msgs = store.get_provider_messages(booking_id) if item else []
     return render_template('booking_detail.html', booking=item,
+                           provider_msgs=provider_msgs,
                            biz=biz, businesses=_all_biz())
 
 @web_bp.route('/api/bookings/<booking_id>', methods=['PATCH'])
@@ -157,7 +159,7 @@ def provider_create():
 @login_required
 def provider_update(provider_id: str):
     data    = request.json or {}
-    allowed = {'default_commission_pct', 'active', 'location_name', 'whatsapp_number'}
+    allowed = {'default_commission_pct', 'active', 'location_name', 'whatsapp_number', 'whatsapp_verified'}
     payload = {k: v for k, v in data.items() if k in allowed}
     ok = store.update_provider(provider_id, payload)
     return jsonify({'status': 'ok' if ok else 'error'})
@@ -364,6 +366,32 @@ def location_update(loc_id: str):
         return jsonify({'status': 'ok'})
     data = request.json or {}
     store._sb().table('locations').update(data).eq('id', loc_id).execute()
+    return jsonify({'status': 'ok'})
+
+# ─── NOTIFICATIONS ───────────────────────────────────────────────────────────
+
+@web_bp.route('/notifications')
+@login_required
+def notifications():
+    biz   = _current_biz()
+    items = store.get_notifications(biz.get('id'), limit=100)
+    store.mark_all_notifications_read(biz.get('id'))
+    return render_template('notifications.html', notifications=items,
+                           biz=biz, businesses=_all_biz())
+
+@web_bp.route('/api/notifications')
+@login_required
+def notifications_api():
+    biz   = _current_biz()
+    items = store.get_notifications(biz.get('id'), unread_only=True, limit=20)
+    count = store.get_unread_count(biz.get('id'))
+    return jsonify({'count': count, 'items': items})
+
+@web_bp.route('/api/notifications/read', methods=['POST'])
+@login_required
+def notifications_mark_read():
+    biz = _current_biz()
+    store.mark_all_notifications_read(biz.get('id'))
     return jsonify({'status': 'ok'})
 
 # ─── SETTINGS ─────────────────────────────────────────────────────────────────

@@ -103,6 +103,30 @@
       {% endfor %}
     </div>
     {% endif %}
+
+    <!-- Provider conversation thread -->
+    <div class="card mt-4">
+      <h2 style="font-size:15px;margin-bottom:12px">Provider Conversation</h2>
+      {% if provider_msgs %}
+      <div style="display:flex;flex-direction:column;gap:10px">
+        {% for m in provider_msgs %}
+        <div style="display:flex;{% if m.role=='agent' %}justify-content:flex-end{% else %}justify-content:flex-start{% endif %}">
+          <div style="max-width:85%;padding:10px 14px;border-radius:12px;font-size:12px;
+                      line-height:1.55;white-space:pre-wrap;
+                      {% if m.role=='agent' %}background:#1d4ed8;color:#fff;border-bottom-right-radius:3px
+                      {% else %}background:var(--surface2);color:var(--text);border-bottom-left-radius:3px{% endif %}">
+            <div>{{ m.text }}</div>
+            <div style="font-size:10px;opacity:.6;margin-top:4px;text-align:{% if m.role=='agent' %}right{% else %}left{% endif %}">
+              {{ m.role|upper }} · {{ (m.ts or '')[:16].replace('T',' ') }}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-muted" style="font-size:13px">No messages yet.</p>
+      {% endif %}
+    </div>
   </div>
 
 </div>

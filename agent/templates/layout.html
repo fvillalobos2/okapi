@@ -160,7 +160,15 @@ select.form-control{cursor:pointer}
     <a href="/settings"  class="{% if active=='settings' %}active{% endif %}">⚙️ Settings</a>
   </div>
   <div class="sidebar-bottom">
-    <a href="/logout">Sign out</a>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <a href="/logout">Sign out</a>
+      <a href="/notifications" id="notif-bell" title="Notifications"
+         style="position:relative;font-size:18px;text-decoration:none">
+        🔔<span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-6px;
+          background:var(--danger);color:#fff;border-radius:99px;font-size:10px;
+          font-weight:700;padding:1px 5px;min-width:16px;text-align:center"></span>
+      </a>
+    </div>
   </div>
 </nav>
 
@@ -185,5 +193,24 @@ select.form-control{cursor:pointer}
 </div>
 
 {% block scripts %}{% endblock %}
+<script>
+(function pollNotifications() {
+  async function check() {
+    try {
+      const r = await fetch('/api/notifications');
+      const d = await r.json();
+      const badge = document.getElementById('notif-badge');
+      if (d.count > 0) {
+        badge.textContent = d.count > 99 ? '99+' : d.count;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+    } catch(e) {}
+  }
+  check();
+  setInterval(check, 30000);
+})();
+</script>
 </body>
 </html>

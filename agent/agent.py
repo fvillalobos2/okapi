@@ -499,6 +499,10 @@ def notify_provider(booking_text: str, client_phone: str,
         print(f'  ✓ Commission negotiation sent to provider ({provider_number})')
         store.add_pending_quote(provider_number, client_phone, booking_text,
                                 business_id=bid, commission_pct=commission_pct)
+        booking_id = store.get_booking_id_by_provider(provider_number, bid)
+        if booking_id:
+            store.log_provider_message(booking_id, 'agent', msg1)
+            store.log_provider_message(booking_id, 'agent', msg2)
     except Exception as e:
         print(f'  ✗ Failed to notify provider: {e}')
 
@@ -528,6 +532,9 @@ def _send_full_booking_to_provider(provider_number: str, pending: dict,
     try:
         twilio_client.messages.create(from_=effective_sender, to=provider_number, body=msg)
         print(f'  ✓ Full booking sent to provider {provider_number}')
+        booking_id = store.get_booking_id_by_provider(provider_number, pending.get('business_id'))
+        if booking_id:
+            store.log_provider_message(booking_id, 'agent', msg)
     except Exception as e:
         print(f'  ✗ Could not send full booking: {e}')
 
@@ -877,6 +884,11 @@ def handle_inbound(from_number: str, body: str,
     if provider_location:
         pending = store.get_pending_quote(from_number, bid)
         if pending:
+            booking_id = store.get_booking_id_by_provider(from_number, bid)
+            # Log provider's inbound message
+            if booking_id:
+                store.log_provider_message(booking_id, 'provider', body)
+
             if pending.get('link_sent'):
                 return '✅ Recibido. Ya enviamos el enlace al cliente. Esperando su pago.'
 
@@ -899,10 +911,8 @@ def handle_inbound(from_number: str, body: str,
                     # Counter-offer
                     store.update_commission_status(from_number, 'countered',
                                                    counter_offer=counter, business_id=bid)
-                    biz_name = (business or {}).get('name', 'GolfCartRentalsCR')
-                    min_pct  = float((business or {}).get('min_commission_pct', 5.0))
-                    auto_pct = float((business or {}).get('auto_accept_counter_within_pct', 2.0))
                     base_pct = pending.get('commission_pct', 10.0)
+                    auto_pct = float((business or {}).get('auto_accept_counter_within_pct', 2.0))
 
                     if counter >= base_pct - auto_pct:
                         # Auto-accept (within tolerance)
@@ -911,7 +921,7 @@ def handle_inbound(from_number: str, body: str,
                         _send_full_booking_to_provider(from_number, pending, sender)
                         return f'✅ Contrapropuesta de {counter:.0f}% aceptada automáticamente.'
                     else:
-                        # Alert admin
+                        # Alert admin + create notification
                         alert_admin(
                             f'💼 *Counter-offer from provider*\n\n'
                             f'Provider: {from_number}\n'
@@ -920,12 +930,17 @@ def handle_inbound(from_number: str, body: str,
                             f'Reply in CRM to approve or reject.',
                             sender
                         )
+                        store.create_notification(
+                            bid, 'counter_offer',
+                            f'Counter-offer: {provider_location}',
+                            f'Provider offered {counter:.0f}% (we asked {base_pct:.0f}%). Needs approval.',
+                            booking_id=booking_id
+                        )
                         return f'✅ Recibimos tu contrapropuesta de {counter:.0f}%. Te respondemos pronto.'
 
                 else:
                     # Rejected
                     store.update_commission_status(from_number, 'rejected', business_id=bid)
-                    # Try next provider
                     location  = _extract_booking_field(pending.get('booking', ''), 'Location')
                     next_prov = store.get_next_provider(location, from_number, bid)
                     if next_prov:
@@ -939,6 +954,13 @@ def handle_inbound(from_number: str, body: str,
                             f'Provider {from_number} rejected commission.\n'
                             f'Location: {location}\nNo backup provider available.',
                             sender
+                        )
+                        store.create_notification(
+                            bid, 'no_provider',
+                            f'No provider available: {location}',
+                            f'Provider {from_number} rejected commission. No backup available.',
+                            booking_id=booking_id,
+                            lead_phone=pending.get('client')
                         )
                         return '✅ Entendido. Gracias por responder.'
 
@@ -957,6 +979,14 @@ def handle_inbound(from_number: str, body: str,
                 send_whatsapp(client_phone, client_msg, sender)
                 store.append_message(client_phone, 'assistant', client_msg, bid)
                 store.mark_quote_link_sent(from_number, bid)
+                # Notify dashboard that provider sent a price
+                store.create_notification(
+                    bid, 'provider_quoted',
+                    f'Provider sent price: {provider_location}',
+                    f'Price quote received and forwarded to client {client_phone}.',
+                    booking_id=booking_id,
+                    lead_phone=client_phone
+                )
                 return '✅ Recibido. Ya notificamos al cliente.'
         else:
             return '✅ Mensaje recibido. No hay reservas pendientes para este número.'
@@ -1069,6 +1099,21 @@ def handle_inbound(from_number: str, body: str,
                 return ''
 
     store.append_message(from_number, 'user', body, bid)
+
+    # ── Human agent detection ─────────────────────────────────────────────────
+    _human_kw = ('hablar con alguien', 'agente humano', 'persona real', 'humano real',
+                 'necesito ayuda', 'quiero hablar', 'hablar con una persona',
+                 'speak to someone', 'human agent', 'real person', 'talk to someone',
+                 'speak with a person', 'need help', 'representative')
+    if any(kw in body.lower() for kw in _human_kw):
+        store.create_notification(
+            bid, 'human_needed',
+            'Human agent requested',
+            f'Customer {from_number} is asking for a real person.',
+            lead_phone=from_number
+        )
+        alert_admin(f'🆘 *Human agent needed*\n\nCustomer: {from_number}\nMessage: {body}', sender)
+
     reply = ask_claude(from_number, body, business)
 
     booking = extract_booking(reply)
