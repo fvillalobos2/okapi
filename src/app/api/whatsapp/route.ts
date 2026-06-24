@@ -14,12 +14,17 @@ export async function sendWhatsApp(to: string, body: string) {
     },
     body: new URLSearchParams({ From: FROM, To: to, Body: body }).toString(),
   })
-  return res.ok
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    console.error('[Twilio]', err)
+    return { ok: false, error: err }
+  }
+  return { ok: true }
 }
 
 // Internal endpoint for testing
 export async function POST(req: NextRequest) {
   const { to, body } = await req.json()
-  const ok = await sendWhatsApp(to, body)
-  return NextResponse.json({ ok })
+  const result = await sendWhatsApp(to, body)
+  return NextResponse.json(result)
 }
