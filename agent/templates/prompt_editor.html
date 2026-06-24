@@ -203,26 +203,66 @@ async function loadServices() {
   const services = await r.json();
   const list = document.getElementById('services-list');
   list.innerHTML = '';
+  if (!services.length) {
+    list.innerHTML = '<p class="text-muted" style="font-size:12px;padding:8px 0">No services yet.</p>';
+    return;
+  }
   services.forEach(s => {
     const div = document.createElement('div');
-    div.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)';
-    div.innerHTML = `<div>
-      <div style="font-size:13px">${s.name}</div>
-      <div style="font-size:11px;color:var(--muted)">${s.price_range||''}</div>
-    </div>
-    <div style="display:flex;gap:6px;align-items:center">
-      <button class="btn btn-ghost btn-sm" onclick="toggleService('${s.id}',${s.active})">${s.active?'Active':'Off'}</button>
-      <button class="btn btn-sm" style="background:var(--danger);color:#fff;padding:3px 8px" onclick="deleteService('${s.id}')">×</button>
-    </div>`;
+    div.id = 'svc-'+s.id;
+    div.style.cssText = 'padding:10px 0;border-bottom:1px solid var(--border)';
+    div.innerHTML = `
+      <div id="svc-view-${s.id}" style="display:flex;align-items:start;justify-content:space-between;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:500">${escHtml(s.name)}</div>
+          <div style="font-size:11px;color:var(--muted)">${escHtml(s.description||'')}${s.price_range?'<span style="margin-left:6px;color:var(--success)">'+escHtml(s.price_range)+'</span>':''}</div>
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button class="btn btn-ghost btn-sm" onclick="editService('${s.id}','${escJs(s.name)}','${escJs(s.description||'')}','${escJs(s.price_range||'')}')">✏️</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleService('${s.id}',${s.active})" style="${s.active?'':'opacity:.5'}">${s.active?'On':'Off'}</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteService('${s.id}')">×</button>
+        </div>
+      </div>
+      <div id="svc-edit-${s.id}" style="display:none;margin-top:8px">
+        <div style="display:grid;gap:6px">
+          <input id="svc-name-${s.id}" class="form-control" style="font-size:12px;padding:5px 8px" placeholder="Service name" value="${escHtml(s.name)}">
+          <input id="svc-desc-${s.id}" class="form-control" style="font-size:12px;padding:5px 8px" placeholder="Description" value="${escHtml(s.description||'')}">
+          <input id="svc-price-${s.id}" class="form-control" style="font-size:12px;padding:5px 8px" placeholder="Price range (e.g. $50–80/day)" value="${escHtml(s.price_range||'')}">
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-primary btn-sm" onclick="saveService('${s.id}')">Save</button>
+            <button class="btn btn-ghost btn-sm" onclick="cancelEditService('${s.id}')">Cancel</button>
+          </div>
+        </div>
+      </div>`;
     list.appendChild(div);
   });
 }
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escJs(s){ return String(s).replace(/'/g,"\\'").replace(/\n/g,' '); }
+function editService(id,name,desc,price){
+  document.getElementById('svc-view-'+id).style.display='none';
+  document.getElementById('svc-edit-'+id).style.display='block';
+}
+function cancelEditService(id){
+  document.getElementById('svc-view-'+id).style.display='flex';
+  document.getElementById('svc-edit-'+id).style.display='none';
+}
+async function saveService(id){
+  const name  = document.getElementById('svc-name-'+id).value.trim();
+  const desc  = document.getElementById('svc-desc-'+id).value.trim();
+  const price = document.getElementById('svc-price-'+id).value.trim();
+  if (!name) return;
+  await fetch('/api/services/'+id, {method:'PATCH', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({name, description: desc, price_range: price})});
+  loadServices();
+}
 async function addService() {
-  const name = prompt('Service name:'); if (!name) return;
-  const range = prompt('Price range (e.g. $50-80/day):') || '';
+  const name = window.prompt('Service name:'); if (!name) return;
+  const desc  = window.prompt('Description (optional):') || '';
+  const price = window.prompt('Price range (e.g. $50–80/day):') || '';
   await fetch('/api/businesses/'+slug+'/services', {
     method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({name, price_range: range, active: true})
+    body: JSON.stringify({name, description: desc, price_range: price, active: true})
   });
   loadServices();
 }

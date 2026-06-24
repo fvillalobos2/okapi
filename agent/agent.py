@@ -826,6 +826,17 @@ _COMMISSION_ACCEPT = {
     'sí', 'si', 'yes', 'ok', 'de acuerdo', 'acepto', 'aceptado',
     'claro', 'confirmo', 'confirmed', 'acepta', 'perfecto', 'listo',
 }
+# Words that indicate acceptance even inside longer sentences
+_COMMISSION_ACCEPT_WORDS = {'sí', 'si', 'yes', 'ok', 'acepto', 'aceptado',
+                             'claro', 'confirmo', 'acepta', 'perfecto',
+                             'disponible', 'disponibilidad', 'tengo', 'puedo',
+                             'accepted', 'agree'}
+
+def _is_commission_accept(text: str) -> bool:
+    if text in _COMMISSION_ACCEPT:
+        return True
+    words = set(re.split(r'\W+', text.lower()))
+    return bool(words & _COMMISSION_ACCEPT_WORDS)
 
 def _is_counter_offer(text: str) -> Optional[float]:
     """Return numeric counter-offer pct if text looks like one, else None."""
@@ -902,7 +913,7 @@ def handle_inbound(from_number: str, body: str,
             if commission_status == 'pending':
                 counter = _is_counter_offer(body_lower)
 
-                if body_lower in _COMMISSION_ACCEPT:
+                if _is_commission_accept(body_lower) and counter is None:
                     # Provider accepted commission
                     pct = pending.get('commission_pct', 10.0)
                     store.update_commission_status(from_number, 'accepted',
@@ -910,7 +921,7 @@ def handle_inbound(from_number: str, body: str,
                     _send_full_booking_to_provider(from_number, pending, sender)
                     return '✅ Comisión aceptada. Le enviamos los detalles de la reserva.'
 
-                elif counter is not None and body_lower not in {'no'}:
+                elif counter is not None and 'no' not in re.split(r'\W+', body_lower):
                     # Counter-offer
                     store.update_commission_status(from_number, 'countered',
                                                    counter_offer=counter, business_id=bid)
