@@ -1,0 +1,157 @@
+{% extends "layout.html" %}
+{% block title %}Dashboard — Okapi{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% set active = 'dashboard' %}
+
+{% block topbar_actions %}
+<span class="text-muted" style="font-size:12px">{{ biz.name }}</span>
+{% endblock %}
+
+{% block content %}
+
+<!-- ALERTS -->
+{% for a in alerts %}
+<div class="alert alert-{{ a.type }}">⚠ {{ a.msg }}</div>
+{% endfor %}
+
+<!-- KPI CARDS -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-label">Active Leads</div>
+    <div class="kpi-value">{{ kpi.active_leads or 0 }}</div>
+    <div class="kpi-sub">{{ kpi.total_leads or 0 }} total</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Bookings Today</div>
+    <div class="kpi-value">{{ kpi.bookings_today or 0 }}</div>
+    <div class="kpi-sub">{{ kpi.paid_bookings_count or 0 }} this month</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Revenue MTD</div>
+    <div class="kpi-value">${{ "%.0f"|format(kpi.revenue_mtd or 0) }}</div>
+    <div class="kpi-sub">booking fees collected</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Conversion Rate</div>
+    <div class="kpi-value">{{ kpi.conversion_rate or 0 }}%</div>
+    <div class="kpi-sub">leads → paid bookings</div>
+  </div>
+</div>
+
+<div class="grid-2" style="gap:24px">
+
+  <!-- PENDING QUOTES -->
+  <div>
+    <div class="section-header">
+      <h2>Pending Quotes ({{ quotes|length }})</h2>
+      <a href="/bookings" class="btn btn-ghost btn-sm">View all</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Provider</th><th>Location</th><th>Pick-up</th><th>Status</th></tr></thead>
+        <tbody>
+        {% for prov, q in quotes.items() %}
+        {% set loc   = q.booking.split('\n')|selectattr('0','equalto','L')|first|default('—') %}
+        {% set pickup_lines = [] %}
+        <tr>
+          <td class="mono">{{ prov[-10:] }}</td>
+          <td>
+            {% for line in q.booking.split('\n') %}
+              {% if line.lower().startswith('location:') %}{{ line.split(':',1)[1].strip() }}{% endif %}
+            {% endfor %}
+          </td>
+          <td>
+            {% for line in q.booking.split('\n') %}
+              {% if line.lower().startswith('pick-up:') %}{{ line.split(':',1)[1].strip()[:16] }}{% endif %}
+            {% endfor %}
+          </td>
+          <td>
+            {% if q.link_sent %}
+              <span class="badge badge-paid">Link Sent</span>
+            {% elif q.commission_status == 'pending' %}
+              <span class="badge badge-pending">Awaiting Commission</span>
+            {% elif q.commission_status == 'countered' %}
+              <span class="badge badge-countered">Counter-offer</span>
+            {% else %}
+              <span class="badge badge-pending">Awaiting Price</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-muted" style="text-align:center;padding:24px">No active quotes</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PENDING PAYMENTS -->
+  <div>
+    <div class="section-header">
+      <h2>Pending Payments ({{ payments|length }})</h2>
+      <a href="/bookings?payment_status=pending" class="btn btn-ghost btn-sm">View all</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Order</th><th>Client</th><th>Location</th><th>Fee</th></tr></thead>
+        <tbody>
+        {% for order, p in payments.items() %}
+        <tr>
+          <td class="mono">{{ order }}</td>
+          <td class="mono">{{ p.client[-12:] if p.client else '—' }}</td>
+          <td>
+            {% for line in p.booking.split('\n') %}
+              {% if line.lower().startswith('location:') %}{{ line.split(':',1)[1].strip() }}{% endif %}
+            {% endfor %}
+          </td>
+          <td>${{ "%.2f"|format(p.fee or 0) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-muted" style="text-align:center;padding:24px">No pending payments</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- RECENT BOOKINGS -->
+<div class="mt-6">
+  <div class="section-header">
+    <h2>Recent Bookings</h2>
+    <a href="/bookings" class="btn btn-ghost btn-sm">View all</a>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Order</th><th>Client</th><th>Location</th><th>Cart</th><th>Fee</th><th>Status</th><th>Date</th></tr>
+      </thead>
+      <tbody>
+      {% for b in recent_bookings %}
+      <tr>
+        <td><a href="/bookings/{{ b.id }}" class="mono">{{ b.order_number or b.id[:8] }}</a></td>
+        <td class="mono">{{ (b.client_phone or '—')[-12:] }}</td>
+        <td>
+          {% for line in (b.booking_text or '').split('\n') %}
+            {% if line.lower().startswith('location:') %}{{ line.split(':',1)[1].strip() }}{% endif %}
+          {% endfor %}
+        </td>
+        <td>
+          {% for line in (b.booking_text or '').split('\n') %}
+            {% if line.lower().startswith('cart:') %}{{ line.split(':',1)[1].strip() }}{% endif %}
+          {% endfor %}
+        </td>
+        <td>{% if b.fee_amount %}${{ "%.2f"|format(b.fee_amount) }}{% else %}—{% endif %}</td>
+        <td><span class="badge badge-{{ b.payment_status }}">{{ b.payment_status }}</span></td>
+        <td class="text-muted">{{ (b.created_at or '')[:10] }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="text-muted" style="text-align:center;padding:24px">No bookings yet</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

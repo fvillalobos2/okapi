@@ -1,0 +1,167 @@
+{% extends "layout.html" %}
+{% block title %}Analytics — Okapi{% endblock %}
+{% block page_title %}Analytics{% endblock %}
+{% set active = 'analytics' %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block topbar_actions %}
+<select class="form-control" style="width:auto;padding:6px 10px"
+        onchange="location='/analytics?days='+this.value">
+  <option value="7"  {% if days==7  %}selected{% endif %}>Last 7 days</option>
+  <option value="30" {% if days==30 %}selected{% endif %}>Last 30 days</option>
+  <option value="90" {% if days==90 %}selected{% endif %}>Last 90 days</option>
+</select>
+{% endblock %}
+
+{% block content %}
+
+<!-- KPI CARDS -->
+<div class="kpi-grid" style="margin-bottom:24px">
+  <div class="kpi-card">
+    <div class="kpi-label">Total Leads</div>
+    <div class="kpi-value">{{ kpi.total_leads or 0 }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Paid Bookings</div>
+    <div class="kpi-value">{{ kpi.paid_bookings_count or 0 }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Revenue (fees)</div>
+    <div class="kpi-value">${{ "%.0f"|format(kpi.revenue_mtd or 0) }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Conversion Rate</div>
+    <div class="kpi-value">{{ kpi.conversion_rate or 0 }}%</div>
+  </div>
+</div>
+
+<!-- LEAD FUNNEL + TREND CHART -->
+<div class="grid-2" style="gap:24px;margin-bottom:24px">
+
+  <!-- Funnel -->
+  <div class="card">
+    <h2 style="font-size:15px;margin-bottom:16px">Lead Funnel</h2>
+    {% set total = kpi.total_leads or 1 %}
+    {% for label, count, cls in [
+      ('New',     kpi.total_leads or 0,   'accent'),
+      ('Active',  kpi.active_leads or 0,  'info'),
+      ('Booked',  kpi.booked_leads or 0,  'success'),
+      ('Lost',    kpi.lost_leads or 0,    'danger'),
+    ] %}
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:13px">{{ label }}</span>
+        <span style="font-size:13px;font-weight:600">{{ count }}</span>
+      </div>
+      <div style="background:var(--bg);border-radius:4px;height:8px;overflow:hidden">
+        <div style="background:var(--{{ cls }});height:100%;width:{{ [(count/total*100)|round|int, 100]|min }}%;transition:width .3s"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Monthly trend chart -->
+  <div class="card">
+    <h2 style="font-size:15px;margin-bottom:16px">Monthly Trend</h2>
+    <canvas id="trendChart" height="180"></canvas>
+  </div>
+
+</div>
+
+<!-- PROVIDER LEADERBOARD + LOCATION BREAKDOWN -->
+<div class="grid-2" style="gap:24px">
+
+  <div>
+    <div class="section-header"><h2>Provider Leaderboard</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Location</th><th>Acceptance</th><th>Avg Response</th><th>Bookings</th></tr></thead>
+        <tbody>
+        {% for p in providers %}
+        <tr>
+          <td>{{ p.location_name }}</td>
+          <td>
+            {% if p.acceptance_rate is not none %}
+              <span class="{% if p.acceptance_rate >= 80 %}text-success{% elif p.acceptance_rate >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                {{ "%.0f"|format(p.acceptance_rate) }}%
+              </span>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% if p.avg_response_time_minutes %}
+              {% set mins = p.avg_response_time_minutes|int %}
+              {% if mins < 60 %}{{ mins }}m{% else %}{{ (mins/60)|round(1) }}h{% endif %}
+            {% else %}—{% endif %}
+          </td>
+          <td>{{ p.total_bookings or 0 }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-muted" style="text-align:center;padding:20px">No providers</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div>
+    <div class="section-header"><h2>Location Breakdown</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Location</th><th>Total Bookings</th><th>Paid</th><th>Revenue (fees)</th></tr></thead>
+        <tbody>
+        {% for loc in locations %}
+        <tr>
+          <td>{{ loc.location }}</td>
+          <td>{{ loc.total }}</td>
+          <td>{{ loc.paid }}</td>
+          <td>${{ "%.0f"|format(loc.revenue) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-muted" style="text-align:center;padding:20px">No data yet</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const trend  = {{ trend | tojson }};
+const labels = trend.map(t => t.month);
+const counts = trend.map(t => t.bookings);
+const revs   = trend.map(t => parseFloat(t.revenue || 0).toFixed(0));
+
+const ctx = document.getElementById('trendChart');
+if (ctx && trend.length) {
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Bookings', data: counts, backgroundColor: '#3b82f6', yAxisID: 'y1', order: 2 },
+        { label: 'Revenue ($)', data: revs, type: 'line', borderColor: '#22c55e',
+          backgroundColor: 'rgba(34,197,94,.1)', pointRadius: 4, yAxisID: 'y2', order: 1 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#94a3b8', font: { size: 12 } } } },
+      scales: {
+        x:  { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
+        y1: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' }, position: 'left', title: { display: true, text: 'Bookings', color: '#94a3b8' } },
+        y2: { ticks: { color: '#94a3b8' }, grid: { display: false }, position: 'right', title: { display: true, text: 'Revenue $', color: '#94a3b8' } },
+      }
+    }
+  });
+} else if (ctx) {
+  ctx.parentElement.innerHTML = '<p class="text-muted" style="text-align:center;padding:40px">No data yet</p>';
+}
+</script>
+{% endblock %}

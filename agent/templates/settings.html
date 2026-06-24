@@ -1,0 +1,89 @@
+{% extends "layout.html" %}
+{% block title %}Settings — Okapi{% endblock %}
+{% block page_title %}Settings — {{ biz.name }}{% endblock %}
+{% set active = 'settings' %}
+
+{% block content %}
+<div class="card" style="max-width:560px">
+  <form method="post">
+
+    <h2 style="font-size:15px;margin-bottom:20px">Automation</h2>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Follow-up after (hours)</label>
+        <input type="number" name="follow_up_hours" class="form-control"
+               value="{{ biz.follow_up_hours or 24 }}" min="1" max="168">
+        <div class="text-muted" style="font-size:11px;margin-top:4px">
+          Send a nudge to cold leads after this many hours of inactivity
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Provider timeout (hours)</label>
+        <input type="number" name="provider_timeout_hours" class="form-control"
+               value="{{ biz.provider_timeout_hours or 4 }}" min="1" max="48">
+        <div class="text-muted" style="font-size:11px;margin-top:4px">
+          Try next provider if no response within this time
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Auto-accept counter-offer within %</label>
+      <input type="number" name="auto_accept_counter_within_pct" class="form-control"
+             value="{{ biz.auto_accept_counter_within_pct or 2 }}" min="0" max="20" step="0.5"
+             style="max-width:120px">
+      <div class="text-muted" style="font-size:11px;margin-top:4px">
+        If provider counter-offers within this % of our rate, auto-accept (e.g. 2 = accept 8% if we offer 10%)
+      </div>
+    </div>
+
+    <div class="form-group" style="border-top:1px solid var(--border);padding-top:20px;margin-top:8px">
+      <h2 style="font-size:15px;margin-bottom:16px">Alerts</h2>
+      <label>Admin WhatsApp (for system alerts)</label>
+      <input type="text" name="admin_whatsapp" class="form-control"
+             value="{{ biz.admin_whatsapp or '' }}" placeholder="+50612345678">
+      <div class="text-muted" style="font-size:11px;margin-top:4px">
+        Receives alerts for counter-offers, provider timeouts, etc.
+      </div>
+    </div>
+
+    <div style="border-top:1px solid var(--border);padding-top:20px;margin-top:8px">
+      <h2 style="font-size:15px;margin-bottom:16px">Commission</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Default commission %</label>
+          <input type="number" class="form-control"
+                 value="{{ biz.default_commission_pct or 10 }}" disabled>
+          <div class="text-muted" style="font-size:11px;margin-top:4px">
+            Edit in <a href="/businesses" style="color:var(--accent)">Businesses</a> page
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Min acceptable commission %</label>
+          <input type="number" class="form-control"
+                 value="{{ biz.min_commission_pct or 5 }}" disabled>
+        </div>
+      </div>
+    </div>
+
+    <div style="border-top:1px solid var(--border);padding-top:20px;margin-top:8px">
+      <h2 style="font-size:15px;margin-bottom:16px">Webhook URLs</h2>
+      <div class="form-group">
+        <label>WhatsApp Webhook (configure in Twilio)</label>
+        <input type="text" class="form-control"
+               value="{{ request.host_url }}webhook/{{ biz.slug }}" readonly
+               onclick="this.select()">
+      </div>
+      <div class="form-group">
+        <label>Payment Webhook (configure in Tilopay)</label>
+        <input type="text" class="form-control"
+               value="{{ request.host_url }}payment-confirmed" readonly
+               onclick="this.select()">
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary" style="margin-top:8px">Save Settings</button>
+  </form>
+</div>
+{% endblock %}

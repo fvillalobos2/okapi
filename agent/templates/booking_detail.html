@@ -1,0 +1,134 @@
+{% extends "layout.html" %}
+{% block title %}Booking — Okapi{% endblock %}
+{% block page_title %}Booking{% endblock %}
+{% set active = 'bookings' %}
+
+{% block topbar_actions %}
+<a href="/bookings" class="btn btn-ghost btn-sm">← Back to Bookings</a>
+{% endblock %}
+
+{% block content %}
+{% if not booking %}
+<div class="card"><p class="text-muted">Booking not found.</p></div>
+{% else %}
+
+<div class="grid-2" style="gap:24px;align-items:start">
+
+  <!-- LEFT: Core details -->
+  <div>
+    <div class="card mb-4">
+      <div class="section-header">
+        <h2>Booking Details</h2>
+        <span class="badge badge-{{ booking.payment_status }}">{{ booking.payment_status }}</span>
+      </div>
+      <table style="width:100%;line-height:2">
+        <tr><td class="text-muted" style="width:140px">Order #</td><td class="mono">{{ booking.order_number or '—' }}</td></tr>
+        <tr><td class="text-muted">Client</td><td class="mono">{{ booking.client_phone or '—' }}</td></tr>
+        <tr><td class="text-muted">Provider</td><td class="mono">{{ booking.provider_number or '—' }}</td></tr>
+        <tr><td class="text-muted">Rental amount</td><td>{% if booking.rental_amount %}${{ "%.2f"|format(booking.rental_amount) }} {{ booking.currency or 'USD' }}{% else %}—{% endif %}</td></tr>
+        <tr><td class="text-muted">Booking fee</td><td>{% if booking.fee_amount %}<strong>${{ "%.2f"|format(booking.fee_amount) }}</strong>{% else %}—{% endif %}</td></tr>
+        <tr><td class="text-muted">Paid at</td><td>{{ (booking.paid_at or '')[:16].replace('T',' ') or '—' }}</td></tr>
+        <tr><td class="text-muted">Created</td><td>{{ (booking.created_at or '')[:16].replace('T',' ') }}</td></tr>
+        <tr><td class="text-muted">Provider contacted</td><td>{{ (booking.provider_contacted_at or '')[:16].replace('T',' ') or '—' }}</td></tr>
+        <tr><td class="text-muted">Provider responded</td><td>{{ (booking.provider_responded_at or '')[:16].replace('T',' ') or '—' }}</td></tr>
+      </table>
+    </div>
+
+    <!-- Booking text -->
+    {% if booking.booking_text %}
+    <div class="card mb-4">
+      <h2 style="font-size:15px;margin-bottom:12px">Booking Block</h2>
+      <pre style="background:var(--bg);padding:12px;border-radius:8px;font-size:12px;
+                  white-space:pre-wrap;color:var(--text);line-height:1.6">{{ booking.booking_text }}</pre>
+    </div>
+    {% endif %}
+
+    <!-- Admin overrides -->
+    <div class="card">
+      <h2 style="font-size:15px;margin-bottom:16px">Admin Override</h2>
+      <div class="form-group">
+        <label>Commission % (final)</label>
+        <input type="number" id="commission_override" class="form-control"
+               value="{{ booking.commission_pct_final or booking.commission_pct_offered or 10 }}"
+               min="0" max="100" step="0.5">
+      </div>
+      <div class="form-group">
+        <label>Payment Status</label>
+        <select id="payment_status_override" class="form-control">
+          <option value="pending"   {% if booking.payment_status=='pending'   %}selected{% endif %}>Pending</option>
+          <option value="paid"      {% if booking.payment_status=='paid'      %}selected{% endif %}>Paid</option>
+          <option value="cancelled" {% if booking.payment_status=='cancelled' %}selected{% endif %}>Cancelled</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="saveOverride()">Save Override</button>
+      <div id="override-status" class="text-muted mt-4" style="font-size:12px"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Commission negotiation history -->
+  <div>
+    <div class="card">
+      <h2 style="font-size:15px;margin-bottom:16px">Commission Negotiation</h2>
+      <table style="width:100%">
+        <tr><td class="text-muted" style="width:140px">Offered</td>
+            <td>{{ booking.commission_pct_offered or '—' }}%</td></tr>
+        <tr><td class="text-muted">Status</td>
+            <td><span class="badge badge-{{ booking.commission_negotiation_status }}">{{ booking.commission_negotiation_status }}</span></td></tr>
+        {% if booking.commission_counter_offer %}
+        <tr><td class="text-muted">Counter-offer</td>
+            <td><strong class="text-warning">{{ booking.commission_counter_offer }}%</strong></td></tr>
+        {% endif %}
+        {% if booking.commission_pct_final %}
+        <tr><td class="text-muted">Final agreed</td>
+            <td><strong class="text-success">{{ booking.commission_pct_final }}%</strong></td></tr>
+        {% endif %}
+      </table>
+
+      {% if booking.commission_negotiation_status == 'countered' %}
+      <div class="alert alert-warning mt-4">
+        Provider counter-offered {{ booking.commission_counter_offer }}%.
+        Use the override above to set the final rate and update payment status.
+      </div>
+      {% endif %}
+    </div>
+
+    {% if booking.modification_requests %}
+    <div class="card mt-4">
+      <h2 style="font-size:15px;margin-bottom:12px">Modification Requests</h2>
+      {% for mod in booking.modification_requests %}
+      <div style="background:var(--bg);padding:10px;border-radius:6px;margin-bottom:8px;font-size:13px">
+        <div>{{ mod.request or mod }}</div>
+        <div class="text-muted" style="font-size:11px;margin-top:4px">{{ (mod.created_at or '')[:16] }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function saveOverride() {
+  const status = document.getElementById('override-status');
+  const payload = {
+    commission_pct_final: parseFloat(document.getElementById('commission_override').value),
+    payment_status: document.getElementById('payment_status_override').value,
+  };
+  status.textContent = 'Saving…';
+  try {
+    const r = await fetch('/api/bookings/{{ booking.id if booking else "" }}', {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    status.textContent = d.status === 'ok' ? '✓ Saved' : 'Error';
+    if (d.status === 'ok') setTimeout(() => location.reload(), 600);
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+  }
+}
+</script>
+{% endblock %}

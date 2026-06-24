@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+{% block title %}New Business — Okapi{% endblock %}
+{% block page_title %}Add Business{% endblock %}
+{% set active = 'businesses' %}
+
+{% block topbar_actions %}
+<a href="/businesses" class="btn btn-ghost btn-sm">← Back</a>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:560px">
+  <form method="post">
+    <div class="form-group">
+      <label>Business Name</label>
+      <input type="text" name="name" class="form-control" placeholder="e.g. SurfBoardRentalsCR" required>
+    </div>
+    <div class="form-group">
+      <label>Slug (URL-safe, unique)</label>
+      <input type="text" name="slug" class="form-control" placeholder="e.g. surfboardrentalscr" required>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>WhatsApp Number</label>
+        <input type="text" name="whatsapp_number" class="form-control" placeholder="+14155238886">
+      </div>
+      <div class="form-group">
+        <label>Twilio Sender</label>
+        <input type="text" name="twilio_sender" class="form-control" placeholder="whatsapp:+14155238886">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Default Commission %</label>
+        <input type="number" name="default_commission_pct" class="form-control" value="10" min="0" max="100" step="0.5">
+      </div>
+      <div class="form-group">
+        <label>Min Commission %</label>
+        <input type="number" name="min_commission_pct" class="form-control" value="5" min="0" max="100" step="0.5">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Auto-accept counter within % (e.g. 2 = accept if within 2% of our rate)</label>
+      <input type="number" name="auto_accept_counter_within_pct" class="form-control" value="2" min="0" max="20" step="0.5">
+    </div>
+    <button type="submit" class="btn btn-primary">Create Business</button>
+  </form>
+</div>
+{% endblock %}

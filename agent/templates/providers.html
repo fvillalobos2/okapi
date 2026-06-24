@@ -1,0 +1,141 @@
+{% extends "layout.html" %}
+{% block title %}Providers — Okapi{% endblock %}
+{% block page_title %}Providers{% endblock %}
+{% set active = 'providers' %}
+
+{% block topbar_actions %}
+<button class="btn btn-primary" onclick="showAddModal()">+ Add Provider</button>
+{% endblock %}
+
+{% block content %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Location</th><th>WhatsApp</th><th>Commission %</th>
+        <th>Acceptance Rate</th><th>Avg Response</th><th>Total Bookings</th>
+        <th>Active</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for p in providers %}
+    <tr id="row-{{ p.id }}">
+      <td><strong>{{ p.location_name }}</strong></td>
+      <td class="mono">{{ p.whatsapp_number }}</td>
+      <td>
+        <input type="number" class="form-control" style="width:70px;padding:4px 8px"
+               value="{{ p.default_commission_pct or 10 }}" min="0" max="100" step="0.5"
+               onchange="updateProvider('{{ p.id }}', {default_commission_pct: parseFloat(this.value)})">
+      </td>
+      <td>
+        {% if p.acceptance_rate is not none %}
+          <span class="{% if p.acceptance_rate >= 80 %}text-success{% elif p.acceptance_rate >= 60 %}text-warning{% else %}text-danger{% endif %}">
+            {{ "%.0f"|format(p.acceptance_rate) }}%
+          </span>
+        {% else %}—{% endif %}
+      </td>
+      <td>
+        {% if p.avg_response_time_minutes %}
+          {% set mins = p.avg_response_time_minutes|int %}
+          {% if mins < 60 %}{{ mins }}m
+          {% else %}{{ (mins/60)|round(1) }}h{% endif %}
+        {% else %}—{% endif %}
+      </td>
+      <td>{{ p.total_bookings or 0 }}</td>
+      <td>
+        <button class="btn btn-sm {% if p.active %}btn-primary{% else %}btn-ghost{% endif %}"
+                onclick="toggleActive('{{ p.id }}', {{ 'true' if p.active else 'false' }})">
+          {{ 'Active' if p.active else 'Inactive' }}
+        </button>
+      </td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openEdit('{{ p.id }}','{{ p.location_name }}','{{ p.whatsapp_number }}',{{ p.default_commission_pct or 10 }})">Edit</button></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8" class="text-muted" style="text-align:center;padding:32px">No providers yet</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;width:400px;max-width:90vw">
+    <h2 style="font-size:16px;margin-bottom:20px" id="modal-title">Add Provider</h2>
+    <input type="hidden" id="modal-id">
+    <div class="form-group">
+      <label>Location Name</label>
+      <input type="text" id="modal-location" class="form-control" placeholder="e.g. Tamarindo">
+    </div>
+    <div class="form-group">
+      <label>WhatsApp Number</label>
+      <input type="text" id="modal-number" class="form-control" placeholder="whatsapp:+50612345678">
+    </div>
+    <div class="form-group">
+      <label>Default Commission %</label>
+      <input type="number" id="modal-commission" class="form-control" value="10" min="0" max="100" step="0.5">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-primary" style="flex:1" onclick="saveModal()">Save</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+    </div>
+    <div id="modal-status" class="text-muted mt-4" style="font-size:12px"></div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showAddModal() {
+  document.getElementById('modal-id').value = '';
+  document.getElementById('modal-title').textContent = 'Add Provider';
+  document.getElementById('modal-location').value = '';
+  document.getElementById('modal-number').value = '';
+  document.getElementById('modal-commission').value = 10;
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function openEdit(id, loc, num, pct) {
+  document.getElementById('modal-id').value = id;
+  document.getElementById('modal-title').textContent = 'Edit Provider';
+  document.getElementById('modal-location').value = loc;
+  document.getElementById('modal-number').value = num;
+  document.getElementById('modal-commission').value = pct;
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
+async function saveModal() {
+  const id        = document.getElementById('modal-id').value;
+  const status    = document.getElementById('modal-status');
+  const payload   = {
+    location_name:         document.getElementById('modal-location').value.trim().toLowerCase(),
+    whatsapp_number:       document.getElementById('modal-number').value.trim(),
+    default_commission_pct: parseFloat(document.getElementById('modal-commission').value),
+    active: true,
+  };
+  status.textContent = 'Saving…';
+  try {
+    let r;
+    if (id) {
+      r = await fetch('/api/providers/'+id, {method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+    } else {
+      r = await fetch('/api/providers', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+    }
+    const d = await r.json();
+    if (d.status === 'ok') { closeModal(); location.reload(); }
+    else status.textContent = 'Error';
+  } catch(e) { status.textContent = 'Error: '+e.message; }
+}
+
+async function updateProvider(id, data) {
+  await fetch('/api/providers/'+id, {method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)});
+}
+
+async function toggleActive(id, current) {
+  await updateProvider(id, {active: !current});
+  location.reload();
+}
+</script>
+{% endblock %}

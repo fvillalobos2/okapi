@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+{% block title %}Businesses — Okapi{% endblock %}
+{% block page_title %}Businesses{% endblock %}
+{% set active = 'businesses' %}
+
+{% block topbar_actions %}
+<a href="/businesses/new" class="btn btn-primary">+ Add Business</a>
+{% endblock %}
+
+{% block content %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Name</th><th>Slug</th><th>WhatsApp</th><th>Commission %</th><th>Active</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+    {% for b in businesses %}
+    <tr>
+      <td><strong>{{ b.name }}</strong></td>
+      <td><span class="badge" style="background:var(--surface2);color:var(--muted)">{{ b.slug }}</span></td>
+      <td class="mono">{{ b.whatsapp_number }}</td>
+      <td>{{ b.default_commission_pct or 10 }}%</td>
+      <td>
+        <button class="btn btn-sm {% if b.active %}btn-primary{% else %}btn-ghost{% endif %}"
+                onclick="toggleBiz('{{ b.id }}', {{ 'true' if b.active else 'false' }})">
+          {{ 'Active' if b.active else 'Inactive' }}
+        </button>
+      </td>
+      <td style="display:flex;gap:6px">
+        <a href="/businesses/{{ b.slug }}/prompt" class="btn btn-ghost btn-sm">AI Prompt</a>
+        <a href="/api/switch-biz/{{ b.slug }}" class="btn btn-ghost btn-sm">Switch to</a>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" class="text-muted" style="text-align:center;padding:32px">No businesses</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function toggleBiz(id, current) {
+  await fetch('/api/businesses/'+id, {
+    method:'PATCH', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({active: !current})
+  });
+  location.reload();
+}
+</script>
+{% endblock %}

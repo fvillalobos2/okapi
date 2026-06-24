@@ -1,0 +1,58 @@
+{% extends "layout.html" %}
+{% block title %}Bookings — Okapi{% endblock %}
+{% block page_title %}Bookings{% endblock %}
+{% set active = 'bookings' %}
+
+{% block topbar_actions %}
+<select class="form-control" style="width:auto;padding:6px 10px" onchange="location='/bookings?payment_status='+this.value">
+  <option value="" {% if not pstat_filter %}selected{% endif %}>All statuses</option>
+  <option value="pending"   {% if pstat_filter=='pending'   %}selected{% endif %}>Pending</option>
+  <option value="paid"      {% if pstat_filter=='paid'      %}selected{% endif %}>Paid</option>
+  <option value="cancelled" {% if pstat_filter=='cancelled' %}selected{% endif %}>Cancelled</option>
+</select>
+<span class="text-muted">{{ bookings|length }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Order #</th><th>Client</th><th>Location</th><th>Cart</th>
+        <th>Pick-up</th><th>Rental</th><th>Fee</th><th>Commission</th>
+        <th>Payment</th><th>Created</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for b in bookings %}
+    {% set bt = b.booking_text or '' %}
+    <tr>
+      <td><a href="/bookings/{{ b.id }}" class="mono">{{ b.order_number or b.id[:8]+'…' }}</a></td>
+      <td class="mono">{{ (b.client_phone or '—')[-12:] }}</td>
+      <td>
+        {% for line in bt.split('\n') %}{% if line.lower().startswith('location:') %}{{ line.split(':',1)[1].strip() }}{% endif %}{% endfor %}
+      </td>
+      <td>
+        {% for line in bt.split('\n') %}{% if line.lower().startswith('cart:') %}{{ line.split(':',1)[1].strip() }}{% endif %}{% endfor %}
+      </td>
+      <td class="text-muted" style="font-size:12px">
+        {% for line in bt.split('\n') %}{% if line.lower().startswith('pick-up:') %}{{ line.split(':',1)[1].strip()[:16] }}{% endif %}{% endfor %}
+      </td>
+      <td>{% if b.rental_amount %}${{ "%.0f"|format(b.rental_amount) }}{% else %}—{% endif %}</td>
+      <td>{% if b.fee_amount %}<strong>${{ "%.2f"|format(b.fee_amount) }}</strong>{% else %}—{% endif %}</td>
+      <td>
+        {% if b.commission_pct_final %}{{ b.commission_pct_final }}%
+        {% elif b.commission_pct_offered %}{{ b.commission_pct_offered }}%{% else %}—{% endif %}
+        <span class="badge badge-{{ b.commission_negotiation_status }}" style="font-size:10px">{{ b.commission_negotiation_status }}</span>
+      </td>
+      <td><span class="badge badge-{{ b.payment_status }}">{{ b.payment_status }}</span></td>
+      <td class="text-muted">{{ (b.created_at or '')[:10] }}</td>
+      <td><a href="/bookings/{{ b.id }}" class="btn btn-ghost btn-sm">View</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="11" class="text-muted" style="text-align:center;padding:32px">No bookings found</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

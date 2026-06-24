@@ -1,0 +1,155 @@
+{% extends "layout.html" %}
+{% block title %}Lead — Okapi{% endblock %}
+{% block page_title %}Lead: {{ lead.phone if lead else 'Not found' }}{% endblock %}
+{% set active = 'leads' %}
+
+{% block topbar_actions %}
+<a href="/leads" class="btn btn-ghost btn-sm">← Back to Leads</a>
+{% endblock %}
+
+{% block content %}
+{% if not lead %}
+<div class="card"><p class="text-muted">Lead not found.</p></div>
+{% else %}
+
+<div class="grid-2" style="gap:24px;align-items:start">
+
+  <!-- LEFT: Lead info + booking -->
+  <div>
+    <div class="card mb-4">
+      <div class="section-header">
+        <h2>Lead Info</h2>
+        <span class="badge badge-{{ lead.status }}">{{ lead.status }}</span>
+      </div>
+      <table style="width:100%">
+        <tr><td class="text-muted" style="width:120px">Phone</td><td class="mono">{{ lead.phone }}</td></tr>
+        <tr><td class="text-muted">Name</td><td>{{ lead.name or '—' }}</td></tr>
+        <tr><td class="text-muted">Email</td><td>{{ lead.email or '—' }}</td></tr>
+        <tr><td class="text-muted">Source</td>
+          <td>
+            {% if lead.utm_source %}{{ lead.utm_source }}{% if lead.utm_medium %}/{{ lead.utm_medium }}{% endif %}{% endif %}
+            {% if lead.source_url %}<br><span class="mono text-muted" style="font-size:11px">{{ lead.source_url }}</span>{% endif %}
+            {% if not lead.utm_source and not lead.source_url %}—{% endif %}
+          </td>
+        </tr>
+        <tr><td class="text-muted">Follow-up</td>
+          <td>
+            {% if lead.follow_up_sent_at %}
+              Sent {{ (lead.follow_up_sent_at or '')[:16].replace('T',' ') }}
+              {% if lead.follow_up_responded %}<span class="text-success"> ✓ responded</span>{% else %}<span class="text-warning"> (no response)</span>{% endif %}
+            {% else %}Not sent{% endif %}
+          </td>
+        </tr>
+        <tr><td class="text-muted">Last active</td><td>{{ (lead.last_active_at or '')[:16].replace('T',' ') }}</td></tr>
+        <tr><td class="text-muted">Created</td><td>{{ (lead.created_at or '')[:16].replace('T',' ') }}</td></tr>
+      </table>
+    </div>
+
+    {% if booking %}
+    <div class="card">
+      <div class="section-header">
+        <h2>Booking</h2>
+        <span class="badge badge-{{ booking.payment_status }}">{{ booking.payment_status }}</span>
+      </div>
+      <table style="width:100%">
+        <tr><td class="text-muted" style="width:120px">Order #</td><td class="mono">{{ booking.order_number or '—' }}</td></tr>
+        <tr><td class="text-muted">Fee</td><td>{% if booking.fee_amount %}${{ "%.2f"|format(booking.fee_amount) }}{% else %}—{% endif %}</td></tr>
+        <tr><td class="text-muted">Rental</td><td>{% if booking.rental_amount %}${{ "%.2f"|format(booking.rental_amount) }}{% else %}—{% endif %}</td></tr>
+        <tr><td class="text-muted">Commission</td><td>
+          {{ booking.commission_pct_offered or '—' }}% offered
+          {% if booking.commission_pct_final %} / {{ booking.commission_pct_final }}% final{% endif %}
+          — <span class="badge badge-{{ booking.commission_negotiation_status }}">{{ booking.commission_negotiation_status }}</span>
+        </td></tr>
+        <tr><td class="text-muted">Provider</td><td class="mono">{{ booking.provider_number or '—' }}</td></tr>
+        <tr><td class="text-muted">Created</td><td>{{ (booking.created_at or '')[:16].replace('T',' ') }}</td></tr>
+      </table>
+      {% if booking.booking_text %}
+      <div class="mt-4">
+        <div class="text-muted" style="font-size:11px;margin-bottom:6px">BOOKING DETAILS</div>
+        <pre style="background:var(--bg);padding:10px;border-radius:6px;font-size:12px;white-space:pre-wrap;color:var(--text)">{{ booking.booking_text }}</pre>
+      </div>
+      {% endif %}
+      <div class="mt-4">
+        <a href="/bookings/{{ booking.id }}" class="btn btn-ghost btn-sm">Full booking view →</a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- RIGHT: Conversation -->
+  <div>
+    <div class="card" style="height:600px;display:flex;flex-direction:column">
+      <div class="section-header" style="margin-bottom:12px">
+        <h2>Conversation</h2>
+        <span class="text-muted" style="font-size:11px">{{ (conv.messages or [])|length }} messages</span>
+      </div>
+
+      <div id="chat-messages" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px 0">
+        {% for msg in (conv.messages or []) %}
+        <div style="display:flex;{% if msg.role=='user' %}justify-content:flex-end{% endif %}">
+          <div style="max-width:80%;padding:8px 12px;border-radius:10px;font-size:13px;line-height:1.5;
+            {% if msg.role=='user' %}
+              background:#1d4ed8;color:#fff;border-bottom-right-radius:3px
+            {% else %}
+              background:var(--surface2);color:var(--text);border-bottom-left-radius:3px
+            {% endif %}">
+            {{ msg.content }}
+            <div style="font-size:10px;opacity:.6;margin-top:4px">{{ (msg.ts or '')[:16].replace('T',' ') }}</div>
+          </div>
+        </div>
+        {% else %}
+        <div class="text-muted" style="text-align:center;padding:24px">No messages yet</div>
+        {% endfor %}
+      </div>
+
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:12px">
+        <div style="display:flex;gap:8px">
+          <input type="text" id="reply-input" class="form-control" placeholder="Type a manual reply…" style="flex:1">
+          <button class="btn btn-primary" onclick="sendReply()">Send</button>
+        </div>
+        <div id="reply-status" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const msgs = document.getElementById('chat-messages');
+  if (msgs) msgs.scrollTop = msgs.scrollHeight;
+});
+
+async function sendReply() {
+  const input  = document.getElementById('reply-input');
+  const status = document.getElementById('reply-status');
+  const msg    = input.value.trim();
+  if (!msg) return;
+  status.textContent = 'Sending…';
+  try {
+    const r = await fetch('/api/leads/{{ lead.phone if lead else "" }}/reply', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({message: msg})
+    });
+    const d = await r.json();
+    if (d.status === 'sent') {
+      status.textContent = '✓ Sent';
+      input.value = '';
+      setTimeout(() => location.reload(), 800);
+    } else {
+      status.textContent = 'Error: ' + (d.error || 'Unknown');
+    }
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+  }
+}
+
+document.getElementById('reply-input')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); }
+});
+</script>
+{% endblock %}

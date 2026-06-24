@@ -1,0 +1,62 @@
+{% extends "layout.html" %}
+{% block title %}Leads — Okapi{% endblock %}
+{% block page_title %}Leads{% endblock %}
+{% set active = 'leads' %}
+
+{% block topbar_actions %}
+<div style="display:flex;gap:8px;align-items:center">
+  <select class="form-control" style="width:auto;padding:6px 10px" onchange="location='/leads?status='+this.value">
+    <option value="" {% if not status_filter %}selected{% endif %}>All statuses</option>
+    <option value="new"    {% if status_filter=='new'    %}selected{% endif %}>New</option>
+    <option value="active" {% if status_filter=='active' %}selected{% endif %}>Active</option>
+    <option value="booked" {% if status_filter=='booked' %}selected{% endif %}>Booked</option>
+    <option value="lost"   {% if status_filter=='lost'   %}selected{% endif %}>Lost</option>
+  </select>
+  <span class="text-muted">{{ leads|length }} leads</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Phone</th><th>Name</th><th>Source</th><th>Status</th>
+        <th>Follow-up</th><th>Last Active</th><th>Created</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for lead in leads %}
+    <tr>
+      <td><a href="/leads/{{ lead.phone }}">{{ lead.phone }}</a></td>
+      <td>{{ lead.name or '—' }}</td>
+      <td>
+        {% if lead.utm_source %}
+          <span class="badge badge-info" style="background:#0c2340;color:#7dd3fc;font-size:10px">
+            {{ lead.utm_source }}{% if lead.utm_medium %}/{{ lead.utm_medium }}{% endif %}
+          </span>
+        {% elif lead.source_url %}
+          <span class="text-muted mono" style="font-size:11px">{{ lead.source_url[-30:] }}</span>
+        {% else %}—{% endif %}
+      </td>
+      <td><span class="badge badge-{{ lead.status }}">{{ lead.status }}</span></td>
+      <td>
+        {% if lead.follow_up_sent_at %}
+          {% if lead.follow_up_responded %}
+            <span class="text-success">✓ Responded</span>
+          {% else %}
+            <span class="text-warning">Sent {{ (lead.follow_up_sent_at or '')[:10] }}</span>
+          {% endif %}
+        {% else %}—{% endif %}
+      </td>
+      <td class="text-muted">{{ (lead.last_active_at or '')[:16].replace('T',' ') }}</td>
+      <td class="text-muted">{{ (lead.created_at or '')[:10] }}</td>
+      <td><a href="/leads/{{ lead.phone }}" class="btn btn-ghost btn-sm">View</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8" class="text-muted" style="text-align:center;padding:32px">No leads found</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
