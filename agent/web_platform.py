@@ -113,40 +113,48 @@ def lead_reply(phone: str):
 # ─── CONVERSATIONS ───────────────────────────────────────────────────────────
 
 @web_bp.route('/conversations')
+@web_bp.route('/conversations/<provider_id>')
 @login_required
-def conversations():
-    biz      = _current_biz()
-    bookings = store.get_bookings(biz.get('id'), limit=200)
-    bookings = [b for b in bookings if b.get('provider_number')]
-    return render_template('conversations.html', bookings=bookings, selected=None,
-                           provider_msgs=[], biz=biz, businesses=_all_biz())
+def conversations(provider_id: str = None):
+    biz       = _current_biz()
+    providers = store.get_providers_list(biz.get('id'))
+    return render_template('conversations.html', providers=providers,
+                           selected_id=provider_id,
+                           biz=biz, businesses=_all_biz())
 
-@web_bp.route('/conversations/<booking_id>')
+@web_bp.route('/api/providers/<provider_id>/messages')
 @login_required
-def conversation_detail(booking_id: str):
-    biz      = _current_biz()
-    bookings = store.get_bookings(biz.get('id'), limit=200)
-    bookings = [b for b in bookings if b.get('provider_number')]
-    selected = store.get_booking_by_id(booking_id)
-    msgs     = store.get_provider_messages(booking_id) if selected else []
-    return render_template('conversations.html', bookings=bookings, selected=selected,
-                           provider_msgs=msgs, biz=biz, businesses=_all_biz())
-
-@web_bp.route('/api/conversations/<booking_id>/send', methods=['POST'])
-@login_required
-def conversation_send(booking_id: str):
-    from agent import send_whatsapp, TWILIO_WA_NUMBER
-    biz     = _current_biz()
-    booking = store.get_booking_by_id(booking_id)
-    if not booking:
+def provider_messages_api(provider_id: str):
+    biz = _current_biz()
+    try:
+        r = store._sb().table('providers').select('*').eq('id', provider_id).limit(1).execute()
+    except Exception:
+        return jsonify({'error': 'DB error'}), 500
+    if not r.data:
         return jsonify({'error': 'Not found'}), 404
-    msg    = (request.json or {}).get('message', '').strip()
+    p    = r.data[0]
+    msgs = store.get_all_provider_messages_by_number(p['whatsapp_number'], biz.get('id'))
+    return jsonify({'messages': msgs, 'provider': p})
+
+@web_bp.route('/api/providers/<provider_id>/message', methods=['POST'])
+@login_required
+def provider_message_send(provider_id: str):
+    from agent import send_whatsapp, TWILIO_WA_NUMBER
+    biz = _current_biz()
+    try:
+        r = store._sb().table('providers').select('*').eq('id', provider_id).limit(1).execute()
+    except Exception:
+        return jsonify({'error': 'DB error'}), 500
+    if not r.data:
+        return jsonify({'error': 'Not found'}), 404
+    provider = r.data[0]
+    msg = (request.json or {}).get('message', '').strip()
     if not msg:
-        return jsonify({'error': 'Empty'}), 400
+        return jsonify({'error': 'Empty message'}), 400
     sender = biz.get('twilio_sender', TWILIO_WA_NUMBER)
-    to     = booking['provider_number']
+    to = provider['whatsapp_number']
     send_whatsapp(to, msg, sender)
-    store.log_provider_message(booking_id, 'agent', msg)
+    store.log_provider_direct_message(to, 'agent', msg, biz.get('id'))
     return jsonify({'status': 'sent'})
 
 # ─── BOOKINGS ─────────────────────────────────────────────────────────────────

@@ -934,6 +934,48 @@ def get_provider_messages(booking_id: str) -> list:
         return []
 
 
+def get_all_provider_messages_by_number(provider_number: str,
+                                         business_id: Optional[str] = None) -> list:
+    """Aggregate all provider_messages across all bookings for a given provider number."""
+    b = _bid(business_id)
+    if not b:
+        return []
+    try:
+        r = (_sb().table('bookings')
+             .select('id, order_number, provider_messages, created_at')
+             .eq('provider_number', provider_number)
+             .eq('business_id', b)
+             .order('created_at').execute())
+        all_msgs = []
+        for booking in (r.data or []):
+            for m in (booking.get('provider_messages') or []):
+                all_msgs.append({**m,
+                                  'booking_id':    booking['id'],
+                                  'order_number':  booking.get('order_number', '')})
+        all_msgs.sort(key=lambda x: x.get('ts', ''))
+        return all_msgs
+    except Exception as e:
+        print(f'  ⚠ get_all_provider_messages_by_number: {e}')
+        return []
+
+
+def log_provider_direct_message(provider_number: str, role: str, text: str,
+                                  business_id: Optional[str] = None):
+    """Log a direct (non-booking) message to the most recent booking for this provider."""
+    b = _bid(business_id)
+    if not b:
+        return
+    try:
+        r = (_sb().table('bookings').select('id')
+             .eq('provider_number', provider_number)
+             .eq('business_id', b)
+             .order('created_at', desc=True).limit(1).execute())
+        if r.data:
+            log_provider_message(r.data[0]['id'], role, text, b)
+    except Exception as e:
+        print(f'  ⚠ log_provider_direct_message: {e}')
+
+
 def mark_provider_verified(provider_number: str, business_id: Optional[str] = None):
     """Mark provider as WhatsApp-verified when they initiate a message to us."""
     b = _bid(business_id)
