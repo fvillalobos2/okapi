@@ -136,6 +136,46 @@ def provider_messages_api(provider_id: str):
     msgs = store.get_all_provider_messages_by_number(p['whatsapp_number'], biz.get('id'))
     return jsonify({'messages': msgs, 'provider': p})
 
+@web_bp.route('/api/providers/<provider_id>/summary', methods=['POST'])
+@login_required
+def provider_chat_summary(provider_id: str):
+    import anthropic
+    biz = _current_biz()
+    try:
+        r = store._sb().table('providers').select('*').eq('id', provider_id).limit(1).execute()
+    except Exception:
+        return jsonify({'error': 'DB error'}), 500
+    if not r.data:
+        return jsonify({'error': 'Not found'}), 404
+    provider = r.data[0]
+    msgs = store.get_all_provider_messages_by_number(provider['whatsapp_number'], biz.get('id'))
+    if not msgs:
+        return jsonify({'error': 'No messages to summarize'}), 400
+
+    transcript = '\n'.join(
+        f"[{'Agent' if m['role'] == 'agent' else 'Provider'}] {m.get('ts','')[:16]}: {m.get('text','')}"
+        for m in msgs
+    )
+    api_key = os.getenv('ANTHROPIC_API_KEY')
+    if not api_key:
+        return jsonify({'error': 'No API key'}), 500
+    client = anthropic.Anthropic(api_key=api_key)
+    try:
+        resp = client.messages.create(
+            model='claude-sonnet-4-6',
+            max_tokens=512,
+            system=(
+                'You are summarizing a WhatsApp conversation between a booking agent and a '
+                'golf cart rental provider. Be concise and structured. Focus on: '
+                '1) What was negotiated or discussed, 2) Current status (pending/accepted/price quoted), '
+                '3) Any action items or unresolved points. Use bullet points. Max 200 words.'
+            ),
+            messages=[{'role': 'user', 'content': f'Provider: {provider["location_name"]}\n\n{transcript}'}],
+        )
+        return jsonify({'summary': resp.content[0].text, 'message_count': len(msgs)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @web_bp.route('/api/providers/<provider_id>/message', methods=['POST'])
 @login_required
 def provider_message_send(provider_id: str):
