@@ -105,33 +105,38 @@ You are given the booking's pick-up and drop-off dates (to calculate rental days
 
 Return ONLY a JSON object with exactly three fields:
 - "available": true or false
-- "price": the TOTAL numeric rental price as a float, or null if unavailable
-- "currency": "USD" if dollars, "CRC" if colones, "USD" as default if unclear
+- "price": the TOTAL numeric rental price as a float, or null if unavailable/unclear
+- "currency": "USD" or "CRC"
 
-DAILY RATE RULE: If the provider quotes a per-day rate (e.g. "$80/day", "$80 por día",
-"80 diario", "80 al día"), multiply it by the number of rental days from the booking dates
-to get the TOTAL price.
+## DEFAULT CURRENCY: USD
+Always default to "USD" unless the provider clearly indicates colones.
+CRC indicators: "colones", "₡", "CRC", "colon", "crc"
+USD indicators: "$", "dólares", "USD", "dollars" — or NO currency symbol at all.
 
-AVAILABILITY RULE: If ANY numeric price appears, set available=true — UNLESS a clear
-negative phrase appears AND no price is given alongside it.
+## DAILY RATE RULE
+If the provider quotes a per-day rate ("$80/day", "$80 por día", "80 diario", "80 al día"),
+multiply by the number of rental days to get the TOTAL price.
 
-Positive signals: any number, "confirmo", "sería/serían", "son", "cuesta", "disponible",
-"available", "sí/si", "yes", "ok", "claro", "$", "₡", "colones", "dólares"
+## AVAILABILITY RULE
+If ANY numeric price >= 20 appears, set available=true — UNLESS a clear negative phrase
+appears AND no price is given alongside it.
+Prices below 20 are NOT valid rental prices — ignore them.
 
-Negative signals (only when NO price present): "no disponible", "no tengo",
-"not available", "lleno", "ocupado", "no puedo", "sorry"
+## NEGATIVE signals (only when NO price present):
+"no disponible", "no tengo", "not available", "lleno", "ocupado", "no puedo", "sorry"
 
-Currency:
-- "colones", "₡", "CRC" → "CRC"
-- "$", "dólares", "USD", "dollars", or no symbol → "USD"
+## POSITIVE signals: any number >= 20 alongside the message, "confirmo", "sería/serían",
+"son", "cuesta", "disponible", "available", "sí/si", "yes", "claro", "$", "₡"
 
-Examples (2-day rental):
-"500"                            → {"available": true,  "price": 500.00,   "currency": "USD"}
-"$80/day"                        → {"available": true,  "price": 160.00,   "currency": "USD"}
-"80 por día"                     → {"available": true,  "price": 160.00,   "currency": "USD"}
-"Confirmo, serían $500 dólares"  → {"available": true,  "price": 500.00,   "currency": "USD"}
-"Sí, 85000 colones"              → {"available": true,  "price": 85000.00, "currency": "CRC"}
-"No disponible esas fechas"      → {"available": false, "price": null,     "currency": null}
+Examples (assume 4-day rental):
+"500"                            → {"available": true,  "price": 500.00,    "currency": "USD"}
+"$80/day"                        → {"available": true,  "price": 320.00,    "currency": "USD"}
+"80 por día"                     → {"available": true,  "price": 320.00,    "currency": "USD"}
+"Confirmo, serían $500 dólares"  → {"available": true,  "price": 500.00,    "currency": "USD"}
+"Sí, 85000 colones"              → {"available": true,  "price": 85000.00,  "currency": "CRC"}
+"Son 300"                        → {"available": true,  "price": 300.00,    "currency": "USD"}
+"No disponible esas fechas"      → {"available": false, "price": null,      "currency": null}
+"Si" or "Ok"                     → {"available": false, "price": null,      "currency": null}
 
 Return ONLY valid JSON. No explanation."""
 
@@ -296,50 +301,73 @@ def ask_claude(phone: str, user_message: str, business: Optional[dict] = None) -
     )
     return response.content[0].text
 
+_CRC_KEYWORDS = ('colones', 'colon', '₡', ' crc')
+_MIN_PRICE_USD = 20.0
+_MIN_PRICE_CRC = 5000.0
+
+def _extract_price(provider_message: str, pickup: str, dropoff: str):
+    """Return (available, price, currency) from provider message. Defaults to USD."""
+    extract_input = (
+        f'Booking dates:\n  Pick-up: {pickup}\n  Drop-off: {dropoff}\n\n'
+        f"Provider's reply: {provider_message}"
+    )
+    try:
+        resp = claude_client.messages.create(
+            model='claude-sonnet-4-6',
+            max_tokens=128,
+            system=PRICE_EXTRACT_PROMPT,
+            messages=[{'role': 'user', 'content': extract_input}],
+        )
+        parsed   = json.loads(resp.content[0].text.strip())
+        available = parsed.get('available', False)
+        price     = parsed.get('price')
+        currency  = (parsed.get('currency') or 'USD').upper()
+    except Exception as e:
+        print(f'  ⚠ Claude price extract failed: {e}')
+        available, price, currency = False, None, 'USD'
+
+    # Validate minimum price — ignore clearly wrong numbers
+    if price is not None:
+        min_p = _MIN_PRICE_CRC if currency == 'CRC' else _MIN_PRICE_USD
+        if float(price) < min_p:
+            print(f'  ⚠ Price {price} {currency} below minimum — discarding')
+            price = None
+            available = False
+
+    # Regex fallback if Claude returned no price but message has numbers
+    if not available or not price:
+        msg_lower = provider_message.lower()
+        negative_words = ['no disponible', 'not available', 'no tengo', 'lleno',
+                          'ocupado', 'no puedo', 'sorry']
+        if not any(w in msg_lower for w in negative_words):
+            candidates = []
+            for n in re.findall(r'[\d]+(?:[.,][\d]+)*', provider_message):
+                try:
+                    candidates.append(float(n.replace(',', '').replace('.', '')))
+                except ValueError:
+                    pass
+            # Determine currency first to apply correct minimum
+            regex_crc = any(w in msg_lower for w in _CRC_KEYWORDS)
+            regex_currency = 'CRC' if regex_crc else 'USD'
+            min_p = _MIN_PRICE_CRC if regex_crc else _MIN_PRICE_USD
+            valid = [c for c in candidates if c >= min_p]
+            if valid:
+                price     = max(valid)
+                available = True
+                currency  = regex_currency
+                print(f'  ⚠ Regex fallback: {currency} {price}')
+
+    return available, price, currency
+
+
 def relay_quote_to_client(provider_message: str, booking_text: str,
                            client_phone: str, provider_number: str,
                            language: str = 'en',
                            commission_pct: float = 10.0) -> str:
     pickup  = _extract_booking_field(booking_text, 'Pick-up')
     dropoff = _extract_booking_field(booking_text, 'Drop-off')
-    extract_input = (
-        f'Booking dates:\n  Pick-up: {pickup}\n  Drop-off: {dropoff}\n\n'
-        f"Provider's reply: {provider_message}"
-    )
-    extract_response = claude_client.messages.create(
-        model='claude-sonnet-4-6',
-        max_tokens=128,
-        system=PRICE_EXTRACT_PROMPT,
-        messages=[{'role': 'user', 'content': extract_input}],
-    )
-    raw = extract_response.content[0].text.strip()
 
-    try:
-        parsed    = json.loads(raw)
-        available = parsed.get('available', False)
-        price     = parsed.get('price')
-        currency  = (parsed.get('currency') or 'USD').upper()
-    except Exception:
-        available, price, currency = False, None, 'USD'
-
-    if not available or not price:
-        negative_words = ['no disponible', 'not available', 'no tengo', 'lleno',
-                          'ocupado', 'no puedo', 'sorry, not']
-        has_negative = any(w in provider_message.lower() for w in negative_words)
-        if not has_negative:
-            candidates = []
-            for n in re.findall(r'\d+(?:[,\.]\d+)*', provider_message):
-                try:
-                    candidates.append(float(n.replace(',', '')))
-                except ValueError:
-                    pass
-            if candidates:
-                price     = max(candidates)
-                available = True
-                msg_lower = provider_message.lower()
-                currency  = 'CRC' if any(w in msg_lower for w in
-                                         ['colon', 'colones', '₡', 'crc']) else 'USD'
-                print(f'  ⚠ Regex fallback: {currency} {price}')
+    available, price, currency = _extract_price(provider_message, pickup, dropoff)
 
     es = (language == 'es')
 
@@ -984,6 +1012,23 @@ def handle_inbound(from_number: str, body: str,
                 booking_text = pending['booking']
                 lang         = detect_client_language(client_phone, business)
                 commission_pct = pending.get('commission_pct', 10.0)
+
+                # Gate: if message has no valid price number, ask provider to send price
+                pickup  = _extract_booking_field(booking_text, 'Pick-up')
+                dropoff = _extract_booking_field(booking_text, 'Drop-off')
+                avail, price_check, _ = _extract_price(body, pickup, dropoff)
+                if not avail or not price_check:
+                    ask_price_msg = (
+                        '💬 Por favor indique el *precio total* del alquiler.\n\n'
+                        'Ejemplo: "$500" o "150.000 colones"\n\n'
+                        '_De preferencia en dólares (USD)._'
+                    )
+                    send_whatsapp(from_number, ask_price_msg, sender)
+                    if booking_id:
+                        store.log_provider_message(booking_id, 'agent', ask_price_msg)
+                    print(f'  ↩ Provider ({provider_location}): no price detected — asked for price')
+                    return '✅ Esperando precio del proveedor.'
+
                 print(f'  ↩ Provider reply ({provider_location}) → client {client_phone} [{lang}]')
 
                 client_msg = relay_quote_to_client(body, booking_text,
