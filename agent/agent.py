@@ -78,8 +78,11 @@ app.secret_key = os.getenv('SECRET_KEY', os.urandom(24))
 
 def _load_prompt():
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'prompt.txt')
-    with open(path, 'r') as f:
-        return f.read().strip()
+    try:
+        with open(path, 'r') as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return ''
 
 _FILE_PROMPT = _load_prompt()
 
