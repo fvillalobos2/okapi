@@ -7,7 +7,12 @@ import os
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 
-from supabase import create_client, Client
+try:
+    from supabase import create_client, Client
+    print("[supabase_store] supabase package imported OK", flush=True)
+except ImportError as _e:
+    print(f"[supabase_store] FATAL: supabase not installed: {_e}", flush=True)
+    raise
 
 SUPABASE_URL = os.getenv('SUPABASE_URL', 'https://nvadokdvwdykpihmhjut.supabase.co')
 SUPABASE_KEY = os.getenv('SUPABASE_SERVICE_KEY',
