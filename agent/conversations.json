@@ -1,0 +1,139 @@
+{
+  "whatsapp:+50663111116": [
+    {
+      "role": "user",
+      "content": "Hi!",
+      "ts": "2026-05-27T01:40:45.596535"
+    },
+    {
+      "role": "user",
+      "content": "Hi!",
+      "ts": "2026-05-27T01:43:59.608468"
+    },
+    {
+      "role": "assistant",
+      "content": "Hello! 👋 Welcome to GolfCartRentalsCR!\n\nAre you looking to rent a golf cart for exploring one of Costa Rica's beautiful beach towns? I'm here to help you with your booking!\n\nWhich location are you interested in? We serve:\n- Tamarindo\n- Flamingo\n- Playas del Coco\n- Jacó\n- Manuel Antonio\n- Potrero",
+      "ts": "2026-05-27T01:44:02.722116"
+    },
+    {
+      "role": "user",
+      "content": "Flamingo",
+      "ts": "2026-05-27T01:44:19.700069"
+    },
+    {
+      "role": "assistant",
+      "content": "Great choice! 🏖️ Flamingo is beautiful!\n\nWhat size golf cart do you need?\n\n**2-Passenger** — perfect for couples\n**4-Passenger** — most popular, great for families\n**6-Passenger** — ideal for larger groups",
+      "ts": "2026-05-27T01:44:22.471704"
+    },
+    {
+      "role": "user",
+      "content": "2 passenger",
+      "ts": "2026-05-27T01:44:36.501178"
+    },
+    {
+      "role": "assistant",
+      "content": "Perfect! A 2-passenger cart is ideal for getting around Flamingo.\n\nWhen would you like to pick up the cart? Please let me know the date and time.",
+      "ts": "2026-05-27T01:44:38.048596"
+    },
+    {
+      "role": "user",
+      "content": "May 30th",
+      "ts": "2026-05-27T01:45:05.190514"
+    },
+    {
+      "role": "assistant",
+      "content": "Got it — May 30th! What time would you like to pick up the cart?\n\nAnd when do you plan to return it?",
+      "ts": "2026-05-27T01:45:07.274647"
+    },
+    {
+      "role": "user",
+      "content": "8 am",
+      "ts": "2026-05-27T01:45:15.996644"
+    },
+    {
+      "role": "assistant",
+      "content": "Perfect! Pick-up at 8 am on May 30th.\n\nAnd what date and time would you like to return the cart?",
+      "ts": "2026-05-27T01:45:18.900880"
+    },
+    {
+      "role": "user",
+      "content": "June 8th",
+      "ts": "2026-05-27T01:45:30.742838"
+    },
+    {
+      "role": "assistant",
+      "content": "Excellent! So you'd like the cart for about 9 days — May 30th at 8 am through June 8th.\n\nWhat time on June 8th would you like to drop it off?",
+      "ts": "2026-05-27T01:45:33.630276"
+    },
+    {
+      "role": "user",
+      "content": "5 pm",
+      "ts": "2026-05-27T01:45:43.450833"
+    },
+    {
+      "role": "assistant",
+      "content": "Perfect! 👍\n\nSo far I have:\n- **Flamingo**\n- **2-passenger cart**\n- **Pick-up:** May 30th at 8 am\n- **Drop-off:** June 8th at 5 pm\n\nTo complete your booking, I'll need a few more details:\n\nWhat's your full name?",
+      "ts": "2026-05-27T01:45:46.033057"
+    },
+    {
+      "role": "user",
+      "content": "Fabián Villalobos T",
+      "ts": "2026-05-27T01:46:06.299402"
+    },
+    {
+      "role": "assistant",
+      "content": "Thank you, Fabián!\n\nWhat's your email address?",
+      "ts": "2026-05-27T01:46:07.841875"
+    },
+    {
+      "role": "user",
+      "content": "favillalobos2@gmail.com",
+      "ts": "2026-05-27T01:46:19.391925"
+    },
+    {
+      "role": "assistant",
+      "content": "Great! And what's your WhatsApp or phone number? (I may already have it from this chat, but just to confirm)",
+      "ts": "2026-05-27T01:46:21.665890"
+    },
+    {
+      "role": "user",
+      "content": "The same as this chat",
+      "ts": "2026-05-27T01:46:37.607274"
+    },
+    {
+      "role": "assistant",
+      "content": "Perfect! And where should we deliver the cart in Flamingo? \n\nDo you have a hotel name or address? (This helps us coordinate the easiest pickup spot for you)",
+      "ts": "2026-05-27T01:46:39.585724"
+    },
+    {
+      "role": "user",
+      "content": "I prefer to pick it up in the store",
+      "ts": "2026-05-27T01:47:05.118512"
+    },
+    {
+      "role": "assistant",
+      "content": "No problem! You can pick it up directly from the provider's location in Flamingo.\n\nOne last question — do you have any special requests or anything else we should know?",
+      "ts": "2026-05-27T01:47:06.998476"
+    },
+    {
+      "role": "user",
+      "content": "No",
+      "ts": "2026-05-27T01:47:18.674848"
+    },
+    {
+      "role": "assistant",
+      "content": "Perfect! Let me confirm your booking details:\n\n📍 **Location:** Flamingo (pick-up at store)\n🚗 **Cart:** 2-passenger\n📅 **Pick-up:** May 30th at 8:00 am\n📅 **Drop-off:** June 8th at 5:00 pm\n👤 **Name:** Fabián Villalobos T\n📧 **Email:** favillalobos2@gmail.com\n📱 **Phone:** (from this chat)\n\nEverything look good?\n\n\n\nWe'll forward this to our local provider in Flamingo and they'll confirm availability and exact pricing within 1 hour. You'll receive all the details including the store address and final cost soon! 🎉",
+      "ts": "2026-05-27T01:47:25.623572"
+    },
+    {
+      "role": "user",
+      "content": "What’s next?",
+      "ts": "2026-05-27T01:47:51.237424"
+    },
+    {
+      "role": "assistant",
+      "content": "Great question! Here's what happens next:\n\n1. **Confirmation (within 1 hour)** — Our local provider in Flamingo will confirm availability and send you the exact pricing and store address\n\n2. **You'll receive:** \n   - Final price for the 9-day rental\n   - Exact pickup location/address\n   - Any additional details you need\n\n3. **Before pickup:** Make sure you have your valid driver's license\n\n4. **Payment:** You'll pay the provider directly when you pick up the cart on May 30th\n\n5. **Enjoy!** Explore Flamingo and the surrounding beaches! 🏖️\n\nIs there anything else you'd like to know while we wait for confirmation?",
+      "ts": "2026-05-27T01:47:56.196083"
+    }
+  ]
+}

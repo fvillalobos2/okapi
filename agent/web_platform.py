@@ -103,6 +103,45 @@ def lead_reply(phone: str):
     store.append_message(phone, 'assistant', msg, biz.get('id'))
     return jsonify({'status': 'sent'})
 
+# ─── CONVERSATIONS ───────────────────────────────────────────────────────────
+
+@web_bp.route('/conversations')
+@login_required
+def conversations():
+    biz      = _current_biz()
+    bookings = store.get_bookings(biz.get('id'), limit=200)
+    bookings = [b for b in bookings if b.get('provider_number')]
+    return render_template('conversations.html', bookings=bookings, selected=None,
+                           provider_msgs=[], biz=biz, businesses=_all_biz())
+
+@web_bp.route('/conversations/<booking_id>')
+@login_required
+def conversation_detail(booking_id: str):
+    biz      = _current_biz()
+    bookings = store.get_bookings(biz.get('id'), limit=200)
+    bookings = [b for b in bookings if b.get('provider_number')]
+    selected = store.get_booking_by_id(booking_id)
+    msgs     = store.get_provider_messages(booking_id) if selected else []
+    return render_template('conversations.html', bookings=bookings, selected=selected,
+                           provider_msgs=msgs, biz=biz, businesses=_all_biz())
+
+@web_bp.route('/api/conversations/<booking_id>/send', methods=['POST'])
+@login_required
+def conversation_send(booking_id: str):
+    from agent import send_whatsapp, TWILIO_WA_NUMBER
+    biz     = _current_biz()
+    booking = store.get_booking_by_id(booking_id)
+    if not booking:
+        return jsonify({'error': 'Not found'}), 404
+    msg    = (request.json or {}).get('message', '').strip()
+    if not msg:
+        return jsonify({'error': 'Empty'}), 400
+    sender = biz.get('twilio_sender', TWILIO_WA_NUMBER)
+    to     = booking['provider_number']
+    send_whatsapp(to, msg, sender)
+    store.log_provider_message(booking_id, 'agent', msg)
+    return jsonify({'status': 'sent'})
+
 # ─── BOOKINGS ─────────────────────────────────────────────────────────────────
 
 @web_bp.route('/bookings')

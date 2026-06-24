@@ -1,0 +1,142 @@
+{% extends "layout.html" %}
+{% block title %}Conversations — Okapi{% endblock %}
+{% block page_title %}Provider Conversations{% endblock %}
+{% set active = 'conversations' %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:280px 1fr;gap:0;height:calc(100vh - 120px);
+            border:1px solid var(--border);border-radius:10px;overflow:hidden">
+
+  <!-- LEFT: booking list -->
+  <div style="border-right:1px solid var(--border);overflow-y:auto;background:var(--surface)">
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border);font-size:11px;
+                font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">
+      Bookings with providers
+    </div>
+    {% if not bookings %}
+    <div class="text-muted" style="padding:24px 16px;font-size:13px">
+      No bookings yet. Complete a WhatsApp conversation first.
+    </div>
+    {% endif %}
+    {% for b in bookings %}
+    {% set has_msgs = b.provider_messages and b.provider_messages|length > 0 %}
+    <a href="/conversations/{{ b.id }}" style="display:block;padding:14px 16px;
+       border-bottom:1px solid var(--border);text-decoration:none;
+       background:{% if selected and selected.id == b.id %}var(--surface2){% else %}transparent{% endif %};
+       transition:background .1s"
+       onmouseover="this.style.background='var(--surface2)'"
+       onmouseout="this.style.background='{% if selected and selected.id == b.id %}var(--surface2){% else %}transparent{% endif %}'">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-size:13px;font-weight:600;color:var(--text)">
+          {{ b.provider_number or '—' }}
+        </span>
+        <span class="badge badge-{{ b.commission_negotiation_status or 'pending' }}" style="font-size:10px">
+          {{ b.commission_negotiation_status or 'pending' }}
+        </span>
+      </div>
+      <div style="font-size:11px;color:var(--muted)">
+        Client: {{ (b.client_phone or '').replace('whatsapp:','') }}
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">
+        {% if has_msgs %}
+          {{ b.provider_messages|length }} message{{ 's' if b.provider_messages|length != 1 }}
+          · {{ (b.provider_messages[-1].ts or '')[:10] }}
+        {% else %}
+          No messages yet
+        {% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- RIGHT: thread -->
+  <div style="display:flex;flex-direction:column;background:var(--bg)">
+    {% if selected %}
+    <div style="padding:14px 20px;border-bottom:1px solid var(--border);background:var(--surface);
+                display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-weight:600;font-size:14px">{{ selected.provider_number or '—' }}</div>
+        <div style="font-size:11px;color:var(--muted)">
+          Booking #{{ selected.order_number or selected.id[:8] }} ·
+          Client: {{ (selected.client_phone or '').replace('whatsapp:','') }} ·
+          <span class="badge badge-{{ selected.commission_negotiation_status or 'pending' }}">
+            {{ selected.commission_negotiation_status or 'pending' }}
+          </span>
+        </div>
+      </div>
+      <a href="/bookings/{{ selected.id }}" class="btn btn-ghost btn-sm">View Booking →</a>
+    </div>
+
+    <div style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px"
+         id="thread">
+      {% if provider_msgs %}
+        {% for m in provider_msgs %}
+        <div style="display:flex;{% if m.role=='agent' %}justify-content:flex-end{% else %}justify-content:flex-start{% endif %}">
+          <div style="max-width:75%;padding:10px 14px;border-radius:14px;font-size:13px;
+                      line-height:1.55;white-space:pre-wrap;
+                      {% if m.role=='agent' %}background:#1d4ed8;color:#fff;border-bottom-right-radius:3px
+                      {% else %}background:var(--surface);border:1px solid var(--border);color:var(--text);border-bottom-left-radius:3px{% endif %}">
+            <div>{{ m.text }}</div>
+            <div style="font-size:10px;opacity:.55;margin-top:5px;text-align:{% if m.role=='agent' %}right{% else %}left{% endif %}">
+              {{ 'You (agent)' if m.role=='agent' else 'Provider' }} · {{ (m.ts or '')[:16].replace('T',' ') }}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="text-muted" style="text-align:center;padding:40px 0;font-size:13px">
+          No messages logged yet for this booking.
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Manual send -->
+    <div style="padding:16px 20px;border-top:1px solid var(--border);background:var(--surface);
+                display:flex;gap:10px">
+      <input type="text" id="manual-msg" class="form-control"
+             placeholder="Send a manual message to provider…" style="flex:1">
+      <button class="btn btn-primary" onclick="sendManual()">Send</button>
+    </div>
+
+    {% else %}
+    <div style="flex:1;display:flex;align-items:center;justify-content:center">
+      <div class="text-muted" style="text-align:center">
+        <div style="font-size:32px;margin-bottom:12px">💬</div>
+        <div style="font-size:14px">Select a booking to view the provider conversation</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// scroll to bottom of thread on load
+const thread = document.getElementById('thread');
+if (thread) thread.scrollTop = thread.scrollHeight;
+
+async function sendManual() {
+  const input = document.getElementById('manual-msg');
+  const msg   = input.value.trim();
+  if (!msg) return;
+  {% if selected %}
+  try {
+    const r = await fetch('/api/conversations/{{ selected.id }}/send', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: msg})
+    });
+    const d = await r.json();
+    if (d.status === 'sent') { input.value = ''; location.reload(); }
+    else alert('Error sending: ' + (d.error || 'unknown'));
+  } catch(e) { alert('Error: ' + e.message); }
+  {% endif %}
+}
+
+document.getElementById('manual-msg')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); sendManual(); }
+});
+</script>
+{% endblock %}
