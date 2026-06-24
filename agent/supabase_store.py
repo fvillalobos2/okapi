@@ -156,6 +156,19 @@ def get_lead_by_phone(phone: str, business_id: Optional[str] = None) -> Optional
         return None
 
 
+def delete_lead(phone: str, business_id: Optional[str] = None) -> bool:
+    b = _bid(business_id)
+    if not b:
+        return False
+    try:
+        _sb().table('conversations').delete().eq('phone', phone).eq('business_id', b).execute()
+        _sb().table('leads').delete().eq('phone', phone).eq('business_id', b).execute()
+        return True
+    except Exception as e:
+        print(f'  ⚠ delete_lead: {e}')
+        return False
+
+
 # ─── CONVERSATION STORE ───────────────────────────────────────────────────────
 
 def get_history(phone: str, business_id: Optional[str] = None) -> list:

@@ -51,7 +51,10 @@
       </td>
       <td class="text-muted">{{ (lead.last_active_at or '')[:16].replace('T',' ') }}</td>
       <td class="text-muted">{{ (lead.created_at or '')[:10] }}</td>
-      <td><a href="/leads/{{ lead.phone }}" class="btn btn-ghost btn-sm">View</a></td>
+      <td style="display:flex;gap:6px">
+        <a href="/leads/{{ lead.phone }}" class="btn btn-ghost btn-sm">View</a>
+        <button class="btn btn-danger btn-sm" onclick="deleteLead(this,'{{ lead.phone }}')">🗑</button>
+      </td>
     </tr>
     {% else %}
     <tr><td colspan="8" class="text-muted" style="text-align:center;padding:32px">No leads found</td></tr>
@@ -59,4 +62,19 @@
     </tbody>
   </table>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function deleteLead(btn, phone) {
+  if (!confirm('Delete ' + phone + ' and their conversation? This cannot be undone.')) return;
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/leads/' + encodeURIComponent(phone), {method: 'DELETE'});
+    const d = await r.json();
+    if (d.status === 'ok') { btn.closest('tr').remove(); }
+    else { alert('Error: ' + (d.error || 'unknown')); btn.disabled = false; }
+  } catch(e) { alert('Error: ' + e.message); btn.disabled = false; }
+}
+</script>
 {% endblock %}

@@ -5,6 +5,9 @@
 
 {% block topbar_actions %}
 <a href="/leads" class="btn btn-ghost btn-sm">← Back to Leads</a>
+{% if lead %}
+<button class="btn btn-danger btn-sm" onclick="deleteLead()">🗑 Delete Contact</button>
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -151,5 +154,16 @@ async function sendReply() {
 document.getElementById('reply-input')?.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); }
 });
+
+async function deleteLead() {
+  const phone = '{{ lead.phone if lead else "" }}';
+  if (!confirm('Delete ' + phone + ' and all their conversation history? This cannot be undone.')) return;
+  try {
+    const r = await fetch('/api/leads/' + encodeURIComponent(phone), {method: 'DELETE'});
+    const d = await r.json();
+    if (d.status === 'ok') { window.location = '/leads'; }
+    else alert('Error deleting: ' + (d.error || 'unknown'));
+  } catch(e) { alert('Error: ' + e.message); }
+}
 </script>
 {% endblock %}

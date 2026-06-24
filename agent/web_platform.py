@@ -88,6 +88,13 @@ def lead_detail(phone: str):
     return render_template('lead_detail.html', lead=lead, conv=conv,
                            booking=booking, biz=biz, businesses=_all_biz())
 
+@web_bp.route('/api/leads/<phone>', methods=['DELETE'])
+@login_required
+def lead_delete(phone: str):
+    biz = _current_biz()
+    ok  = store.delete_lead(phone, biz.get('id'))
+    return jsonify({'status': 'ok' if ok else 'error'})
+
 @web_bp.route('/api/leads/<phone>/reply', methods=['POST'])
 @login_required
 def lead_reply(phone: str):
