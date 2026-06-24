@@ -3,6 +3,9 @@ Okapi Platform — Multi-tenant WhatsApp AI Booking Agent
 First tenant: GolfCartRentalsCR
 """
 
+import sys
+print(f"[startup] Python {sys.version}", flush=True)
+
 import base64
 import json
 import os
@@ -43,7 +46,9 @@ from twilio.twiml.messaging_response import MessagingResponse
 
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'), override=True)
 
+print("[startup] importing supabase_store...", flush=True)
 import supabase_store as store
+print("[startup] supabase_store OK", flush=True)
 
 # ─── CONFIG ──────────────────────────────────────────────────────────────────
 
