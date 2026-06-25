@@ -81,10 +81,29 @@
 
   <!-- RIGHT: Conversation -->
   <div>
-    <div class="card" style="height:600px;display:flex;flex-direction:column">
+    <div class="card" style="height:600px;display:flex;flex-direction:column;position:relative">
       <div class="section-header" style="margin-bottom:12px">
         <h2>Conversation</h2>
-        <span class="text-muted" style="font-size:11px">{{ (conv.messages or [])|length }} messages</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="text-muted" style="font-size:11px">{{ (conv.messages or [])|length }} messages</span>
+          {% if conv and conv.messages %}
+          <button class="btn btn-ghost btn-sm" onclick="aiSummary()">✨ Summary</button>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Summary modal -->
+      <div id="summary-modal" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;
+           background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center;border-radius:10px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;
+                    padding:24px;max-width:480px;width:90%;max-height:80%;display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:15px;font-weight:600">✨ AI Summary</div>
+            <button class="btn btn-ghost btn-sm" onclick="closeSummary()">✕</button>
+          </div>
+          <div id="summary-content" style="overflow-y:auto;font-size:13px;line-height:1.7;color:var(--text);white-space:pre-wrap"></div>
+          <div style="font-size:11px;color:var(--muted)" id="summary-meta"></div>
+        </div>
       </div>
 
       <div id="chat-messages" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px 0">
@@ -153,6 +172,31 @@ async function sendReply() {
 
 document.getElementById('reply-input')?.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); }
+});
+
+async function aiSummary() {
+  const modal   = document.getElementById('summary-modal');
+  const content = document.getElementById('summary-content');
+  const meta    = document.getElementById('summary-meta');
+  modal.style.display = 'flex';
+  content.textContent = '⏳ Generating summary…';
+  meta.textContent    = '';
+  try {
+    const r = await fetch('/api/leads/{{ lead.phone if lead else "" }}/summary', {method:'POST'});
+    const d = await r.json();
+    if (d.summary) {
+      content.textContent = d.summary;
+      meta.textContent    = `${d.message_count} messages · {{ lead.name or lead.phone if lead else '' }}`;
+    } else {
+      content.textContent = 'Error: ' + (d.error || 'Could not generate summary');
+    }
+  } catch(e) { content.textContent = 'Error: ' + e.message; }
+}
+function closeSummary() {
+  document.getElementById('summary-modal').style.display = 'none';
+}
+document.getElementById('summary-modal')?.addEventListener('click', e => {
+  if (e.target === document.getElementById('summary-modal')) closeSummary();
 });
 
 async function deleteLead() {

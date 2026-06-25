@@ -88,6 +88,40 @@ def lead_detail(phone: str):
     return render_template('lead_detail.html', lead=lead, conv=conv,
                            booking=booking, biz=biz, businesses=_all_biz())
 
+@web_bp.route('/api/leads/<phone>/summary', methods=['POST'])
+@login_required
+def lead_summary(phone: str):
+    import anthropic
+    biz  = _current_biz()
+    conv = store.get_conversation_by_phone(phone, biz.get('id'))
+    msgs = (conv or {}).get('messages') or []
+    if not msgs:
+        return jsonify({'error': 'No messages to summarize'}), 400
+    transcript = '\n'.join(
+        f"[{'Client' if m['role'] == 'user' else 'Agent'}] {m.get('ts','')[:16]}: {m.get('content','')}"
+        for m in msgs
+    )
+    api_key = os.getenv('ANTHROPIC_API_KEY')
+    if not api_key:
+        return jsonify({'error': 'No API key'}), 500
+    client = anthropic.Anthropic(api_key=api_key)
+    try:
+        resp = client.messages.create(
+            model='claude-sonnet-4-6',
+            max_tokens=512,
+            system=(
+                'You are summarizing a WhatsApp conversation between a golf cart rental AI agent '
+                'and a potential customer. Be concise and structured. Focus on: '
+                '1) What the client wants (location, dates, cart type), '
+                '2) Current status (inquiry/booking requested/confirmed/cancelled), '
+                '3) Any issues or action items. Use bullet points. Max 200 words.'
+            ),
+            messages=[{'role': 'user', 'content': f'Client: {phone}\n\n{transcript}'}],
+        )
+        return jsonify({'summary': resp.content[0].text, 'message_count': len(msgs)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @web_bp.route('/api/leads/<phone>', methods=['DELETE'])
 @login_required
 def lead_delete(phone: str):
