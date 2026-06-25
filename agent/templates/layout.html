@@ -12,60 +12,81 @@
   --sidebar:220px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);
      display:flex;min-height:100vh;font-size:14px}
 
-/* SIDEBAR */
+/* ── SIDEBAR ─────────────────────────────────────────────────────── */
 .sidebar{width:var(--sidebar);background:var(--surface);border-right:1px solid var(--border);
-         display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:50}
-.sidebar-logo{padding:20px 16px 12px;border-bottom:1px solid var(--border)}
-.sidebar-logo .logo-text{font-size:18px;font-weight:700;color:var(--text)}
-.sidebar-logo .logo-sub{font-size:11px;color:var(--muted);margin-top:2px}
-.biz-selector{padding:10px 16px;border-bottom:1px solid var(--border)}
+         display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:200;
+         transition:transform .25s cubic-bezier(.4,0,.2,1)}
+.sidebar-logo{padding:18px 16px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.logo-mark{width:30px;height:30px;background:var(--accent);border-radius:8px;
+           display:flex;align-items:center;justify-content:center;
+           font-size:14px;font-weight:800;color:#fff;letter-spacing:-.5px;flex-shrink:0}
+.logo-text-wrap .logo-name{font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.3px}
+.logo-text-wrap .logo-sub{font-size:10px;color:var(--muted);margin-top:1px;letter-spacing:.02em}
+.biz-selector{padding:10px 12px;border-bottom:1px solid var(--border)}
 .biz-selector select{width:100%;background:var(--bg);border:1px solid var(--border);
-  color:var(--text);padding:6px 8px;border-radius:6px;font-size:12px;cursor:pointer}
-.nav{flex:1;padding:8px 0;overflow-y:auto}
-.nav a{display:flex;align-items:center;gap:10px;padding:9px 16px;color:var(--muted);
-       text-decoration:none;font-size:13px;font-weight:500;border-radius:0;transition:all .15s}
-.nav a:hover{background:var(--surface2);color:var(--text)}
-.nav a.active{background:var(--accent);color:#fff}
-.nav .nav-section{padding:14px 16px 4px;font-size:10px;font-weight:700;
-                   color:var(--border);text-transform:uppercase;letter-spacing:.08em}
-.sidebar-bottom{padding:12px 16px;border-top:1px solid var(--border)}
-.sidebar-bottom a{color:var(--muted);text-decoration:none;font-size:12px}
-.sidebar-bottom a:hover{color:var(--text)}
+  color:var(--text);padding:6px 8px;border-radius:6px;font-size:12px;cursor:pointer;outline:none}
+.nav{flex:1;padding:6px 0;overflow-y:auto}
+.nav-section{padding:14px 14px 4px;font-size:10px;font-weight:700;
+             color:var(--border);text-transform:uppercase;letter-spacing:.1em}
+.nav a{display:flex;align-items:center;gap:9px;padding:8px 14px;color:var(--muted);
+       text-decoration:none;font-size:13px;font-weight:500;transition:all .12s;
+       border-left:2px solid transparent;margin:1px 0}
+.nav a:hover{background:var(--surface2);color:var(--text);border-left-color:var(--border)}
+.nav a.active{background:rgba(59,130,246,.12);color:var(--accent);border-left-color:var(--accent)}
+.nav-icon{width:16px;height:16px;flex-shrink:0;opacity:.7}
+.nav a.active .nav-icon,.nav a:hover .nav-icon{opacity:1}
+.sidebar-footer{padding:12px 14px;border-top:1px solid var(--border);
+                display:flex;align-items:center;justify-content:space-between}
+.sidebar-footer a{color:var(--muted);text-decoration:none;font-size:12px;transition:color .12s}
+.sidebar-footer a:hover{color:var(--text)}
+.notif-btn{position:relative;display:flex;align-items:center;justify-content:center;
+           width:32px;height:32px;border-radius:6px;background:transparent;
+           border:1px solid var(--border);cursor:pointer;transition:all .12s;text-decoration:none}
+.notif-btn:hover{background:var(--surface2);border-color:var(--muted)}
+.notif-badge{display:none;position:absolute;top:-5px;right:-5px;
+             background:var(--danger);color:#fff;border-radius:99px;
+             font-size:9px;font-weight:700;padding:1px 4px;min-width:15px;text-align:center;
+             border:2px solid var(--surface)}
 
-/* MAIN */
+/* ── MAIN ────────────────────────────────────────────────────────── */
 .main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;min-width:0}
 .topbar{background:var(--surface);border-bottom:1px solid var(--border);
         padding:12px 24px;display:flex;align-items:center;justify-content:space-between;
-        position:sticky;top:0;z-index:40}
-.topbar h1{font-size:17px;font-weight:600}
-.topbar .topbar-actions{display:flex;gap:8px;align-items:center}
+        position:sticky;top:0;z-index:40;gap:12px}
+.topbar h1{font-size:16px;font-weight:600;letter-spacing:-.2px}
+.topbar-actions{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.hamburger{display:none;flex-direction:column;gap:4px;cursor:pointer;
+           background:none;border:none;padding:4px;flex-shrink:0}
+.hamburger span{display:block;width:18px;height:2px;background:var(--muted);
+                border-radius:1px;transition:all .2s}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150;cursor:pointer}
 .content{padding:24px;flex:1}
 
-/* CARDS */
+/* ── CARDS ───────────────────────────────────────────────────────── */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px}
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-bottom:24px}
-.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;
-          padding:16px 20px}
-.kpi-card .kpi-label{color:var(--muted);font-size:12px;font-weight:500;margin-bottom:6px}
-.kpi-card .kpi-value{font-size:28px;font-weight:700;color:var(--text)}
-.kpi-card .kpi-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.kpi-card .kpi-label{color:var(--muted);font-size:11px;font-weight:600;margin-bottom:6px;
+                     text-transform:uppercase;letter-spacing:.06em}
+.kpi-card .kpi-value{font-size:26px;font-weight:700;color:var(--text);line-height:1}
+.kpi-card .kpi-sub{font-size:11px;color:var(--muted);margin-top:4px}
 
-/* TABLES */
+/* ── TABLES ──────────────────────────────────────────────────────── */
 .table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
 table{width:100%;border-collapse:collapse;font-size:13px}
 table th{background:var(--surface2);color:var(--muted);padding:10px 14px;
          text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;
-         letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap}
+         letter-spacing:.06em;border-bottom:1px solid var(--border);white-space:nowrap}
 table td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
 table tr:last-child td{border-bottom:none}
-table tr:hover td{background:rgba(255,255,255,.03)}
+table tr:hover td{background:rgba(255,255,255,.02)}
 table a{color:var(--accent);text-decoration:none}
 table a:hover{text-decoration:underline}
 
-/* BADGES */
+/* ── BADGES ──────────────────────────────────────────────────────── */
 .badge{display:inline-block;padding:2px 8px;border-radius:99px;
        font-size:11px;font-weight:600;white-space:nowrap}
 .badge-new{background:#1e3a5f;color:#93c5fd}
@@ -79,64 +100,86 @@ table a:hover{text-decoration:underline}
 .badge-accepted{background:#14532d;color:#86efac}
 .badge-rejected{background:#3b1515;color:#fca5a5}
 
-/* ALERTS */
-.alert{padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:13px;
+/* ── ALERTS ──────────────────────────────────────────────────────── */
+.alert{padding:10px 14px;border-radius:8px;margin-bottom:10px;font-size:13px;
        display:flex;align-items:center;gap:8px}
 .alert-warning{background:#451a03;border:1px solid #78350f;color:#fcd34d}
 .alert-danger {background:#3b1515;border:1px solid #7f1d1d;color:#fca5a5}
 .alert-info   {background:#0c2340;border:1px solid #0e4a7a;color:#7dd3fc}
 .alert-success{background:#14532d;border:1px solid #166534;color:#86efac}
 
-/* BUTTONS */
+/* ── BUTTONS ─────────────────────────────────────────────────────── */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;
      font-size:13px;font-weight:500;cursor:pointer;border:none;text-decoration:none;
-     transition:all .15s}
+     transition:all .12s;white-space:nowrap}
 .btn-primary{background:var(--accent);color:#fff}
 .btn-primary:hover{background:var(--accent2)}
 .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
 .btn-ghost:hover{background:var(--surface2);color:var(--text)}
 .btn-danger{background:#7f1d1d;color:#fca5a5;border:1px solid #991b1b}
-.btn-danger:hover{background:#991b1b}
+.btn-danger:hover{background:#991b1b;color:#fff}
 .btn-sm{padding:4px 10px;font-size:12px}
 
-/* FORMS */
+/* ── FORMS ───────────────────────────────────────────────────────── */
 .form-group{margin-bottom:16px}
-.form-group label{display:block;color:var(--muted);font-size:12px;font-weight:600;
-                   margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+.form-group label{display:block;color:var(--muted);font-size:11px;font-weight:600;
+                  margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
 .form-control{width:100%;padding:9px 12px;background:var(--bg);border:1px solid var(--border);
-              border-radius:7px;color:var(--text);font-size:14px;outline:none;transition:border .15s}
+              border-radius:7px;color:var(--text);font-size:14px;outline:none;transition:border .12s}
 .form-control:focus{border-color:var(--accent)}
 textarea.form-control{min-height:120px;resize:vertical;font-family:monospace;font-size:13px}
 select.form-control{cursor:pointer}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 
-/* SECTION HEADERS */
-.section-header{display:flex;align-items:center;justify-content:space-between;
-                margin-bottom:16px}
-.section-header h2{font-size:15px;font-weight:600}
+/* ── SECTION HEADERS ─────────────────────────────────────────────── */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-header h2{font-size:14px;font-weight:600;letter-spacing:-.2px}
 
-/* MISC */
-.text-muted{color:var(--muted)}
-.text-success{color:var(--success)}
-.text-danger{color:var(--danger)}
-.text-warning{color:var(--warning)}
+/* ── UTILS ───────────────────────────────────────────────────────── */
+.text-muted{color:var(--muted)}.text-success{color:var(--success)}
+.text-danger{color:var(--danger)}.text-warning{color:var(--warning)}
 .mt-4{margin-top:16px}.mt-6{margin-top:24px}.mt-8{margin-top:32px}
 .mb-4{margin-bottom:16px}.gap-8{gap:8px}
 .flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
 .mono{font-family:monospace;font-size:12px}
+
+/* ── MOBILE ──────────────────────────────────────────────────────── */
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0);box-shadow:4px 0 24px rgba(0,0,0,.4)}
+  .sidebar-overlay.open{display:block}
+  .main{margin-left:0}
+  .hamburger{display:flex}
+  .topbar{padding:10px 16px}
+  .content{padding:16px}
+  .grid-2,.grid-3,.form-row{grid-template-columns:1fr}
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .topbar h1{font-size:15px}
+  .topbar-actions .btn:not(:last-child){display:none}
+}
+@media(max-width:480px){
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .kpi-card .kpi-value{font-size:22px}
+}
 </style>
 {% block extra_head %}{% endblock %}
 </head>
 <body>
 
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
 <!-- SIDEBAR -->
-<nav class="sidebar">
+<nav class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <div class="logo-text">🐒 Okapi</div>
-    <div class="logo-sub">Multi-tenant platform</div>
+    <div class="logo-mark">Ok</div>
+    <div class="logo-text-wrap">
+      <div class="logo-name">Okapi</div>
+      <div class="logo-sub">Booking Platform</div>
+    </div>
   </div>
+
   <div class="biz-selector">
     <select onchange="location='/api/switch-biz/'+this.value">
       {% for b in businesses %}
@@ -146,37 +189,103 @@ select.form-control{cursor:pointer}
       {% endfor %}
     </select>
   </div>
+
   <div class="nav">
     <div class="nav-section">Operations</div>
-    <a href="/dashboard" class="{% if active=='dashboard' %}active{% endif %}">📊 Dashboard</a>
-    <a href="/leads"     class="{% if active=='leads' %}active{% endif %}">👥 Leads</a>
-    <a href="/bookings"  class="{% if active=='bookings' %}active{% endif %}">📋 Bookings</a>
-    <a href="/providers"      class="{% if active=='providers' %}active{% endif %}">🏪 Providers</a>
-    <a href="/conversations"  class="{% if active=='conversations' %}active{% endif %}">💬 Provider Chats</a>
+
+    <a href="/dashboard" class="{% if active=='dashboard' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/>
+        <rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/>
+      </svg>
+      Dashboard
+    </a>
+
+    <a href="/leads" class="{% if active=='leads' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="6" cy="5" r="3"/><path d="M1 14c0-3 2-5 5-5s5 2 5 5"/>
+        <path d="M11 7l2 2 3-3" stroke-width="1.5"/>
+      </svg>
+      Leads
+    </a>
+
+    <a href="/bookings" class="{% if active=='bookings' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="1" y="3" width="14" height="12" rx="1.5"/>
+        <path d="M5 1v4M11 1v4M1 7h14"/>
+      </svg>
+      Bookings
+    </a>
+
+    <a href="/providers" class="{% if active=='providers' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M2 7V14h12V7"/><path d="M1 4l1.5-3h11L15 4H1z"/><path d="M6 14V9h4v5"/>
+      </svg>
+      Providers
+    </a>
+
+    <a href="/conversations" class="{% if active=='conversations' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M14 10a2 2 0 01-2 2H4l-3 3V3a2 2 0 012-2h9a2 2 0 012 2v7z"/>
+      </svg>
+      Provider Chats
+    </a>
+
     <div class="nav-section">Insights</div>
-    <a href="/analytics" class="{% if active=='analytics' %}active{% endif %}">📈 Analytics</a>
+    <a href="/analytics" class="{% if active=='analytics' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M1 12l4-5 3 3 3-4 4 4"/><rect x="1" y="1" width="14" height="14" rx="1"/>
+      </svg>
+      Analytics
+    </a>
+
     <div class="nav-section">Config</div>
-    <a href="/businesses" class="{% if active=='businesses' %}active{% endif %}">🏢 Businesses</a>
-    <a href="/businesses/{{ biz.slug }}/prompt" class="{% if active=='prompt' %}active{% endif %}">🤖 AI Prompt</a>
-    <a href="/settings"  class="{% if active=='settings' %}active{% endif %}">⚙️ Settings</a>
+    <a href="/businesses" class="{% if active=='businesses' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="1" y="6" width="14" height="9" rx="1"/><path d="M5 6V4a3 3 0 016 0v2"/>
+        <circle cx="8" cy="11" r="1.5"/>
+      </svg>
+      Businesses
+    </a>
+
+    <a href="/businesses/{{ biz.slug }}/prompt" class="{% if active=='prompt' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="8" cy="8" r="7"/><path d="M8 5v3l2 2"/>
+        <circle cx="8" cy="8" r="2" fill="currentColor" stroke="none"/>
+      </svg>
+      AI Prompt
+    </a>
+
+    <a href="/settings" class="{% if active=='settings' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="8" cy="8" r="2.5"/>
+        <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/>
+      </svg>
+      Settings
+    </a>
   </div>
-  <div class="sidebar-bottom">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <a href="/logout">Sign out</a>
-      <a href="/notifications" id="notif-bell" title="Notifications"
-         style="position:relative;font-size:18px;text-decoration:none">
-        🔔<span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-6px;
-          background:var(--danger);color:#fff;border-radius:99px;font-size:10px;
-          font-weight:700;padding:1px 5px;min-width:16px;text-align:center"></span>
-      </a>
-    </div>
+
+  <div class="sidebar-footer">
+    <a href="/logout">Sign out</a>
+    <a href="/notifications" id="notif-btn" class="notif-btn" title="Notifications">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M8 1a5 5 0 015 5v3l1.5 2.5H1.5L3 9V6a5 5 0 015-5z"/>
+        <path d="M6.5 13.5a1.5 1.5 0 003 0"/>
+      </svg>
+      <span id="notif-badge" class="notif-badge"></span>
+    </a>
   </div>
 </nav>
 
 <!-- MAIN -->
 <div class="main">
   <div class="topbar">
-    <h1>{% block page_title %}{% endblock %}</h1>
+    <div style="display:flex;align-items:center;gap:12px;min-width:0">
+      <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <h1>{% block page_title %}{% endblock %}</h1>
+    </div>
     <div class="topbar-actions">{% block topbar_actions %}{% endblock %}</div>
   </div>
 
@@ -194,7 +303,25 @@ select.form-control{cursor:pointer}
 </div>
 
 {% block scripts %}{% endblock %}
+
 <script>
+// ── Sidebar mobile toggle ──────────────────────────────────────────
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
+// Close sidebar on nav link click (mobile)
+document.querySelectorAll('.nav a').forEach(a => {
+  a.addEventListener('click', () => {
+    if (window.innerWidth <= 768) closeSidebar();
+  });
+});
+
+// ── Notification badge ─────────────────────────────────────────────
 (function pollNotifications() {
   async function check() {
     try {
