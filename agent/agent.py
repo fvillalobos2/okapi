@@ -65,7 +65,7 @@ TILOPAY_KEY      = os.getenv('TILOPAY_KEY',      '2551-6952-8539-8918-3539')
 TILOPAY_USER     = os.getenv('TILOPAY_USER',     'wHFrGq')
 TILOPAY_PASSWORD = os.getenv('TILOPAY_PASSWORD', 'mOadzM')
 AGENT_BASE_URL   = os.getenv('AGENT_BASE_URL',
-                               'https://gcr-whatsapp-agent-production.up.railway.app')
+                               'https://agent.projectokapi.com')
 
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', '')
 ADMIN_WA       = os.getenv('ADMIN_WA', '')       # Admin WhatsApp for system alerts
