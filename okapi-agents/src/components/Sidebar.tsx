@@ -62,6 +62,16 @@ const nav = [
           </svg>
         ),
       },
+      {
+        href: '/integrations',
+        label: 'Integraciones',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M2 8h3M11 8h3M5 8a3 3 0 106 0 3 3 0 00-6 0z"/>
+            <path d="M5 4V2M5 14v-2M11 4V2M11 14v-2"/>
+          </svg>
+        ),
+      },
     ],
   },
 ]
