@@ -1,0 +1,29 @@
+[14:48:49] [INFO] ============================================================
+[14:48:49] [INFO] Innova CS Analysis v2 — Won + Lost + Areas de Mejora
+[14:48:49] [INFO] MAX_WON=400 | MAX_LOST=140 | BATCH=3 | MSGS=60
+[14:48:49] [INFO] ============================================================
+[14:48:49] [INFO] SKIP_WON=1 — loading previous WON analysis from innova_cs_analysis.json
+[14:48:49] [OK] Loaded previous WON analysis (38 products)
+[14:48:49] [OK] Loaded 123 previously fetched LOST chats (IDs: 123)
+[14:48:49] [INFO] Lost CSV: 6634 total | 123 already done | 6511 new available | need 17 more
+[14:48:49] [INFO] Fetching 17 new LOST chats...
+[14:48:49] [INFO] 
+Fetching LOST-NEW chats (max 17)...
+[14:49:27] [OK] LOST-NEW: 15 chats fetched (2 skipped)
+[14:49:27] [OK] Total LOST chats: 138
+[14:49:27] [OK] Raw data saved → innova_cs_data.json
+[14:49:27] [INFO] 
+Analyzing 138 [LOST] chats — 46 batches...
+[14:49:27] [INFO]   → Claude [LOST] batch 1 (~2999 tokens)...
+[14:50:53] [INFO]   ← [LOST] batch 1 | stop=end_turn | 13748 chars
+[14:50:53] [OK]   [LOST] batch 1 parsed OK
+[14:50:53] [INFO]   → Claude [LOST] batch 2 (~2021 tokens)...
+[14:51:48] [INFO]   ← [LOST] batch 2 | stop=end_turn | 9245 chars
+[14:51:48] [OK]   [LOST] batch 2 parsed OK
+[14:51:49] [INFO]   → Claude [LOST] batch 3 (~1210 tokens)...
+[14:52:41] [INFO]   ← [LOST] batch 3 | stop=end_turn | 8768 chars
+[14:52:41] [OK]   [LOST] batch 3 parsed OK
+[14:52:41] [INFO]   → Claude [LOST] batch 4 (~993 tokens)...
+[14:53:22] [INFO]   ← [LOST] batch 4 | stop=end_turn | 7216 chars
+[14:53:22] [OK]   [LOST] batch 4 parsed OK
+[14:53:22] [INFO]   → Claude [LOST] batch 5 (~1270 tokens)...

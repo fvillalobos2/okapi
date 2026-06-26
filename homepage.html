@@ -1,0 +1,1016 @@
+<!-- GOLFCARTRENTALSCR – Full Homepage -->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ─── RESET & TOKENS ─────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0A2540;
+  --gold:#F59E0B;
+  --gold-dark:#D97706;
+  --green:#22C55E;
+  --gray-50:#F8FAFC;
+  --gray-100:#F1F5F9;
+  --gray-200:#E2E8F0;
+  --gray-400:#94A3B8;
+  --gray-600:#475569;
+  --gray-800:#1E293B;
+  --white:#FFFFFF;
+  --radius-sm:8px;
+  --radius-md:16px;
+  --radius-lg:24px;
+  --radius-pill:9999px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:0 4px 20px rgba(0,0,0,.10);
+  --shadow-lg:0 20px 60px rgba(0,0,0,.15);
+  --max-w:1200px;
+  --section-py:72px;
+}
+.gcr-wrap{font-family:'Inter',sans-serif;color:var(--gray-800);line-height:1.6;-webkit-font-smoothing:antialiased}
+.gcr-wrap img{max-width:100%;display:block}
+.gcr-wrap a{text-decoration:none;color:inherit}
+.gcr-wrap ul{list-style:none}
+.gcr-wrap>p,.entry-content>p{display:none!important}
+
+/* ─── ASTRA HEADER OVERRIDE ─────────────────────── */
+#masthead{background:var(--white)!important;box-shadow:var(--shadow-sm)!important;position:sticky!important;top:0!important;z-index:1000!important}
+/* Logo & header container — proper desktop margins */
+#masthead .ast-container,.ast-header-html-1 .ast-container,.site-header .ast-container{max-width:1200px!important;margin:0 auto!important;padding:0 32px!important}
+#masthead .ast-site-header-wrap{padding:0!important}
+.ast-header-identity-box{padding:0!important}
+#masthead .site-title a{font-family:'Inter',sans-serif!important;font-weight:800!important;color:var(--navy)!important;font-size:1.3rem!important;letter-spacing:-0.02em!important}
+/* Nav items */
+#masthead .main-navigation a{font-family:'Inter',sans-serif!important;font-weight:500!important;color:var(--gray-600)!important;font-size:.875rem!important;padding:.5rem .75rem!important;border-radius:0!important;background:transparent!important;transition:color .2s!important;text-decoration:none!important}
+#masthead .main-navigation a:hover{color:var(--navy)!important;background:transparent!important;text-decoration:underline!important;text-underline-offset:4px!important;text-decoration-thickness:1.5px!important}
+/* Become a Partner — outlined gold pill */
+#masthead .main-navigation li:last-child a{background:transparent!important;color:var(--gold)!important;border:1.5px solid var(--gold)!important;border-radius:var(--radius-pill)!important;padding:.4rem 1.1rem!important;font-weight:600!important;text-decoration:none!important}
+#masthead .main-navigation li:last-child a:hover{background:var(--gold)!important;color:var(--white)!important;text-decoration:none!important}
+/* Remove divider */
+#masthead .main-navigation li:nth-last-child(2){margin-left:0!important;padding-left:0!important;border-left:none!important}
+.ast-button-wrap .menu-link,.ast-header-button-1 a{background:var(--gold)!important;color:var(--white)!important;border-radius:var(--radius-pill)!important;padding:.5rem 1.25rem!important;font-weight:600!important;font-size:.875rem!important;transition:background .2s!important}
+.ast-button-wrap .menu-link:hover,.ast-header-button-1 a:hover{background:var(--gold-dark)!important}
+.entry-header,.post-thumbnail,.ast-single-post-featured-section,.ast-article-featured-img,.ast-post-format-wrapper{display:none!important}
+.entry-content{max-width:none!important;padding:0!important}
+.entry-content>p:first-child,.entry-content>h1:first-child{display:none}
+.site-content,.content-area,.site-main,.entry-content{padding:0!important;margin:0!important;max-width:none!important}
+.ast-container{max-width:none!important;padding:0!important}
+.page .entry-content{padding:0!important}
+article{margin-top:0!important}
+
+/* ─── CONTAINERS ─────────────────────────────────── */
+.gcr-container{max-width:var(--max-w);margin:0 auto;padding:0 24px}
+.gcr-section{padding:var(--section-py) 0}
+.gcr-section--dark{background:var(--navy);color:var(--white)}
+.gcr-section--gray{background:var(--gray-50)}
+.gcr-section--gold{background:var(--gold)}
+
+/* ─── TYPOGRAPHY ─────────────────────────────────── */
+.gcr-label{font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:.75rem;display:block}
+.gcr-label--light{color:rgba(255,255,255,.7)}
+.gcr-h1{font-size:clamp(2.25rem,5vw,4rem);font-weight:900;line-height:1.1;letter-spacing:-.03em;color:var(--navy)}
+.gcr-h2{font-size:clamp(1.75rem,3.5vw,2.75rem);font-weight:800;line-height:1.15;letter-spacing:-.02em;color:var(--navy)}
+.gcr-h3{font-size:1.25rem;font-weight:700;line-height:1.3;color:var(--navy)}
+.gcr-lead{font-size:1.125rem;color:var(--gray-600);line-height:1.7;max-width:640px}
+.gcr-section--dark .gcr-h2,.gcr-section--dark .gcr-h3{color:var(--white)}
+.gcr-section--dark .gcr-lead{color:rgba(255,255,255,.75)}
+
+/* ─── BUTTONS ─────────────────────────────────────── */
+.gcr-btn{display:inline-flex;align-items:center;gap:.5rem;padding:.875rem 2rem;border-radius:var(--radius-pill);font-family:'Inter',sans-serif;font-size:.9375rem;font-weight:600;cursor:pointer;border:2px solid transparent;transition:all .2s;text-decoration:none;white-space:nowrap}
+.gcr-btn--primary{background:var(--gold);color:var(--white)!important;border-color:var(--gold)}
+.gcr-btn--primary:hover{background:var(--gold-dark);border-color:var(--gold-dark);transform:translateY(-1px);box-shadow:0 8px 24px rgba(245,158,11,.35)}
+.gcr-btn--outline{background:rgba(255,255,255,.12);color:var(--white)!important;border-color:rgba(255,255,255,.9);backdrop-filter:blur(4px)}
+.gcr-btn--outline:hover{background:rgba(255,255,255,.22);border-color:var(--white);color:var(--white)!important}
+.gcr-btn--dark{background:var(--navy);color:var(--white)!important;border-color:var(--navy)}
+.gcr-btn--dark:hover{background:#0f3060;transform:translateY(-1px)}
+.gcr-btn--whatsapp{background:#25D366;color:var(--white)!important;border-color:#25D366;font-size:1.05rem;padding:1rem 2.5rem}
+.gcr-btn--whatsapp:hover{background:#1ebe5d;transform:translateY(-2px);box-shadow:0 8px 30px rgba(37,211,102,.4);color:var(--white)!important}
+
+/* ─── HERO ───────────────────────────────────────── */
+.gcr-hero{position:relative;min-height:100vh;display:flex;align-items:center;overflow:hidden}
+.gcr-hero__bg{position:absolute;inset:0;background-image:url('https://salmon-ibex-825566.hostingersite.com/wp-content/uploads/2026/05/ai-hero-cart.jpg');background-size:cover;background-position:center}
+.gcr-hero__overlay{position:absolute;inset:0;background:linear-gradient(to right,rgba(10,37,64,.82) 0%,rgba(10,37,64,.55) 55%,rgba(10,37,64,.1) 100%)}
+.gcr-hero__content{position:relative;z-index:2;max-width:var(--max-w);margin:0 auto;padding:0 24px;width:100%}
+.gcr-hero__badge{display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.15);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.25);border-radius:var(--radius-pill);padding:.5rem 1rem;font-size:.8125rem;font-weight:600;color:var(--white);margin-bottom:1.75rem;letter-spacing:.04em;text-transform:uppercase}
+.gcr-hero__badge-dot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse-dot 2s infinite}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.3)}}
+.gcr-hero__h1{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:900;line-height:1.05;letter-spacing:-.03em;color:var(--white);margin-bottom:1.25rem;max-width:14ch}
+.gcr-hero__h1 em{font-style:normal;color:var(--gold)}
+.gcr-hero__sub{font-size:1.125rem;color:rgba(255,255,255,.85);max-width:560px;margin-bottom:2.5rem;line-height:1.65}
+.gcr-hero__ctas{display:flex;flex-wrap:wrap;gap:1rem;margin-bottom:3.5rem}
+.gcr-hero__locations{display:flex;flex-wrap:wrap;gap:.625rem}
+.gcr-hero__loc-pill{background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);color:var(--white)!important;font-size:.8125rem;font-weight:500;padding:.375rem .875rem;border-radius:var(--radius-pill);transition:background .2s}
+.gcr-hero__loc-pill:hover{background:rgba(255,255,255,.22);color:var(--white)!important}
+.gcr-hero__scroll{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.375rem;color:rgba(255,255,255,.6);font-size:.75rem;font-weight:500;letter-spacing:.06em;text-transform:uppercase}
+.gcr-hero__scroll-line{width:1px;height:40px;background:linear-gradient(to bottom,rgba(255,255,255,.6),transparent);animation:scroll-line 2s infinite}
+@keyframes scroll-line{0%{opacity:0;transform:scaleY(0) translateY(-100%)}50%{opacity:1;transform:scaleY(1) translateY(0)}100%{opacity:0;transform:scaleY(0) translateY(100%)}}
+
+/* ─── STATS BAR ──────────────────────────────────── */
+.gcr-stats{background:var(--navy);padding:0}
+.gcr-stats__inner{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(255,255,255,.08)}
+.gcr-stat{padding:2rem 1.5rem;text-align:center;border-right:1px solid rgba(255,255,255,.08)}
+.gcr-stat:last-child{border-right:none}
+.gcr-stat__num{font-size:2.25rem;font-weight:900;color:var(--gold);letter-spacing:-.03em;line-height:1}
+.gcr-stat__label{font-size:.8125rem;color:rgba(255,255,255,.6);margin-top:.375rem;font-weight:500;letter-spacing:.02em}
+
+/* ─── LOCATIONS GRID ──────────────────────────────── */
+.gcr-locations__grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3rem}
+.gcr-loc-card{border-radius:var(--radius-md);overflow:hidden;box-shadow:var(--shadow-md);transition:transform .3s,box-shadow .3s;cursor:pointer;background:var(--white)}
+.gcr-loc-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg)}
+.gcr-loc-card__img{position:relative;height:220px;overflow:hidden}
+.gcr-loc-card__img img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.gcr-loc-card:hover .gcr-loc-card__img img{transform:scale(1.06)}
+.gcr-loc-card__badge{position:absolute;top:12px;left:12px;background:var(--gold);color:var(--white);font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.25rem .625rem;border-radius:var(--radius-pill)}
+.gcr-loc-card__body{padding:1.375rem}
+.gcr-loc-card__name{font-size:1.125rem;font-weight:800;color:var(--navy);margin-bottom:.375rem}
+.gcr-loc-card__desc{font-size:.875rem;color:var(--gray-600);line-height:1.55;margin-bottom:1rem}
+.gcr-loc-card__link{display:inline-flex;align-items:center;gap:.375rem;font-size:.875rem;font-weight:600;color:var(--gold)!important}
+.gcr-loc-card__link:hover{color:var(--gold-dark)!important}
+.gcr-loc-card__link svg{transition:transform .2s}
+.gcr-loc-card__link:hover svg{transform:translateX(3px)}
+/* hide phantom empty anchor tags WP auto-generates from hrefs */
+.gcr-loc-card:not(:has(.gcr-loc-card__body)){display:none!important}
+
+/* ─── HOW IT WORKS ────────────────────────────────── */
+.gcr-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-top:3.5rem;position:relative}
+.gcr-steps::before{content:'';position:absolute;top:2.5rem;left:calc(33.33% - 12px);right:calc(33.33% - 12px);height:2px;background:linear-gradient(90deg,var(--gold),var(--gold));opacity:.25}
+.gcr-step{text-align:center;padding:2.5rem 1.5rem;background:var(--white);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);position:relative}
+.gcr-step__num{width:56px;height:56px;background:var(--navy);color:var(--white);font-size:1.25rem;font-weight:900;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;position:relative;z-index:1}
+.gcr-step__icon{font-size:2rem;margin-bottom:.75rem}
+.gcr-step__title{font-size:1.25rem;font-weight:800;color:var(--navy);margin-bottom:.625rem}
+.gcr-step__desc{font-size:.9375rem;color:var(--gray-600);line-height:1.6}
+
+/* ─── FLEET ───────────────────────────────────────── */
+.gcr-fleet__grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.75rem;margin-top:3rem}
+.gcr-fleet-card{background:var(--white);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-md);border:2px solid transparent;transition:all .3s;position:relative}
+.gcr-fleet-card:hover{border-color:var(--gold);transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.gcr-fleet-card--popular{border-color:var(--gold)}
+.gcr-fleet-card__popular-tag{position:absolute;top:16px;right:16px;background:var(--gold);color:var(--white);font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.3rem .75rem;border-radius:var(--radius-pill);z-index:2}
+.gcr-fleet-card__img{height:160px;overflow:hidden;position:relative}
+.gcr-fleet-card__img img{width:100%;height:100%;object-fit:cover;object-position:center;transition:transform .4s}
+.gcr-fleet-card:hover .gcr-fleet-card__img img{transform:scale(1.05)}
+.gcr-fleet-card__body{padding:1.5rem}
+.gcr-fleet-card__name{font-size:1.25rem;font-weight:800;color:var(--navy);margin-bottom:.25rem}
+.gcr-fleet-card__cap{font-size:.8125rem;color:var(--gray-400);font-weight:500;margin-bottom:1rem}
+.gcr-fleet-card__features{margin-bottom:1.25rem}
+.gcr-fleet-card__feature{display:flex;align-items:center;gap:.5rem;font-size:.875rem;color:var(--gray-600);padding:.25rem 0}
+.gcr-fleet-card__feature::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0}
+.gcr-fleet-card__cta{display:block;text-align:center;background:var(--navy);color:var(--white)!important;padding:.875rem;border-radius:var(--radius-sm);font-weight:600;font-size:.9375rem;transition:background .2s;margin-top:.25rem}
+.gcr-fleet-card:hover .gcr-fleet-card__cta{background:var(--gold);color:var(--white)!important}
+
+/* ─── WHY US ──────────────────────────────────────── */
+.gcr-why__grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;margin-top:3.5rem}
+.gcr-why-item{text-align:center;padding:2rem 1.25rem}
+.gcr-why-item__icon{width:64px;height:64px;background:var(--gray-100);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;font-size:1.75rem;transition:background .3s}
+.gcr-why-item:hover .gcr-why-item__icon{background:rgba(245,158,11,.15)}
+.gcr-why-item__title{font-size:1rem;font-weight:700;color:var(--white);margin-bottom:.5rem}
+.gcr-why-item__desc{font-size:.875rem;color:rgba(255,255,255,.65);line-height:1.6}
+
+/* ─── TESTIMONIALS ────────────────────────────────── */
+.gcr-reviews__grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3rem}
+.gcr-review{background:var(--white);border-radius:var(--radius-lg);padding:1.75rem;box-shadow:var(--shadow-md);border-top:3px solid var(--gold)}
+.gcr-review__stars{color:var(--gold);font-size:1.125rem;margin-bottom:.875rem;letter-spacing:.05em}
+.gcr-review__text{font-size:.9375rem;color:var(--gray-600);line-height:1.7;margin-bottom:1.125rem;font-style:italic}
+.gcr-review__author{display:flex;align-items:center;gap:.75rem}
+.gcr-review__avatar{width:40px;height:40px;border-radius:50%;background:var(--navy);color:var(--white);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9375rem;flex-shrink:0}
+.gcr-review__name{font-weight:700;font-size:.9375rem;color:var(--navy)}
+.gcr-review__loc{font-size:.8rem;color:var(--gray-400)}
+
+/* ─── SEO CONTENT BLOCK ───────────────────────────── */
+.gcr-guide__cols{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:start;margin-top:3rem}
+.gcr-guide__img{border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-lg)}
+.gcr-guide__img img{width:100%;height:380px;object-fit:cover}
+.gcr-guide__text h3{font-size:1.25rem;font-weight:700;color:var(--navy);margin:1.5rem 0 .5rem}
+.gcr-guide__text p{font-size:.9375rem;color:var(--gray-600);line-height:1.75;margin-bottom:.75rem}
+.gcr-guide__text ul{margin:.75rem 0 1rem 0}
+.gcr-guide__text li{font-size:.9375rem;color:var(--gray-600);line-height:1.65;padding:.2rem 0 .2rem 1.25rem;position:relative}
+.gcr-guide__text li::before{content:'→';position:absolute;left:0;color:var(--gold);font-weight:700}
+
+/* ─── BOOKING FORM ────────────────────────────────── */
+.gcr-book{background:var(--navy);padding:var(--section-py) 0}
+.gcr-book__inner{display:grid;grid-template-columns:1fr 1.4fr;gap:5rem;align-items:start}
+.gcr-book__info h2{color:var(--white);margin-bottom:1rem}
+.gcr-book__info p{color:rgba(255,255,255,.75);font-size:1rem;line-height:1.7;margin-bottom:1.75rem}
+.gcr-book__info .gcr-btn--whatsapp{width:100%;justify-content:center}
+.gcr-book__features{display:flex;flex-direction:column;gap:.875rem}
+.gcr-book__feat{display:flex;align-items:center;gap:.75rem;color:rgba(255,255,255,.85);font-size:.9375rem}
+.gcr-book__feat-icon{font-size:1.25rem;flex-shrink:0}
+.gcr-form{background:var(--white);border-radius:var(--radius-lg);padding:2.5rem;box-shadow:var(--shadow-lg)}
+.gcr-form h3{font-size:1.5rem;font-weight:800;color:var(--navy);margin-bottom:.375rem}
+.gcr-form__sub{font-size:.9rem;color:var(--gray-400);margin-bottom:1.75rem}
+.gcr-form__row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.gcr-form__group{display:flex;flex-direction:column;gap:.375rem;margin-bottom:1rem}
+.gcr-form__group label{font-size:.8125rem;font-weight:600;color:var(--gray-800)!important;letter-spacing:.02em}
+.gcr-form__group input,
+.gcr-form__group select,
+.gcr-form__group textarea{width:100%;padding:.75rem 1rem;border:1.5px solid var(--gray-200);border-radius:var(--radius-sm);font-family:'Inter',sans-serif;font-size:.9375rem;color:var(--gray-800)!important;transition:border-color .2s,box-shadow .2s;background:var(--white)!important;outline:none;-webkit-appearance:none}
+.gcr-form__group input:focus,
+.gcr-form__group select:focus,
+.gcr-form__group textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(245,158,11,.15)}
+.gcr-form__group textarea{resize:vertical;min-height:80px}
+.gcr-form__divider{display:flex;align-items:center;gap:.75rem;margin:1.25rem 0;color:var(--gray-400);font-size:.8125rem;font-weight:600}
+.gcr-form__divider::before,.gcr-form__divider::after{content:'';flex:1;height:1px;background:var(--gray-200)}
+.gcr-form__submit{width:100%;margin-top:.5rem;justify-content:center;font-size:1rem}
+.gcr-form__note{text-align:center;font-size:.8rem;color:var(--gray-400);margin-top:.875rem}
+
+/* ─── FAQ ─────────────────────────────────────────── */
+.gcr-faq__list{max-width:800px;margin:3rem auto 0;display:flex;flex-direction:column;gap:.75rem}
+.gcr-faq-item{background:var(--white);border:1.5px solid var(--gray-200);border-radius:var(--radius-md);overflow:hidden;transition:border-color .2s}
+.gcr-faq-item.open{border-color:var(--gold)}
+.gcr-faq-item__q{display:flex;justify-content:space-between;align-items:center;padding:1.25rem 1.5rem;cursor:pointer;user-select:none}
+.gcr-faq-item__q-text{font-weight:700;font-size:1rem;color:var(--navy);line-height:1.4}
+.gcr-faq-item__icon{width:28px;height:28px;border-radius:50%;background:var(--gray-100);display:flex;align-items:center;justify-content:center;color:var(--navy);font-size:1.125rem;flex-shrink:0;transition:background .2s,transform .3s}
+.gcr-faq-item.open .gcr-faq-item__icon{background:var(--gold);color:var(--white);transform:rotate(45deg)}
+.gcr-faq-item__a{max-height:0;overflow:hidden;transition:max-height .35s ease,padding .35s ease;padding:0 1.5rem;font-size:.9375rem;color:var(--gray-600);line-height:1.75}
+.gcr-faq-item.open .gcr-faq-item__a{max-height:300px;padding-bottom:1.375rem}
+
+/* ─── FOOTER ──────────────────────────────────────── */
+.gcr-footer{background:#06182D;padding:4rem 0 0}
+.gcr-footer__grid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:3rem;padding-bottom:3rem;border-bottom:1px solid rgba(255,255,255,.08)}
+.gcr-footer__brand-name{font-size:1.3rem;font-weight:900;color:var(--white);letter-spacing:-.02em;margin-bottom:.75rem}
+.gcr-footer__brand-desc{font-size:.875rem;color:rgba(255,255,255,.55);line-height:1.7;max-width:240px;margin-bottom:1.25rem}
+.gcr-footer__social{display:flex;gap:.75rem}
+.gcr-footer__social-link{width:38px;height:38px;border-radius:var(--radius-sm);background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:1rem;transition:background .2s}
+.gcr-footer__social-link:hover{background:var(--gold)}
+.gcr-footer__col-title{font-size:.8125rem;font-weight:700;color:var(--white);letter-spacing:.1em;text-transform:uppercase;margin-bottom:1.125rem}
+.gcr-footer__links{display:flex;flex-direction:column;gap:.5rem}
+.gcr-footer__links a{font-size:.875rem;color:rgba(255,255,255,.55);transition:color .2s}
+.gcr-footer__links a:hover{color:var(--gold)}
+.gcr-footer__contact-item{display:flex;align-items:center;gap:.625rem;font-size:.875rem;color:rgba(255,255,255,.55);margin-bottom:.625rem}
+.gcr-footer__contact-item a{color:rgba(255,255,255,.55);transition:color .2s}
+.gcr-footer__contact-item a:hover{color:var(--gold)}
+.gcr-footer__bottom{display:flex;justify-content:space-between;align-items:center;padding:1.25rem 0;font-size:.8125rem;color:rgba(255,255,255,.35)}
+.gcr-footer__bottom a{color:rgba(255,255,255,.35);transition:color .2s}
+.gcr-footer__bottom a:hover{color:rgba(255,255,255,.6)}
+
+/* ─── RESPONSIVE ─────────────────────────────────── */
+@media(max-width:900px){
+  .gcr-stats__inner,.gcr-locations__grid,.gcr-fleet__grid,.gcr-reviews__grid{grid-template-columns:repeat(2,1fr)}
+  .gcr-steps,.gcr-why__grid{grid-template-columns:1fr}
+  .gcr-steps::before{display:none}
+  .gcr-book__inner,.gcr-guide__cols{grid-template-columns:1fr}
+  .gcr-footer__grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:600px){
+  :root{--section-py:52px}
+  .gcr-locations__grid,.gcr-fleet__grid,.gcr-reviews__grid,.gcr-stats__inner,.gcr-footer__grid{grid-template-columns:1fr}
+  /* Stats */
+  .gcr-stat{border-right:none;border-bottom:1px solid rgba(255,255,255,.08);padding:1.125rem 1rem}
+  .gcr-stat__num{font-size:1.875rem}
+  /* Hero */
+  .gcr-hero{min-height:90vh}
+  .gcr-hero__overlay{background:linear-gradient(to bottom,rgba(10,37,64,.75) 0%,rgba(10,37,64,.5) 55%,rgba(10,37,64,.65) 100%)}
+  .gcr-hero__h1{font-size:2rem}
+  .gcr-hero__sub{font-size:.9375rem;margin-bottom:1.75rem}
+  .gcr-hero__ctas{flex-direction:column;gap:.75rem;margin-bottom:2rem}
+  .gcr-hero__ctas .gcr-btn{width:100%;justify-content:center}
+  .gcr-hero__badge{font-size:.75rem;padding:.375rem .875rem}
+  .gcr-hero__locations{gap:.375rem}
+  .gcr-hero__loc-pill{font-size:.75rem;padding:.3rem .625rem}
+  .gcr-hero__scroll{display:none}
+  /* Typography */
+  .gcr-h2{font-size:1.625rem}
+  .gcr-lead{font-size:.9375rem}
+  /* Form */
+  .gcr-form__row{grid-template-columns:1fr}
+  .gcr-form{padding:1.5rem 1.125rem;border-radius:var(--radius-md)}
+  /* Steps */
+  .gcr-step{padding:1.75rem 1.125rem}
+  /* Why */
+  .gcr-why-item{padding:1.25rem .75rem}
+  /* Guide */
+  .gcr-guide__img img{height:200px}
+  .gcr-guide__img{margin-bottom:.25rem}
+  /* Booking */
+  .gcr-book__inner{gap:2rem}
+  /* Footer */
+  .gcr-footer{padding:2.5rem 0 5rem}
+  .gcr-footer__grid{gap:1.75rem;padding-bottom:2rem}
+  .gcr-footer__bottom{flex-direction:column;gap:.375rem;text-align:center;padding:.875rem 0}
+  .gcr-footer__bottom span:last-child{display:none}
+  /* Floating WhatsApp button visible on mobile */
+  .gcr-wa-float{display:flex}
+}
+
+/* ─── FLOATING WHATSAPP (mobile) ─────────────────── */
+.gcr-wa-float{
+  position:fixed;bottom:1.25rem;right:1.25rem;z-index:9999;
+  display:none;align-items:center;gap:.5rem;
+  background:#25D366;color:#fff;
+  border-radius:var(--radius-pill);
+  padding:.8rem 1.375rem;
+  font-family:'Inter',sans-serif;font-size:.9375rem;font-weight:600;
+  box-shadow:0 4px 24px rgba(37,211,102,.5);
+  text-decoration:none;
+  transition:transform .2s,box-shadow .2s;
+}
+.gcr-wa-float:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(37,211,102,.6)}
+</style>
+
+<div class="gcr-wrap">
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  HERO                                          -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="gcr-hero">
+  <div class="gcr-hero__bg"></div>
+  <div class="gcr-hero__overlay"></div>
+  <div class="gcr-hero__content">
+    <div class="gcr-hero__badge">
+      <span class="gcr-hero__badge-dot"></span>
+      Available Now · 6 Beach Locations
+    </div>
+    <h1 class="gcr-hero__h1">
+      Your Costa Rica<br>Beach Day<br><em>Starts Here.</em>
+    </h1>
+    <p class="gcr-hero__sub">We connect you with the best local golf cart rental companies across Costa Rica's top beach towns. Compare options, confirm via WhatsApp, and hit the beach in minutes.</p>
+    <div class="gcr-hero__ctas">
+      <a href="#booking-form" class="gcr-btn gcr-btn--primary">🏖️ Book Your Cart Now</a>
+      <a href="/location/" class="gcr-btn gcr-btn--outline">Explore Locations →</a>
+    </div>
+    <div class="gcr-hero__locations">
+      <a href="/location/tamarindo/" class="gcr-hero__loc-pill">📍 Tamarindo</a>
+      <a href="/location/flamingo/" class="gcr-hero__loc-pill">📍 Flamingo</a>
+      <a href="/location/playas-del-coco/" class="gcr-hero__loc-pill">📍 Playas del Coco</a>
+      <a href="/location/jaco/" class="gcr-hero__loc-pill">📍 Jacó</a>
+      <a href="/location/manuel-antonio/" class="gcr-hero__loc-pill">📍 Manuel Antonio</a>
+      <a href="/location/potrero/" class="gcr-hero__loc-pill">📍 Potrero</a>
+    </div>
+  </div>
+  <div class="gcr-hero__scroll">
+    <div class="gcr-hero__scroll-line"></div>
+    Scroll
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  STATS BAR                                     -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="gcr-stats">
+  <div class="gcr-stats__inner">
+    <div class="gcr-stat">
+      <div class="gcr-stat__num">500+</div>
+      <div class="gcr-stat__label">Happy Customers</div>
+    </div>
+    <div class="gcr-stat">
+      <div class="gcr-stat__num">6</div>
+      <div class="gcr-stat__label">Beach Locations</div>
+    </div>
+    <div class="gcr-stat">
+      <div class="gcr-stat__num">4.9★</div>
+      <div class="gcr-stat__label">Google Rating</div>
+    </div>
+    <div class="gcr-stat">
+      <div class="gcr-stat__num">24h</div>
+      <div class="gcr-stat__label">Support via WhatsApp</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  LOCATIONS                                     -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="gcr-section gcr-section--gray" id="locations">
+  <div class="gcr-container">
+    <span class="gcr-label">Where We Operate</span>
+    <h2 class="gcr-h2" style="max-width:600px">Golf Cart Rentals at Costa Rica's Best Beach Towns</h2>
+    <p class="gcr-lead">From Tamarindo's surf breaks to Manuel Antonio's national park beaches — we connect you with trusted local providers in each town so you get the best cart at the best price.</p>
+    <div class="gcr-locations__grid">
+
+      <div class="gcr-loc-card">
+        <div class="gcr-loc-card__img">
+          <img src="https://salmon-ibex-825566.hostingersite.com/wp-content/uploads/2026/05/ai-loc-tamarindo.jpg" alt="Golf cart rental Tamarindo Costa Rica" loading="lazy">
+          <span class="gcr-loc-card__badge">Most Popular</span>
+        </div>
+        <div class="gcr-loc-card__body">
+          <div class="gcr-loc-card__name">Tamarindo</div>
+          <div class="gcr-loc-card__desc">Guanacaste's surf capital. Cruise to Playa Grande, the estuary, and the best restaurants by cart.</div>
+          <a href="/location/tamarindo/" class="gcr-loc-card__link">Rent in Tamarindo <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+      </div>
+
+      <div class="gcr-loc-card">
+        <div class="gcr-loc-card__img">
+          <img src="https://salmon-ibex-825566.hostingersite.com/wp-content/uploads/2026/05/ai-loc-flamingo.jpg" alt="Golf cart rental Flamingo Costa Rica" loading="lazy">
+        </div>
+        <div class="gcr-loc-card__body">
+          <div class="gcr-loc-card__name">Flamingo</div>
+          <div class="gcr-loc-card__desc">Upscale marina town with white sand beaches. Explore Conchal and Brasilito by cart.</div>
+          <a href="/location/flamingo/" class="gcr-loc-card__link">Rent in Flamingo <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+      </div>
+
+      <div class="gcr-loc-card">
+        <div class="gcr-loc-card__img">
+          <img src="https://salmon-ibex-825566.hostingersite.com/wp-content/uploads/2026/05/ai-loc-coco.jpg" alt="Golf cart rental Playas del Coco Costa Rica" loading="lazy">
+        </div>
+        <div class="gcr-loc-card__body">
+          <div class="gcr-loc-card__name">Playas del Coco</div>
+          <div class="gcr-loc-card__desc">Lively beach town with diving, nightlife, and easy access to Playa Ocotal.</div>
+          <a href="/location/playas-del-coco/" class="gcr-loc-card__link">Rent in Coco <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+      </div>
+
+      <div class="gcr-loc-card">
+        <div class="gcr-loc-card__img">
+          <img src="https://salmon-ibex-825566.hostingersite.com/wp-content/uploads/2026/05/ai-loc-jaco.jpg" alt="Golf cart rental Jacó Costa Rica" loading="lazy">
+        </div>
+        <div class="gcr-loc-card__body">
+          <div class="gcr-loc-card__name">Jacó</div>
+          <div class="gcr-loc-card__desc">Pacific surf town close to San José. Reach Playa Hermosa and Carara National Park easily.</div>
+          <a href="/location/jaco/" class="gcr-loc-card__link">Rent in Jacó <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+      </div>
+
+      <div class="gcr-loc-card">
+        <div class="gcr-loc-card__img">
+          <img src="https://salmon-ibex-825566.hostingersite.com/wp-content/uploads/2026/05/ai-loc-manuel.jpg" alt="Golf cart rental Manuel Antonio Costa Rica" loading="lazy">
+        </div>
+        <div class="gcr-loc-card__body">
+          <div class="gcr-loc-card__name">Manuel Antonio</div>
+          <div class="gcr-loc-card__desc">National park beaches, monkeys, and sloths. Explore the Quepos–park corridor by cart.</div>
+          <a href="/location/manuel-antonio/" class="gcr-loc-card__link">Rent in Manuel Antonio <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+      </div>
+
+      <div class="gcr-loc-card">
+        <div class="gcr-loc-card__img">
+          <img src="https://salmon-ibex-825566.hostingersite.com/wp-content/uploads/2026/05/ai-loc-potrero.jpg" alt="Golf cart rental Potrero Costa Rica" loading="lazy">
+        </div>
+        <div class="gcr-loc-card__body">
+          <div class="gcr-loc-card__name">Potrero</div>
+          <div class="gcr-loc-card__desc">Quiet Guanacaste hideaway near Flamingo. Reach Playa Pan de Azúcar, one of CR's most pristine beaches.</div>
+          <a href="/location/potrero/" class="gcr-loc-card__link">Rent in Potrero <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  HOW IT WORKS                                  -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="gcr-section" id="how-it-works">
+  <div class="gcr-container" style="text-align:center">
+    <span class="gcr-label">Simple Process</span>
+    <h2 class="gcr-h2">How It Works in 3 Easy Steps</h2>
+    <p class="gcr-lead" style="margin:0 auto">No phone tag, no hunting down providers. We handle the search — you enjoy the beach.</p>
+    <div class="gcr-steps">
+      <div class="gcr-step">
+        <div class="gcr-step__num">1</div>
+        <div class="gcr-step__icon">📋</div>
+        <div class="gcr-step__title">Send Your Request</div>
+        <div class="gcr-step__desc">Fill in your location, dates, group size, and cart type. Takes 60 seconds. We receive it instantly on WhatsApp.</div>
+      </div>
+      <div class="gcr-step">
+        <div class="gcr-step__num">2</div>
+        <div class="gcr-step__icon">🤝</div>
+        <div class="gcr-step__title">We Match &amp; Confirm</div>
+        <div class="gcr-step__desc">We check availability with our local partner providers and reply within 1 hour with pricing, options, and delivery details.</div>
+      </div>
+      <div class="gcr-step">
+        <div class="gcr-step__num">3</div>
+        <div class="gcr-step__icon">🏖️</div>
+        <div class="gcr-step__title">Pick Up &amp; Cruise</div>
+        <div class="gcr-step__desc">Collect your cart from the provider or get it delivered to your hotel. Quick walkthrough and you're off to the beach.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  FLEET                                         -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="gcr-section gcr-section--gray" id="fleet">
+  <div class="gcr-container">
+    <span class="gcr-label">Cart Types Available</span>
+    <h2 class="gcr-h2">2, 4 &amp; 6-Passenger Carts Across All Locations</h2>
+    <p class="gcr-lead">Tell us your group size and we'll match you with the right cart from our local partner providers — all street-legal, inspected, and ready for the beach.</p>
+    <div class="gcr-fleet__grid">
+
+      <div class="gcr-fleet-card">
+        <div class="gcr-fleet-card__img">
+          <img src="https://salmon-ibex-825566.hostingersite.com/wp-content/uploads/2026/05/ai-cart-2pax-cr-1.jpg" alt="2-passenger golf cart rental Costa Rica" loading="lazy" style="object-position:center 20%">
+        </div>
+        <div class="gcr-fleet-card__body">
+          <div class="gcr-fleet-card__name">2-Passenger Cart</div>
+          <div class="gcr-fleet-card__cap">👥 Perfect for couples</div>
+          <div class="gcr-fleet-card__features">
+            <div class="gcr-fleet-card__feature">Street-legal &amp; insured</div>
+            <div class="gcr-fleet-card__feature">Bluetooth speaker</div>
+            <div class="gcr-fleet-card__feature">USB charging port</div>
+            <div class="gcr-fleet-card__feature">Cooler holder</div>
+          </div>
+          <a href="#booking-form" class="gcr-fleet-card__cta">Request This Type</a>
+        </div>
+      </div>
+
+      <div class="gcr-fleet-card gcr-fleet-card--popular">
+        <div class="gcr-fleet-card__img">
+          <img src="https://salmon-ibex-825566.hostingersite.com/wp-content/uploads/2026/05/ai-cart-4pax-cr.jpg" alt="4-passenger golf cart rental Costa Rica" loading="lazy">
+          <span class="gcr-fleet-card__popular-tag">Most Popular</span>
+        </div>
+        <div class="gcr-fleet-card__body">
+          <div class="gcr-fleet-card__name">4-Passenger Cart</div>
+          <div class="gcr-fleet-card__cap">👨‍👩‍👧‍👦 Great for families &amp; groups</div>
+          <div class="gcr-fleet-card__features">
+            <div class="gcr-fleet-card__feature">Street-legal &amp; insured</div>
+            <div class="gcr-fleet-card__feature">Bluetooth speaker</div>
+            <div class="gcr-fleet-card__feature">USB ports + shade canopy</div>
+            <div class="gcr-fleet-card__feature">Extra storage for gear</div>
+          </div>
+          <a href="#booking-form" class="gcr-fleet-card__cta">Request This Type</a>
+        </div>
+      </div>
+
+      <div class="gcr-fleet-card">
+        <div class="gcr-fleet-card__img">
+          <img src="https://salmon-ibex-825566.hostingersite.com/wp-content/uploads/2026/05/ai-cart-6pax-cr-1.jpg" alt="6-passenger golf cart rental Costa Rica" loading="lazy">
+        </div>
+        <div class="gcr-fleet-card__body">
+          <div class="gcr-fleet-card__name">6-Passenger Cart</div>
+          <div class="gcr-fleet-card__cap">🎉 The party cart</div>
+          <div class="gcr-fleet-card__features">
+            <div class="gcr-fleet-card__feature">Street-legal &amp; insured</div>
+            <div class="gcr-fleet-card__feature">Bluetooth speaker</div>
+            <div class="gcr-fleet-card__feature">Shade canopy</div>
+            <div class="gcr-fleet-card__feature">Max storage &amp; comfort</div>
+          </div>
+          <a href="#booking-form" class="gcr-fleet-card__cta">Request This Type</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  WHY CHOOSE US                                 -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="gcr-section gcr-section--dark">
+  <div class="gcr-container" style="text-align:center">
+    <span class="gcr-label gcr-label--light">Why GolfCartRentalsCR</span>
+    <h2 class="gcr-h2" style="color:#fff;max-width:640px;margin:0 auto 1rem">The Smarter Way to Book a Golf Cart in Costa Rica</h2>
+    <p class="gcr-lead" style="margin:0 auto">We're a marketplace — we do the legwork with local providers so you get the right cart at the right price without the hassle.</p>
+    <div class="gcr-why__grid">
+      <div class="gcr-why-item">
+        <div class="gcr-why-item__icon">🤝</div>
+        <div class="gcr-why-item__title">Vetted Local Providers</div>
+        <div class="gcr-why-item__desc">We partner only with licensed, insured golf cart companies in each beach town — no random strangers.</div>
+      </div>
+      <div class="gcr-why-item">
+        <div class="gcr-why-item__icon">💰</div>
+        <div class="gcr-why-item__title">Best Available Price</div>
+        <div class="gcr-why-item__desc">We check availability across multiple providers for your dates and surface the best rate — you pay the provider directly.</div>
+      </div>
+      <div class="gcr-why-item">
+        <div class="gcr-why-item__icon">⚡</div>
+        <div class="gcr-why-item__title">One Message, Done</div>
+        <div class="gcr-why-item__desc">Send us one WhatsApp request and we handle the rest — no calling around, no language barriers.</div>
+      </div>
+      <div class="gcr-why-item">
+        <div class="gcr-why-item__icon">🚗</div>
+        <div class="gcr-why-item__title">Hotel Delivery Available</div>
+        <div class="gcr-why-item__desc">Most of our partner providers deliver to your hotel. We coordinate the logistics for you.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  TESTIMONIALS                                  -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="gcr-section gcr-section--gray">
+  <div class="gcr-container" style="text-align:center">
+    <span class="gcr-label">Real Reviews</span>
+    <h2 class="gcr-h2">What Our Customers Say</h2>
+    <div class="gcr-reviews__grid">
+
+      <div class="gcr-review">
+        <div class="gcr-review__stars">★★★★★</div>
+        <p class="gcr-review__text">"Best decision of our trip. We rented a 4-passenger cart in Tamarindo and spent the whole day exploring Playa Grande and the estuary. Drop-off was so easy — messaged on WhatsApp and they sorted everything."</p>
+        <div class="gcr-review__author">
+          <div class="gcr-review__avatar">S</div>
+          <div>
+            <div class="gcr-review__name">Sarah M.</div>
+            <div class="gcr-review__loc">📍 Tamarindo · Feb 2025</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="gcr-review">
+        <div class="gcr-review__stars">★★★★★</div>
+        <p class="gcr-review__text">"The cart was spotless and delivered right to our hotel in Flamingo. We drove to Conchal, Brasilito, and back — the whole family loved it. Incredible value and super friendly team."</p>
+        <div class="gcr-review__author">
+          <div class="gcr-review__avatar">J</div>
+          <div>
+            <div class="gcr-review__name">James & Lily K.</div>
+            <div class="gcr-review__loc">📍 Flamingo · Dec 2024</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="gcr-review">
+        <div class="gcr-review__stars">★★★★★</div>
+        <p class="gcr-review__text">"Rented in Manuel Antonio and it was perfect for the park road. The team was super fast to reply on WhatsApp and helped us figure out where to park near the entrance. Will book again!"</p>
+        <div class="gcr-review__author">
+          <div class="gcr-review__avatar">C</div>
+          <div>
+            <div class="gcr-review__name">Carlos R.</div>
+            <div class="gcr-review__loc">📍 Manuel Antonio · Jan 2025</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  SEO CONTENT GUIDE                             -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="gcr-section" id="guide">
+  <div class="gcr-container">
+    <div class="gcr-guide__cols">
+      <div class="gcr-guide__img">
+        <img src="https://salmon-ibex-825566.hostingersite.com/wp-content/uploads/2026/05/ai-cart-hero-cr.jpg" alt="Golf cart on Costa Rica beach road" loading="lazy">
+      </div>
+      <div class="gcr-guide__text">
+        <span class="gcr-label">Your Complete Guide</span>
+        <h2 class="gcr-h2" style="margin-bottom:1rem">Golf Cart Rentals in Costa Rica: Everything You Need to Know</h2>
+        <p>Golf carts are one of the best ways to explore Costa Rica's beach towns. They're legal on most beach roads, easy to park, and make every day feel like a vacation — even getting to the grocery store is fun.</p>
+        <h3>Are Golf Carts Legal in Costa Rica?</h3>
+        <p>Yes. Street-legal golf carts (LSVs — Low Speed Vehicles) are permitted on most roads in Costa Rica's beach towns. All our carts are fully registered, insured, and meet local road requirements.</p>
+        <h3>Which Beach Towns Are Best for Golf Carts?</h3>
+        <ul>
+          <li><strong>Tamarindo</strong> — Golf cart-friendly streets, beach access, estuary roads</li>
+          <li><strong>Flamingo</strong> — Hilly terrain, perfect for cart exploration to Conchal</li>
+          <li><strong>Playas del Coco</strong> — Flat beach strip, easy cruising</li>
+          <li><strong>Jacó</strong> — Long beachfront boulevard, access to Hermosa</li>
+          <li><strong>Manuel Antonio</strong> — Scenic road to national park</li>
+          <li><strong>Potrero</strong> — Quiet roads, great for sunset drives</li>
+        </ul>
+        <h3>What Do I Need to Rent?</h3>
+        <p>A valid driver's license, a credit card for the deposit, and to be at least 21 years old. No special permit or international license required.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  BOOKING FORM                                  -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="gcr-book" id="booking-form">
+  <div class="gcr-container">
+    <div class="gcr-book__inner">
+      <div class="gcr-book__info">
+        <span class="gcr-label gcr-label--light">Get Availability &amp; Pricing</span>
+        <h2 class="gcr-h2" style="color:#fff;margin-bottom:1rem">Request Your Cart in Minutes</h2>
+        <p>Send us your details and we'll check availability with our local partner providers. We reply on WhatsApp within 1 hour with options, pricing, and delivery info.</p>
+        <div style="margin-bottom:2rem">
+          <a href="javascript:void(0)" onclick="gcrChatWhatsApp()" class="gcr-btn gcr-btn--whatsapp">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            Chat on WhatsApp
+          </a>
+        </div>
+        <div class="gcr-book__features">
+          <div class="gcr-book__feat"><span class="gcr-book__feat-icon">⚡</span> WhatsApp reply within 1 hour</div>
+          <div class="gcr-book__feat"><span class="gcr-book__feat-icon">🤝</span> Multiple providers checked for you</div>
+          <div class="gcr-book__feat"><span class="gcr-book__feat-icon">🚗</span> Hotel delivery available</div>
+          <div class="gcr-book__feat"><span class="gcr-book__feat-icon">💬</span> 24/7 support on WhatsApp</div>
+        </div>
+      </div>
+
+      <div class="gcr-form">
+        <h3>Request a Golf Cart</h3>
+        <p class="gcr-form__sub">We'll check availability with local providers and reply via WhatsApp within 1 hour.</p>
+
+        <div class="gcr-form__group">
+          <label for="f-location">📍 Location *</label>
+          <select id="f-location" required>
+            <option value="">Select your beach town…</option>
+            <option>Tamarindo</option>
+            <option>Flamingo</option>
+            <option>Playas del Coco</option>
+            <option>Jacó</option>
+            <option>Manuel Antonio</option>
+            <option>Potrero</option>
+          </select>
+        </div>
+
+        <div class="gcr-form__group">
+          <label for="f-cart">🛒 Cart Type *</label>
+          <select id="f-cart" required>
+            <option value="">Select cart size…</option>
+            <option>2-Passenger Cart</option>
+            <option>4-Passenger Cart (Most Popular)</option>
+            <option>6-Passenger Cart</option>
+          </select>
+        </div>
+
+        <div class="gcr-form__divider">Pick-up</div>
+        <div class="gcr-form__row">
+          <div class="gcr-form__group" style="margin-bottom:0">
+            <label for="f-pickup-date">📅 Pick-up Date *</label>
+            <input type="date" id="f-pickup-date" required>
+          </div>
+          <div class="gcr-form__group" style="margin-bottom:0">
+            <label for="f-pickup-time">🕐 Pick-up Time *</label>
+            <input type="time" id="f-pickup-time" required value="08:00">
+          </div>
+        </div>
+
+        <div class="gcr-form__divider">Drop-off</div>
+        <div class="gcr-form__row">
+          <div class="gcr-form__group" style="margin-bottom:0">
+            <label for="f-dropoff-date">📅 Drop-off Date *</label>
+            <input type="date" id="f-dropoff-date" required>
+          </div>
+          <div class="gcr-form__group" style="margin-bottom:0">
+            <label for="f-dropoff-time">🕐 Drop-off Time *</label>
+            <input type="time" id="f-dropoff-time" required value="17:00">
+          </div>
+        </div>
+
+        <div class="gcr-form__divider">Your Details</div>
+        <div class="gcr-form__row">
+          <div class="gcr-form__group" style="margin-bottom:0">
+            <label for="f-name">👤 Full Name *</label>
+            <input type="text" id="f-name" placeholder="John Smith" required>
+          </div>
+          <div class="gcr-form__group" style="margin-bottom:0">
+            <label for="f-phone">📱 Your Phone / WhatsApp *</label>
+            <input type="tel" id="f-phone" placeholder="+1 555 000 0000" required>
+          </div>
+        </div>
+
+        <div class="gcr-form__group" style="margin-top:1rem">
+          <label for="f-email">📧 Email Address *</label>
+          <input type="email" id="f-email" placeholder="you@email.com" required>
+        </div>
+
+        <div class="gcr-form__group">
+          <label for="f-hotel">🏨 Hotel / Delivery Address</label>
+          <input type="text" id="f-hotel" placeholder="Hotel name or address for delivery">
+        </div>
+
+        <div class="gcr-form__group">
+          <label for="f-notes">📝 Special Requests</label>
+          <textarea id="f-notes" placeholder="Any special requests, questions, or extra gear needed…"></textarea>
+        </div>
+
+        <button type="button" class="gcr-btn gcr-btn--whatsapp gcr-form__submit" onclick="gcrSendBooking()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Send Booking via WhatsApp
+        </button>
+        <p class="gcr-form__note">You'll be redirected to WhatsApp to confirm. We respond within 1 hour.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  FAQ                                           -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="gcr-section" id="faq">
+  <div class="gcr-container" style="text-align:center">
+    <span class="gcr-label">FAQs</span>
+    <h2 class="gcr-h2">Frequently Asked Questions</h2>
+    <p class="gcr-lead" style="margin:0 auto">Everything you need to know before booking your golf cart in Costa Rica.</p>
+    <div class="gcr-faq__list">
+      <div class="gcr-faq-item">
+        <div class="gcr-faq-item__q" onclick="gcrToggleFaq(this)">
+          <span class="gcr-faq-item__q-text">Are golf carts street-legal in Costa Rica?</span>
+          <span class="gcr-faq-item__icon">+</span>
+        </div>
+        <div class="gcr-faq-item__a">Yes. All providers in our network operate registered, plated, and insured Low-Speed Vehicles (LSVs) that are legally permitted on most roads in Costa Rica's beach towns including Tamarindo, Flamingo, Jacó, Manuel Antonio, Playas del Coco, and Potrero.</div>
+      </div>
+      <div class="gcr-faq-item">
+        <div class="gcr-faq-item__q" onclick="gcrToggleFaq(this)">
+          <span class="gcr-faq-item__q-text">What documents do I need to rent a golf cart?</span>
+          <span class="gcr-faq-item__icon">+</span>
+        </div>
+        <div class="gcr-faq-item__a">You need a valid driver's license from your home country, a credit card for the security deposit, and to be at least 21 years old. An international driving permit is welcome but not required in Costa Rica.</div>
+      </div>
+      <div class="gcr-faq-item">
+        <div class="gcr-faq-item__q" onclick="gcrToggleFaq(this)">
+          <span class="gcr-faq-item__q-text">Do you deliver the cart to my hotel?</span>
+          <span class="gcr-faq-item__icon">+</span>
+        </div>
+        <div class="gcr-faq-item__a">Yes! Most providers in our network offer hotel and vacation rental delivery. Just include your hotel name or address in the request form and we'll confirm delivery details with the provider. A small delivery fee may apply depending on your distance.</div>
+      </div>
+      <div class="gcr-faq-item">
+        <div class="gcr-faq-item__q" onclick="gcrToggleFaq(this)">
+          <span class="gcr-faq-item__q-text">How far in advance should I book?</span>
+          <span class="gcr-faq-item__icon">+</span>
+        </div>
+        <div class="gcr-faq-item__a">We recommend booking at least 48 hours in advance, especially during high season (December–April) when demand is highest. Same-day and last-minute bookings are sometimes possible — just message us on WhatsApp and we'll check availability.</div>
+      </div>
+      <div class="gcr-faq-item">
+        <div class="gcr-faq-item__q" onclick="gcrToggleFaq(this)">
+          <span class="gcr-faq-item__q-text">Is a deposit required?</span>
+          <span class="gcr-faq-item__icon">+</span>
+        </div>
+        <div class="gcr-faq-item__a">Yes, a refundable security deposit is held on your credit card at pickup. The deposit is fully released upon the cart's safe return in the same condition. We do not charge the deposit unless there is damage.</div>
+      </div>
+      <div class="gcr-faq-item">
+        <div class="gcr-faq-item__q" onclick="gcrToggleFaq(this)">
+          <span class="gcr-faq-item__q-text">What happens if the cart breaks down?</span>
+          <span class="gcr-faq-item__icon">+</span>
+        </div>
+        <div class="gcr-faq-item__a">All providers in our network offer roadside assistance for their rentals. If anything happens, contact us on WhatsApp and we'll coordinate with the provider immediately to get you back on the road or arrange a replacement cart.</div>
+      </div>
+      <div class="gcr-faq-item">
+        <div class="gcr-faq-item__q" onclick="gcrToggleFaq(this)">
+          <span class="gcr-faq-item__q-text">Can I take the cart on the beach?</span>
+          <span class="gcr-faq-item__icon">+</span>
+        </div>
+        <div class="gcr-faq-item__a">Beach access varies by location. Some beaches in Costa Rica permit vehicle access on the sand (like certain areas in Guanacaste), while others are pedestrian-only. Our team will give you a local map and advise on which areas are permitted when you pick up the cart.</div>
+      </div>
+      <div class="gcr-faq-item">
+        <div class="gcr-faq-item__q" onclick="gcrToggleFaq(this)">
+          <span class="gcr-faq-item__q-text">What is your cancellation policy?</span>
+          <span class="gcr-faq-item__icon">+</span>
+        </div>
+        <div class="gcr-faq-item__a">We offer free cancellation up to 24 hours before your scheduled pickup. Cancellations within 24 hours may be subject to a fee of one day's rental. Just message us on WhatsApp and we'll sort it out — we're flexible and understand travel plans change.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  FOOTER                                        -->
+<!-- ═══════════════════════════════════════════════ -->
+<footer class="gcr-footer">
+  <div class="gcr-container">
+    <div class="gcr-footer__grid">
+      <div>
+        <div class="gcr-footer__brand-name">GolfCartRentalsCR</div>
+        <p class="gcr-footer__brand-desc">Costa Rica's golf cart rental marketplace. We connect you with vetted local providers across 6 beach towns — best price, zero hassle.</p>
+        <div class="gcr-footer__social">
+          <a href="https://wa.me/14155238886" target="_blank" class="gcr-footer__social-link" title="WhatsApp">💬</a>
+          <a href="#" class="gcr-footer__social-link" title="Instagram">📷</a>
+          <a href="#" class="gcr-footer__social-link" title="Facebook">👥</a>
+        </div>
+      </div>
+      <div>
+        <div class="gcr-footer__col-title">Locations</div>
+        <div class="gcr-footer__links">
+          <a href="/location/tamarindo/">Tamarindo</a>
+          <a href="/location/flamingo/">Flamingo</a>
+          <a href="/location/playas-del-coco/">Playas del Coco</a>
+          <a href="/location/jaco/">Jacó</a>
+          <a href="/location/manuel-antonio/">Manuel Antonio</a>
+          <a href="/location/potrero/">Potrero</a>
+        </div>
+      </div>
+      <div>
+        <div class="gcr-footer__col-title">Quick Links</div>
+        <div class="gcr-footer__links">
+          <a href="/how-it-works/">How It Works</a>
+          <a href="/fleet/">Our Fleet</a>
+          <a href="/faq/">FAQ</a>
+          <a href="/contact/">Contact</a>
+          <a href="/become-a-partner/">Become a Partner</a>
+          <a href="/privacy-policy/">Privacy Policy</a>
+        </div>
+      </div>
+      <div>
+        <div class="gcr-footer__col-title">Contact Us</div>
+        <div class="gcr-footer__contact-item">
+          <span>💬</span>
+          <a href="https://wa.me/14155238886" target="_blank">+506 8815-7780 (WhatsApp)</a>
+        </div>
+        <div class="gcr-footer__contact-item">
+          <span>📧</span>
+          <a href="mailto:info@golfcartrentalscr.com">info@golfcartrentalscr.com</a>
+        </div>
+        <div class="gcr-footer__contact-item">
+          <span>📍</span>
+          <span>Costa Rica · 6 Beach Locations</span>
+        </div>
+        <div style="margin-top:1.25rem">
+          <a href="https://wa.me/14155238886" target="_blank" class="gcr-btn gcr-btn--whatsapp" style="font-size:.875rem;padding:.625rem 1.25rem">
+            Book on WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="gcr-footer__bottom">
+      <span>© 2025 GolfCartRentalsCR · Costa Rica</span>
+      <span>Golf Cart Rentals in <a href="/location/tamarindo/">Tamarindo</a> · <a href="/location/flamingo/">Flamingo</a> · <a href="/location/jaco/">Jacó</a> · <a href="/location/manuel-antonio/">Manuel Antonio</a></span>
+    </div>
+  </div>
+</footer>
+
+<a href="https://wa.me/14155238886" target="_blank" class="gcr-wa-float" aria-label="Book on WhatsApp">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+  Book Now
+</a>
+
+</div><!-- /.gcr-wrap -->
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  SCRIPTS                                       -->
+<!-- ═══════════════════════════════════════════════ -->
+<script>
+function gcrToggleFaq(el){
+  var item=el.parentElement;
+  var wasOpen=item.classList.contains('open');
+  document.querySelectorAll('.gcr-faq-item').forEach(function(i){i.classList.remove('open')});
+  if(!wasOpen)item.classList.add('open');
+}
+
+function gcrSendBooking(){
+  var loc=document.getElementById('f-location').value;
+  var cart=document.getElementById('f-cart').value;
+  var pd=document.getElementById('f-pickup-date').value;
+  var pt=document.getElementById('f-pickup-time').value;
+  var dd=document.getElementById('f-dropoff-date').value;
+  var dt=document.getElementById('f-dropoff-time').value;
+  var nm=document.getElementById('f-name').value;
+  var ph=document.getElementById('f-phone').value;
+  var em=document.getElementById('f-email').value;
+  var ht=document.getElementById('f-hotel').value;
+  var nt=document.getElementById('f-notes').value;
+  var msg='🏖️ *Golf Cart Request — GolfCartRentalsCR*\n\n';
+  if(loc) msg+='📍 *Location:* '+loc+'\n';
+  if(cart) msg+='🛒 *Cart:* '+cart+'\n';
+  if(pd||pt) msg+='\n📅 *Pick-up:* '+(pd||'TBD')+' at '+(pt||'TBD')+'\n';
+  if(dd||dt) msg+='📅 *Drop-off:* '+(dd||'TBD')+' at '+(dt||'TBD')+'\n';
+  if(nm||ph||em) msg+='\n';
+  if(nm) msg+='👤 *Name:* '+nm+'\n';
+  if(ph) msg+='📱 *Phone:* '+ph+'\n';
+  if(em) msg+='📧 *Email:* '+em+'\n';
+  if(ht) msg+='🏨 *Hotel/Address:* '+ht+'\n';
+  if(nt) msg+='\n📝 *Notes:* '+nt;
+  window.open('https://wa.me/14155238886?text='+encodeURIComponent(msg.trim()),'_blank');
+}
+function gcrChatWhatsApp(){
+  var loc=document.getElementById('f-location')?document.getElementById('f-location').value:'';
+  var cart=document.getElementById('f-cart')?document.getElementById('f-cart').value:'';
+  var pd=document.getElementById('f-pickup-date')?document.getElementById('f-pickup-date').value:'';
+  var dd=document.getElementById('f-dropoff-date')?document.getElementById('f-dropoff-date').value:'';
+  var nm=document.getElementById('f-name')?document.getElementById('f-name').value:'';
+  var ph=document.getElementById('f-phone')?document.getElementById('f-phone').value:'';
+  var hasData=loc||cart||pd||dd||nm||ph;
+  if(hasData){
+    var msg='🏖️ *Golf Cart Request — GolfCartRentalsCR*\n\n';
+    if(loc) msg+='📍 *Location:* '+loc+'\n';
+    if(cart) msg+='🛒 *Cart:* '+cart+'\n';
+    if(pd) msg+='📅 *Pick-up:* '+pd+'\n';
+    if(dd) msg+='📅 *Drop-off:* '+dd+'\n';
+    if(nm) msg+='👤 *Name:* '+nm+'\n';
+    if(ph) msg+='📱 *Phone:* '+ph+'\n';
+    window.open('https://wa.me/14155238886?text='+encodeURIComponent(msg.trim()),'_blank');
+  } else {
+    window.open('https://wa.me/14155238886','_blank');
+  }
+}
+
+// Set min dates to today
+(function(){
+  var today=new Date().toISOString().split('T')[0];
+  var pd=document.getElementById('f-pickup-date');
+  var dd=document.getElementById('f-dropoff-date');
+  if(pd){pd.min=today;pd.value=today}
+  if(dd){
+    dd.min=today;
+    var tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);
+    dd.value=tomorrow.toISOString().split('T')[0];
+  }
+  if(pd)pd.addEventListener('change',function(){if(dd)dd.min=pd.value});
+})();
+</script>
+
+<!-- FAQ SCHEMA -->
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"FAQPage",
+  "mainEntity":[
+    {"@type":"Question","name":"Are golf carts street-legal in Costa Rica?","acceptedAnswer":{"@type":"Answer","text":"Yes. All our carts are registered, plated, and insured as Low-Speed Vehicles (LSVs) and are legally permitted on most roads in Costa Rica's beach towns."}},
+    {"@type":"Question","name":"What documents do I need to rent a golf cart?","acceptedAnswer":{"@type":"Answer","text":"A valid driver's license, a credit card for the security deposit, and to be at least 21 years old."}},
+    {"@type":"Question","name":"Do you deliver the cart to my hotel?","acceptedAnswer":{"@type":"Answer","text":"Yes! We offer hotel and vacation rental delivery in most of our locations. Include your hotel name or address in the booking form."}},
+    {"@type":"Question","name":"How far in advance should I book?","acceptedAnswer":{"@type":"Answer","text":"At least 48 hours in advance is recommended, especially during high season (December–April). Same-day bookings are sometimes possible."}},
+    {"@type":"Question","name":"What is your cancellation policy?","acceptedAnswer":{"@type":"Answer","text":"Free cancellation up to 24 hours before your scheduled pickup. Cancellations within 24 hours may be subject to a fee of one day's rental."}}
+  ]
+}
+</script>
+
+<!-- LOCAL BUSINESS SCHEMA -->
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"LocalBusiness",
+  "name":"GolfCartRentalsCR",
+  "description":"Golf cart rentals in Costa Rica's best beach towns: Tamarindo, Flamingo, Playas del Coco, Jacó, Manuel Antonio, and Potrero.",
+  "url":"https://salmon-ibex-825566.hostingersite.com",
+  "telephone":"+50688157780",
+  "email":"info@golfcartrentalscr.com",
+  "address":{"@type":"PostalAddress","addressCountry":"CR","addressRegion":"Costa Rica"},
+  "areaServed":["Tamarindo","Flamingo","Playas del Coco","Jacó","Manuel Antonio","Potrero"],
+  "sameAs":["https://wa.me/14155238886"],
+  "openingHoursSpecification":{"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],"opens":"07:00","closes":"20:00"}
+}
+</script>

@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tu Opinión – Innova Home Center</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red: #C8102E;
+    --red-dark: #a50d26;
+    --black: #1a1a1a;
+    --gray: #f5f5f5;
+    --gray-border: #e0e0e0;
+    --text: #333;
+    --text-light: #666;
+    --green-wa: #25D366;
+    --green-wa-dark: #1ebe5d;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(200,16,46,0.18) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(200,16,46,0.10) 0%, transparent 50%),
+      linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow:
+      0 8px 32px rgba(0,0,0,0.45),
+      0 2px 8px rgba(0,0,0,0.30),
+      0 0 0 1px rgba(255,255,255,0.06);
+    width: 100%;
+    max-width: 420px;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: #fff;
+    padding: 24px 24px 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--gray-border);
+  }
+
+  .logo-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+    line-height: 1;
+  }
+
+  .logo-in {
+    background: var(--red);
+    color: #fff;
+    font-size: 28px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px 0 0 4px;
+    letter-spacing: -1px;
+  }
+
+  .logo-nova {
+    color: #fff;
+    font-size: 28px;
+    font-weight: 800;
+    padding: 2px 6px;
+    letter-spacing: -1px;
+  }
+
+  .logo-sub {
+    color: rgba(255,255,255,0.55);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  /* ── Screens ── */
+  .screen { display: none; padding: 28px 24px; }
+  .screen.active { display: block; }
+
+  .screen__title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--black);
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+
+  .screen__sub {
+    font-size: 14px;
+    color: var(--text-light);
+    line-height: 1.5;
+    margin-bottom: 24px;
+  }
+
+  /* ── Stars (landing) ── */
+  .stars-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  .star-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    font-size: 42px;
+    color: #e0e0e0;
+    transition: color 0.15s, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    line-height: 1;
+    filter: drop-shadow(0 0 0px #f5a623);
+  }
+
+  @media (max-width: 400px) {
+    .star-btn { font-size: 34px; padding: 3px; }
+  }
+
+  .star-btn:hover,
+  .star-btn.selected,
+  .star-btn.hover {
+    color: #f5a623;
+    transform: scale(1.25);
+    filter: drop-shadow(0 2px 8px rgba(245,166,35,0.5));
+  }
+
+  .star-btn:active { transform: scale(0.95); }
+
+  /* ── Review platform buttons ── */
+  .btn-review {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 13px 16px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    margin-bottom: 10px;
+    transition: opacity 0.15s, transform 0.1s;
+    color: #fff;
+  }
+
+  .btn-review:active { transform: scale(0.98); opacity: 0.9; }
+
+  .btn-google { background: #4285F4; }
+  .btn-facebook { background: #1877F2; }
+  .btn-instagram { background: linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); }
+
+  .btn-review svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px 0;
+    color: var(--text-light);
+    font-size: 12px;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    border-top: 1px solid var(--gray-border);
+  }
+
+  .btn-contact {
+    display: block;
+    width: 100%;
+    padding: 13px;
+    background: #fff;
+    border: 2px solid var(--red);
+    color: var(--red);
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .btn-contact:hover { background: var(--red); color: #fff; }
+
+  /* ── Feedback form ── */
+  .field-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .required-badge {
+    font-size: 10px;
+    background: var(--red);
+    color: #fff;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+
+  /* Mini stars (feedback form) */
+  .mini-stars { display: flex; gap: 6px; margin-bottom: 18px; }
+  .mini-star {
+    font-size: 28px;
+    cursor: pointer;
+    color: #ddd;
+    line-height: 1;
+    transition: color 0.1s;
+    user-select: none;
+  }
+  .mini-star.on { color: #f5a623; }
+
+  /* Categories */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  .chip {
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--gray-border);
+    background: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .chip.selected {
+    background: var(--red);
+    border-color: var(--red);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  /* Textarea */
+  textarea {
+    width: 100%;
+    border: 1.5px solid var(--gray-border);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 90px;
+    outline: none;
+    transition: border-color 0.15s;
+    margin-bottom: 18px;
+  }
+
+  textarea:focus { border-color: var(--red); }
+
+  /* Manager toggle */
+  .toggle-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .toggle-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1.5px solid var(--gray-border);
+    background: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .toggle-btn.selected-yes {
+    background: #e8f5e9;
+    border-color: #43a047;
+    color: #2e7d32;
+  }
+
+  .toggle-btn.selected-no {
+    background: #fce4e4;
+    border-color: var(--red);
+    color: var(--red-dark);
+  }
+
+  /* WhatsApp button */
+  .btn-wa {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 15px;
+    background: var(--green-wa);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s, transform 0.1s;
+    margin-top: 4px;
+  }
+
+  .btn-wa:hover { background: var(--green-wa-dark); }
+  .btn-wa:active { transform: scale(0.98); }
+
+  .btn-wa svg { width: 22px; height: 22px; }
+
+  .btn-submit-only {
+    width: 100%;
+    padding: 13px;
+    background: var(--red);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: background 0.15s;
+  }
+
+  .btn-submit-only:hover { background: var(--red-dark); }
+
+  /* Error hint */
+  .error-hint {
+    font-size: 12px;
+    color: var(--red);
+    margin-top: -14px;
+    margin-bottom: 14px;
+    display: none;
+  }
+
+  /* Back link */
+  .back-link {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--text-light);
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+    margin-bottom: 20px;
+  }
+  .back-link:hover { color: var(--red); }
+
+  /* Thank you screen */
+  .thank-icon { font-size: 52px; text-align: center; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <!-- Header -->
+  <div class="header">
+    <img src="https://innovahomecenter.com/wp-content/uploads/2023/10/logo-innova-min_9f4ec2788631e6699697b55ae0d16c2c.png"
+         alt="Innova Home Center"
+         style="height:52px; width:auto; display:block; margin:0 auto;">
+  </div>
+
+  <!-- ══ SCREEN 1: Landing ══ -->
+  <div class="screen active" id="screen-landing">
+    <div class="screen__title">Tu opinión es muy<br>importante para nosotros.</div>
+    <p class="screen__sub">Gracias por elegirnos. ¿Cómo calificarías tu experiencia con Innova Home Center?</p>
+
+    <div class="stars-row" id="landing-stars">
+      <button class="star-btn" data-v="1">★</button>
+      <button class="star-btn" data-v="2">★</button>
+      <button class="star-btn" data-v="3">★</button>
+      <button class="star-btn" data-v="4">★</button>
+      <button class="star-btn" data-v="5">★</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 2: Positive — review platforms ══ -->
+  <div class="screen" id="screen-positive">
+    <button class="back-link" onclick="goBack('screen-landing')">← Volver</button>
+    <div class="screen__title">¡Nos alegra mucho! 🎉</div>
+    <p class="screen__sub">¿Nos ayudarías compartiendo tu experiencia en una de estas plataformas?</p>
+
+    <a class="btn-review btn-google"
+       href="https://g.page/r/CVWPuivcwYL7EAI/review"
+       target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="white"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Escribe tu Opinión en Google
+    </a>
+
+  </div>
+
+  <!-- ══ SCREEN 3: Negative — feedback form ══ -->
+  <div class="screen" id="screen-feedback">
+    <button class="back-link" onclick="goBack('screen-landing')">← Volver</button>
+    <div class="screen__title">Queremos mejorar</div>
+    <p class="screen__sub">Cuéntanos qué pasó para poder atenderte mejor.</p>
+
+    <!-- Rating -->
+    <div class="field-label">Tu Calificación <span class="required-badge">Obligatorio</span></div>
+    <div class="mini-stars" id="form-stars">
+      <span class="mini-star" data-v="1">★</span>
+      <span class="mini-star" data-v="2">★</span>
+      <span class="mini-star" data-v="3">★</span>
+      <span class="mini-star" data-v="4">★</span>
+      <span class="mini-star" data-v="5">★</span>
+    </div>
+
+    <!-- Categories -->
+    <div class="field-label">Tuve problemas con <span class="required-badge">Obligatorio</span></div>
+    <div class="chips" id="chips">
+      <div class="chip" data-v="Producto">Producto</div>
+      <div class="chip" data-v="Instalación">Instalación</div>
+      <div class="chip" data-v="Servicio al Cliente">Servicio al Cliente</div>
+      <div class="chip" data-v="Tiempo de Entrega">Tiempo de Entrega</div>
+      <div class="chip" data-v="Cotización">Cotización</div>
+      <div class="chip" data-v="Otro">Otro</div>
+    </div>
+    <div class="error-hint" id="err-chips">Por favor selecciona al menos una categoría.</div>
+
+    <!-- Experience -->
+    <div class="field-label">Cuéntanos tu experiencia <span class="required-badge">Obligatorio</span></div>
+    <textarea id="experience" placeholder="Describe qué pasó…" rows="4"></textarea>
+    <div class="error-hint" id="err-exp">Por favor describe tu experiencia.</div>
+
+    <!-- Manager contact -->
+    <div class="field-label">¿Quieres que el Manager se comunique contigo directamente?</div>
+    <div class="toggle-row">
+      <button class="toggle-btn" id="btn-yes" onclick="setContact(true)">Sí</button>
+      <button class="toggle-btn" id="btn-no" onclick="setContact(false)">No</button>
+    </div>
+
+    <!-- Name (shown if yes) -->
+    <div id="contact-fields" style="display:none">
+      <div class="field-label">Tu nombre</div>
+      <textarea id="contact-name" placeholder="Ej: María González" rows="1" style="min-height:44px; resize:none; margin-bottom:18px;"></textarea>
+    </div>
+
+    <!-- Action button — changes based on contact choice -->
+    <a id="btn-wa-action" class="btn-wa" href="#" onclick="handleSubmit(event)">
+      <svg viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12.002 0C5.373 0 0 5.373 0 12.002c0 2.117.554 4.107 1.523 5.837L.057 23.997l6.306-1.452A11.955 11.955 0 0012.002 24C18.63 24 24 18.628 24 12.002 24 5.373 18.629 0 12.002 0zm0 21.818a9.814 9.814 0 01-5.007-1.374l-.36-.213-3.722.857.888-3.63-.234-.373A9.818 9.818 0 012.182 12c0-5.415 4.405-9.818 9.82-9.818 5.415 0 9.818 4.403 9.818 9.818 0 5.415-4.403 9.818-9.818 9.818z"/></svg>
+      Hablar con el Manager por WhatsApp
+    </a>
+  </div>
+
+  <!-- ══ SCREEN 4: Thank you ══ -->
+  <div class="screen" id="screen-thanks">
+    <div class="thank-icon">🙏</div>
+    <div class="screen__title" style="text-align:center">¡Gracias por tu opinión!</div>
+    <p class="screen__sub" style="text-align:center;margin-top:8px">Tu retroalimentación nos ayuda a mejorar cada día. Nos pondremos en contacto contigo pronto.</p>
+  </div>
+</div>
+
+<script>
+  // ── Config ──────────────────────────────────────────────────
+  const WA_NUMBER = '50688475571'; // +506 8847-5571
+  const BUSINESS  = 'Innova Home Center';
+  const GOOGLE_REVIEW_URL = 'https://g.page/r/CVWPuivcwYL7EAI/review';
+  // ────────────────────────────────────────────────────────────
+
+  document.querySelector('.btn-google').href = GOOGLE_REVIEW_URL;
+
+  let selectedRating = 0;
+  let formRating     = 0;
+  let wantsContact   = null;
+
+  // ── Landing stars ────────────────────────────────────────────
+  const landingStars = document.querySelectorAll('#landing-stars .star-btn');
+
+  landingStars.forEach(btn => {
+    btn.addEventListener('mouseenter', () => highlightStars(landingStars, +btn.dataset.v));
+    btn.addEventListener('mouseleave', () => highlightStars(landingStars, selectedRating));
+    btn.addEventListener('click', () => {
+      selectedRating = +btn.dataset.v;
+      highlightStars(landingStars, selectedRating);
+      setTimeout(() => {
+        if (selectedRating >= 4) {
+          showScreen('screen-positive');
+        } else {
+          formRating = selectedRating;
+          highlightMiniStars(formRating);
+          showScreen('screen-feedback');
+        }
+      }, 250);
+    });
+  });
+
+  function highlightStars(stars, n) {
+    stars.forEach(s => s.classList.toggle('selected', +s.dataset.v <= n));
+  }
+
+  // ── Form mini-stars ───────────────────────────────────────────
+  const miniStars = document.querySelectorAll('#form-stars .mini-star');
+  miniStars.forEach(s => {
+    s.addEventListener('click', () => {
+      formRating = +s.dataset.v;
+      highlightMiniStars(formRating);
+    });
+  });
+
+  function highlightMiniStars(n) {
+    miniStars.forEach(s => s.classList.toggle('on', +s.dataset.v <= n));
+  }
+
+  // ── Chips ─────────────────────────────────────────────────────
+  const chips = document.querySelectorAll('#chips .chip');
+  chips.forEach(c => c.addEventListener('click', () => c.classList.toggle('selected')));
+
+  function selectedChips() {
+    return [...chips].filter(c => c.classList.contains('selected')).map(c => c.dataset.v);
+  }
+
+  // ── Manager contact toggle ─────────────────────────────────────
+  function setContact(val) {
+    wantsContact = val;
+    document.getElementById('btn-yes').className = 'toggle-btn' + (val ? ' selected-yes' : '');
+    document.getElementById('btn-no').className  = 'toggle-btn' + (!val ? ' selected-no' : '');
+    document.getElementById('contact-fields').style.display = val ? 'block' : 'none';
+    updateActionBtn();
+  }
+
+  function updateActionBtn() {
+    const btn = document.getElementById('btn-wa-action');
+    if (wantsContact === false) {
+      btn.outerHTML = `<button class="btn-submit-only" onclick="submitNoContact()">Enviar Opinión</button>`;
+    }
+  }
+
+  // ── Submit ─────────────────────────────────────────────────────
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!validate()) return;
+
+    const cats  = selectedChips().join(', ');
+    const exp   = document.getElementById('experience').value.trim();
+    const name  = document.getElementById('contact-name')?.value.trim() || '';
+    const stars = '★'.repeat(formRating) + '☆'.repeat(5 - formRating);
+
+    const msg = [
+      `Hola, tengo un comentario sobre *${BUSINESS}* que quisiera reportar directamente.`,
+      '',
+      `*Calificación:* ${stars} (${formRating}/5)`,
+      `*Problema con:* ${cats}`,
+      `*Mi experiencia:* ${exp}`,
+      name ? `*Cliente:* ${name}` : '',
+      `*Negocio:* ${BUSINESS}`,
+    ].filter(l => l !== null && l !== undefined).join('\n');
+
+    window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+    showScreen('screen-thanks');
+  }
+
+  function submitNoContact() {
+    if (!validate()) return;
+    showScreen('screen-thanks');
+  }
+
+  function validate() {
+    let ok = true;
+    const cats = selectedChips();
+    const exp  = document.getElementById('experience').value.trim();
+    const errChips = document.getElementById('err-chips');
+    const errExp   = document.getElementById('err-exp');
+
+    errChips.style.display = cats.length === 0 ? 'block' : 'none';
+    errExp.style.display   = exp.length === 0 ? 'block' : 'none';
+
+    if (cats.length === 0 || exp.length === 0) ok = false;
+    return ok;
+  }
+
+  // ── Navigation ────────────────────────────────────────────────
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  function goBack(id) {
+    showScreen(id);
+  }
+</script>
+</body>
+</html>

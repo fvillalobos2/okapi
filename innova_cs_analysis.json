@@ -1,0 +1,1292 @@
+{
+  "generated_at": "2026-06-26T14:32:38.960362",
+  "stats": {
+    "won_chats": 47,
+    "lost_chats": 46
+  },
+  "won": {
+    "productos_detectados": [
+      "Cortina para puerta de dormitorio",
+      "Cortinas",
+      "Cortinas (con herrajes)",
+      "Cortinas (tela/tergal)",
+      "Cortinas / persianas en general",
+      "Cortinas Arrollables",
+      "Cortinas Black Out",
+      "Cortinas Tergal",
+      "Cortinas Zebra",
+      "Cortinas personalizadas",
+      "Deck (piso exterior)",
+      "Deck/Piso exterior",
+      "Papel Tapiz",
+      "Papel tapiz",
+      "Papel tapiz (wallpaper)",
+      "Persiana arrollable blackout",
+      "Persiana con motor",
+      "Persiana sin motor (sistema manual)",
+      "Persianas",
+      "Persianas Blackout",
+      "Persianas Roller",
+      "Persianas arrollables",
+      "Persianas arrollables (screen)",
+      "Persianas arrollables blackout",
+      "Persianas black-out",
+      "Persianas blackout con rieles laterales",
+      "Piso SPC/Laminado",
+      "Piso vinílico",
+      "Pisos (curve/cuarto redondo)",
+      "Pisos (rodapié)",
+      "Rodapié",
+      "Tergal (tela de cortina/persiana)",
+      "Toldos",
+      "Toldos Verticales",
+      "Toldos retráctiles",
+      "Toldos retráctiles manuales",
+      "Toldos retráctiles motorizados",
+      "Toldos verticales"
+    ],
+    "funnel_por_producto": {
+      "Toldos": {
+        "apertura": "Cliente llena formulario web o contacta directamente indicando interés; CS responde con saludo formal y propone visita técnica",
+        "argumentos_clave": [
+          "Visita técnica sin costo para medición y asesoría",
+          "Descuento del 20% aplicable a pago en efectivo o transferencia",
+          "Cotización personalizada post-visita con asesor nombrado (Gerardo Chaves)",
+          "Flexibilidad para ajustar especificaciones técnicas (número de resortes, anclajes)",
+          "Coordinación interna entre CS y área de operaciones",
+          "Seguimiento activo por parte de CS meses después de cotización enviada",
+          "Descuento del 15% para pago en efectivo o transferencia",
+          "Descuento adicional del 5% aprobado por Gerencia con vigencia de 5 días para crear urgencia",
+          "Cotización en dólares con medidas exactas (ej: 'Toldo izquierdo 3.22m ancho x 3.25m alto')",
+          "Plazo claro de producción: '8 a 10 días hábiles para que le realicen la instalación'"
+        ],
+        "manejo_objeciones": [
+          "Atraso del asesor: 'El asesor estaría llegando en 10min es que tuvo un pequeño atraso'",
+          "Cliente redirige la gestión a otra persona interna ('Favor envie esto a Natalia Benavides, en JOROSA, ella está a cargo de este proyecto'): no hay respuesta documentada de CS al respecto en el chat",
+          "Consulta sobre medidas exactas: CS responde con especificaciones detalladas por paño ('Toldo izquierdo 3.22m ancho x 3.25m alto / Toldo derecho 3.34m ancho x 3.25m alto')",
+          "Solicitud de mayor descuento implícita: CS proactivamente ofrece 5% adicional 'conversando con Gerencia' sin esperar que el cliente lo pida"
+        ],
+        "como_se_cierra": "Cliente confirma con 'Si lo queremos contratar', CS solicita adelanto del 50% vía transferencia o depósito y envía datos bancarios",
+        "onboarding": [
+          "CS confirma recepción del adelanto del 50%",
+          "Se indica que operaciones contactará para coordinar instalación",
+          "CS confirma recepción del pago final",
+          "Seguimiento activo de estado de cuenta si hay saldo pendiente",
+          "CS deriva al cliente al encargado de operaciones con contacto directo: 'El compañero de operaciones Esteban Vargas es el encargado de esa área. Le facilito el contacto'",
+          "Seguimiento automático de cotización enviado meses después por Yessenia",
+          "Confirmación inmediata de recibo del pago: 'Le confirmo de recibido el adelanto del 50% de la cotización'",
+          "Coordinación de visita de instalación con fecha y hora específica",
+          "Solicitud de datos de facturación post-pago",
+          "Seguimiento de garantía: atención reactiva cuando se cae una persiana meses después"
+        ]
+      },
+      "Cortinas y Persianas": {
+        "apertura": "Cliente menciona casa nueva y necesidad de cortinas/persianas; CS responde ofreciendo visita de asesor sin costo",
+        "argumentos_clave": [
+          "Visita del asesor sin ningún costo",
+          "Descuento del 20% para pago en efectivo o transferencia",
+          "Múltiples opciones presentadas simultáneamente (Opción A: Arrollable + Tergal / Opción B: Zebra)",
+          "Urgencia táctica: 'Para poder proceder con la instalación para el miércoles o jueves requerimos la confirmación y el adelanto del 50% antes de medio día para iniciar la producción'",
+          "Recomendación boca a boca de vecinos del condominio como validación social",
+          "Visita sin costo al cliente",
+          "Instalación coordinada en 10 a 12 días hábiles tras adelanto",
+          "Asesor personalizado asignado por nombre: 'le estará atendiendo nuestro asesor Gerardo Chaves'"
+        ],
+        "manejo_objeciones": [
+          "Costo de visita: 'La visita no tiene ningún costo, podemos coordinar si gusta'",
+          "Solicitud de cambio de especificaciones (Black Out que abra desde el medio, Tergal de lado a lado): 'Si, en este caso le vamos a modificar la cotización'",
+          "No puedo entre semana: 'Si podemos coordinar para ese sábado 11 a las 8 a.m. ¿Le parece?'",
+          "¿Cómo funciona después del depósito?: 'Le confirmo de recibido vamos a procesar la orden y el compañero de operaciones le estará contactando para coordinar la instalación'"
+        ],
+        "como_se_cierra": "Cliente solicita ajuste de especificaciones técnicas; CS confirma modificación de cotización como señal de avance hacia el cierre",
+        "onboarding": [
+          "Recordatorio de visita el día anterior o la mañana del mismo día",
+          "Cotización enviada el mismo día de la visita",
+          "Opciones múltiples presentadas para facilitar decisión",
+          "Solicitud de adelanto del 50% con plazo límite para iniciar producción",
+          "CS confirma recepción del comprobante de pago",
+          "CS informa que operaciones contactará para coordinar instalación",
+          "Plazo de 10 a 12 días hábiles comunicado desde el inicio"
+        ]
+      },
+      "Papel Tapiz": {
+        "apertura": "CS inicia proactivamente enviando catálogo con colecciones, precios, descuento vigente del 15% y requerimientos técnicos antes de que el cliente pregunte. Luego pregunta: '¿En qué parte del país requeriría la visita?'",
+        "argumentos_clave": [
+          "Descuento del 15% vigente durante el mes para pago por transferencia o depósito",
+          "Beneficio adicional de 5% aprobado por gerencia con vigencia de 5 días: 'Gerencia nos aprobó un beneficio adicional del 5% sobre su cotización anterior, válido por los próximos 5 días'",
+          "Visita sin costo: 'No, la visita no tiene ningún costo'",
+          "Cotización detallada por área visitada",
+          "Respuesta rápida redirigiendo a canal correcto: 'Le hemos enviado la información al otro chat'"
+        ],
+        "manejo_objeciones": [
+          "¿La visita tiene algún costo? (preguntado 2 veces): 'No, la visita no tiene ningún costo'",
+          "Confusión en cotización con ítem 'Sin Instalación': CS explica desglose ítem por ítem y envía imagen aclaratoria",
+          "Cliente pregunta por total de instalación: CS desglosa por pared y explica recargo por altura superior a 3.20m",
+          "Cliente no confirma pedido por trabajo de fontanería pendiente: CS acepta sin presionar: 'Perfecto, quedamos atentos!'"
+        ],
+        "como_se_cierra": "Tras seguimiento con descuento adicional de gerencia, cliente confirma intención de compra pero condiciona fecha a trabajo de fontanería. Venta marcada como WON con compromiso de aviso del cliente.",
+        "onboarding": [
+          "CS envía cotización revisada con descuento adicional",
+          "CS queda en espera activa de confirmación del cliente"
+        ]
+      },
+      "Cortinas (segundo pedido mismo cliente)": {
+        "apertura": "Cliente existente escribe de noche solicitando cotización adicional para dormitorio: 'Escribía para solicitar una cotización de la cortina que habíamos elegido para el cuarto'",
+        "argumentos_clave": [
+          "Reutilización de cotización previa modificada por habitación específica",
+          "Proceso de pago ya conocido por el cliente facilita cierre inmediato"
+        ],
+        "manejo_objeciones": [
+          "¿Qué debo poner en el detalle de la transferencia?: 'No, puede colocar el número de cotización nada más. Pero con sólo que nos adjunte el comprobante por este medio ya procesamos la orden'"
+        ],
+        "como_se_cierra": "Cliente indica que su novia está haciendo el depósito mientras conversa. Envía comprobante ese mismo día.",
+        "onboarding": [
+          "CS confirma recepción del segundo 50% final",
+          "CS confirma orden procesada y contacto de operaciones para instalación"
+        ]
+      },
+      "Piso vinílico": {
+        "apertura": "Cliente llega con cotización previa y pregunta por ajuste de precio (sin transporte); la venta ya estaba avanzada antes del chat registrado",
+        "argumentos_clave": [
+          "Flexibilidad para ajustar cotización según condiciones del cliente (sin transporte)",
+          "Tiempo de alistamiento claro: '48 horas a partir del adelanto'",
+          "Disponibilidad de retiro en bodega como alternativa a entrega"
+        ],
+        "manejo_objeciones": [
+          "Urgencia de entrega para día específico: CS consulta con operaciones y da fecha concreta de retiro ('puede pasar a retirarlo el jueves por la tarde después de 12md')",
+          "Olvido de especificar color: CS emite nueva cotización inmediatamente con el color indicado (rústico)"
+        ],
+        "como_se_cierra": "Cliente solicita datos bancarios, CS envía cuentas y cotización ajustada, cliente envía comprobante de pago y confirma retiro en bodega",
+        "onboarding": [
+          "CS confirma recepción del pago y notifica que operaciones coordinará la entrega/retiro",
+          "CS comparte contacto del encargado de operaciones al momento del retiro",
+          "Cliente consulta manual de instalación post-venta (área de mejora detectada: no existe manual disponible)"
+        ]
+      },
+      "Persianas": {
+        "apertura": "Visita técnica de medición en domicilio del cliente como primer paso formal; CS coordina fecha y hora, solicita ubicación física y pin de Google Maps/Waze",
+        "argumentos_clave": [
+          "Descuento del 20% aplicado para pago en efectivo o transferencia",
+          "Cotización enviada el mismo día de la visita técnica",
+          "Posibilidad de priorizar producción ante urgencia del cliente",
+          "Plazo estimado claro: '10 a 12 días hábiles a partir del adelanto del 50%'",
+          "Respuesta inmediata y coordinación ágil de visita (misma conversación)",
+          "Confirmación clara de fecha, hora y nombre del asesor",
+          "Seguimiento post-cotización personalizado con nombre del asesor de CS",
+          "Descuento del 20% para pago por transferencia o depósito bancario",
+          "Cotización en dólares enviada por correo tras visita del asesor",
+          "Asesor identificado por nombre: 'Le estará atendiendo nuestro asesor Gerardo Chaves'"
+        ],
+        "manejo_objeciones": [
+          "Cliente quiere pagar antes de la visita para acelerar producción: CS explica que primero deben confirmarse medidas y telas ('Se deben corroborar las medidas primero y escoger las telas')",
+          "Urgencia por viaje inminente: CS valida la urgencia y ofrece priorización ('Puede ser que estén listas en menos del tiempo estimado')",
+          "No se registran objeciones de precio en esta conversación",
+          "Horario de visita no disponible: CS ofrece alternativas inmediatas ('¿podría ser miércoles a las 7am?')",
+          "Pago de fin de semana sin respuesta: mensaje automático gestiona expectativa ('Nuestros Asesores le estarán remitiendo respuesta Sábado y Domingo en horas de la tarde')"
+        ],
+        "como_se_cierra": "CS envía cotización con descuento del 20% aplicado; cliente solicita datos bancarios de inmediato y transfiere el 50% el mismo día; saldo restante pagado antes de la instalación",
+        "onboarding": [
+          "CS confirma recepción del adelanto y notifica que operaciones coordinará la instalación",
+          "CS coordina fecha y hora de instalación considerando eventos o viajes del cliente",
+          "Seguimiento proactivo de CS para coordinar instalación según disponibilidad del cliente",
+          "Recordatorio de visita el día anterior o mañana del evento",
+          "Reconfirmación de hora con ajuste: '¿Es posible que el asesor pueda llegar a las 9:30am?'",
+          "Solicitud proactiva de información logística antes de la visita: '¿Para cuántas ventanas requiere cotizar persianas en la visita?'",
+          "Confirmación de pago: 'Le confirmo de recibido la cancelación. Muchas gracias!'",
+          "Emisión de factura a nombre del cliente coordinada con operaciones",
+          "Solicitud de reseña en Google 9 días después del cierre",
+          "Canal abierto para posventa: atención de garantía (persiana caída) ~9 meses después con diagnóstico por fotos y coordinación con técnico"
+        ]
+      },
+      "Persianas y Cortinas": {
+        "apertura": "CS contacta proactivamente al cliente que llegó por Facebook, ofreciendo opciones de fecha para visita técnica: 'Le escribo ya que nos contactó vía nuestro Facebook para coordinar una visita en Sabanilla'",
+        "argumentos_clave": [
+          "Visita técnica en domicilio como primer paso para cotizar",
+          "Descuento del 20% por pago en efectivo o transferencia aplicado directamente en cotización",
+          "Descuento adicional del 5% enviado en segunda cotización para estimular decisión",
+          "Cotización enviada en USD con detalle claro de totales"
+        ],
+        "manejo_objeciones": [
+          "Cliente pide visita en sábado: CS explica límite operativo ('Las visitas las realizamos de lunes a viernes apartir de las 7 a.m.') y ofrece alternativas de días entre semana",
+          "Cliente necesita tiempo para revisar cotización: CS responde 'Claro, quedamos atentos' sin presionar"
+        ],
+        "como_se_cierra": "Cliente solicita imprimir cotización para revisión final y confirma intención: 'solo espero q me lo impriman para revisarlo y les confirmo'. CS responde 'Claro, quedamos atentos'",
+        "onboarding": [
+          "Envío de cotización detallada post-visita técnica con múltiples archivos adjuntos",
+          "Segunda cotización con descuento adicional enviada al día siguiente para reforzar decisión"
+        ]
+      },
+      "Tergal (reemplazo de tela)": {
+        "apertura": "Cliente retorna años después para reemplazar producto instalado previamente: 'Me gustaría cotizar el reemplazo de un tergal que ustedes me instalaron hace 4 años'",
+        "argumentos_clave": [
+          "Reconocimiento del historial del cliente por nombre y dirección de instalación",
+          "Proceso simplificado: solo se reemplaza el tergal, no la instalación completa",
+          "Descuento del 20% válido por 30 días aplicado en cotización",
+          "Descuento aplica para transferencia, aclarado explícitamente: 'no aplica tarjeta ni tasa cero 3meses'"
+        ],
+        "manejo_objeciones": [
+          "Cliente consulta cómo funciona el proceso con instalación existente: CS aclara de forma directa y simple 'Si, sería reemplazar el tergal solamente'"
+        ],
+        "como_se_cierra": "Cliente confirma directamente vía WhatsApp: 'si me gustaría proceder'. CS solicita adelanto del 50% y envía datos bancarios",
+        "onboarding": [
+          "Confirmación de recibo del depósito del 50%",
+          "Pase de orden a producción inmediato",
+          "Coordinación de instalación a través del área de operaciones",
+          "Confirmación de dirección de instalación con datos históricos del cliente",
+          "Solicitud de reseña en Google post-instalación",
+          "Segundo recordatorio de reseña en Google enviado días después"
+        ]
+      },
+      "Cortinas": {
+        "apertura": "Confirmación de visita presencial con asesor nombrado (Gerardo Chaves), con hora y recordatorio el día de la cita",
+        "argumentos_clave": [
+          "Visita presencial con asesor que lleva muestras de tela",
+          "Cotización personalizada en dólares post-visita",
+          "Descuento del 15% por pago en efectivo o transferencia",
+          "Instalación incluida en el precio",
+          "Descuento del 20% para pago en efectivo o transferencia",
+          "Opción alternativa: Tasa Cero 3 meses (sin descuento)",
+          "Cotización incluye herrajes",
+          "Visita de asesor presencial para rectificación de medidas",
+          "Dos opciones de pago presentadas simultáneamente para facilitar decisión",
+          "Descuento del 20% por pago en efectivo o transferencia",
+          "Asesor lleva muestras físicas al domicilio",
+          "Cotización personalizada según visita realizada por el asesor"
+        ],
+        "manejo_objeciones": [
+          "¿Traiga todas las muestras de telas?: 'Si, el asesor lleva las muestras de tela'",
+          "¿Hay otra ventana para revisar también?: 'si, no hay problema usted le indica al asesor cuales serían para que las pueda medir todas'",
+          "¿Es incluido instalaciones?: 'Si, la instalación está incluida'",
+          "No tienen sala de exhibición: 'De momento no tenemos sala de exhibición, lo manejamos de forma virtual'",
+          "Duda sobre color/tela: Se coordina segunda visita del asesor con muestras físicas para el mismo día",
+          "Solo tiene efectivo disponible: Se acepta sin fricción y se ajusta el flujo al pago parcial (50% adelanto)",
+          "Cliente solicita cambio de fecha de visita: 'Claro, seria para el jueves a la 1:30 pm de la tarde' — se adapta sin fricción",
+          "No tienen sala de exhibición: 'Por esa razón el asesor le llevaría la muestra el lunes'",
+          "Cliente solo disponible ciertos días: CS ofrece múltiples opciones de horario incluyendo mismo día y fines de semana",
+          "Cliente solicita reprogramar visita: CS acepta sin fricción y reconfirma nueva fecha"
+        ],
+        "como_se_cierra": "El cliente confirma la cotización, CS envía cuentas bancarias de inmediato, cliente transfiere adelanto y CS confirma recibo y pasa a producción/instalación",
+        "onboarding": [
+          "Confirmación textual de recibo del pago: 'Le confirmo de recibido vamos a procesar la orden'",
+          "Aviso de que operaciones contactará para coordinar instalación",
+          "Envío de cupón de fidelidad $70 post-venta",
+          "Atención a problemas post-instalación (ej. bastones desprendidos) solicitando fotos para reporte",
+          "Solicitar segundo apellido para facturación",
+          "Informar que la factura electrónica se emite al cancelar el 50% restante",
+          "Indicar plazo de instalación: 8 a 10 días hábiles desde el adelanto",
+          "Confirmación de recibido del depósito",
+          "Solicitud de datos de facturación (nombre, cédula, dirección, correo, teléfono)",
+          "Emisión de factura"
+        ]
+      },
+      "Pisos (rodapié)": {
+        "apertura": "El cliente selecciona una opción de cotización múltiple: 'La primera, solo el cuarto, 340 dólares'",
+        "argumentos_clave": [
+          "Cotización modular: se puede cotizar solo una habitación",
+          "Descuento del 15% por pago en efectivo o transferencia",
+          "Notas claras sobre lo que NO incluye la cotización (rodapié separado)"
+        ],
+        "manejo_objeciones": [
+          "Rodapié no incluido: 'no se ha incluido rodapié, el cuál deberá ser suministrado e instalado por el cliente' — luego CS acepta gestionarlo igual cuando el cliente lo solicita"
+        ],
+        "como_se_cierra": "Cliente confirma cotización correcta, paga adelanto, luego paga saldo final al confirmar instalación del rodapié",
+        "onboarding": [
+          "Confirmación de recibo de cada pago parcial",
+          "Coordinación de instalación del rodapié como segunda fase",
+          "Cliente retorna al año siguiente con nueva necesidad (papel tapiz), demostrando fidelización"
+        ]
+      },
+      "Papel tapiz": {
+        "apertura": "Cliente inicia con consulta desde enlace web o pregunta directa por producto; CS responde con catálogo visual, precio por rollo y cobertura en m²",
+        "argumentos_clave": [
+          "Precio desde $145 por rollo (5 m²)",
+          "15% de descuento vigente en el mes",
+          "Dos vías de avance: enviar medidas o coordinar visita",
+          "Información proactiva sobre consideraciones técnicas (nivelado, humedad)",
+          "Descuento del 15% por pago por transferencia o depósito bancario",
+          "Fecha de llegada de pedido específica: 'entre 3 y 4 de julio'",
+          "Urgencia por stock limitado: 'Hay muy poca cantidad de los mismos, por lo que agradecemos su confirmación para evitar que se acabe alguno de ellos'",
+          "Instalación incluida en cotización (o flexible si el cliente la maneja aparte)"
+        ],
+        "manejo_objeciones": [
+          "¿Cuál me sirve para limpiar con niños (humedad)?: 'El papel tapiz que manejamos no puede estar expuesto a humedad o agua / Por lo que no se podría limpiar' — honestidad directa aunque implica perder la venta puntual",
+          "¿No tienen tipo vinílico?: 'No, de ese tipo no manejamos' — respuesta directa sin ofrecer alternativa",
+          "Atrasos y demoras en instalaciones previas: 'Esto se debe a la fecha que se realiza pedido, puede variar la fecha de llegada de papel tapiz e instalación, vamos a consultar en un momento le estaremos dando fecha aproximada con mucho gusto'",
+          "Duda sobre si la instalación está incluida: 'La cotización enviada incluye la instalación... Pero podemos quitar la instalación si así lo requieren'",
+          "Solicitud de agilizar proceso: se da fecha concreta de pedido (viernes), llegada (3-4 julio) e instalación (semana del 7 julio)"
+        ],
+        "como_se_cierra": "Cliente proporciona medidas y zona, CS solicita nombre completo y correo para formalizar presupuesto — conversación aún en curso al momento del análisis",
+        "onboarding": [
+          "Aclaración de condiciones técnicas antes del cierre (superficie nivelada, sin humedad)",
+          "Alerta sobre tiempos de pedido si diseño no está en inventario local (20-25 días)",
+          "Confirmación de fechas de instalación post-pago",
+          "Coordinación de instalación por el mismo canal de WhatsApp",
+          "Ajuste de cotización si el cliente decide no incluir instalación",
+          "Seguimiento interno con el equipo de operaciones"
+        ]
+      },
+      "Persianas arrollables (screen)": {
+        "apertura": "Visita técnica previa por asesor (Gerardo Chaves), seguida de envío de cotización personalizada con descuento ya aplicado",
+        "argumentos_clave": [
+          "Descuento del 20% aplicado para pago por transferencia o depósito bancario",
+          "Cotización en dólares con total claro al final del documento",
+          "Confirmación de que se tienen las medidas exactas tomadas en visita",
+          "Flexibilidad en fecha de instalación: 'No hay problema voy a indicarle a mi compañero de operaciones'"
+        ],
+        "manejo_objeciones": [
+          "¿Existe la posibilidad de hacerlo esta semana?: CS responde con disponibilidad implícita adjuntando documentos de seguimiento",
+          "¿Habría problema si pido que lleguen a instalar por ahí del 15 de abril?: 'No hay problema voy a indicarle a mi compañero de operaciones'"
+        ],
+        "como_se_cierra": "El cliente solicita la cuenta bancaria para depositar el 50%, CS envía datos bancarios y confirma: 'Le confirmo de recibido, vamos a procesar la orden y el compañero de operaciones le estará contactando para coordinar la instalación'",
+        "onboarding": [
+          "Confirmación de recibo del depósito del 50%",
+          "Solicitud de ubicación de Google Maps o Waze para coordinar instalación",
+          "Solicitud de correo electrónico del cliente",
+          "Compañero de operaciones contacta para coordinar fecha y hora de instalación",
+          "Confirmación del segundo 50% tras instalación exitosa",
+          "Envío de cupón de fidelidad de $50 a clientes recurrentes"
+        ]
+      },
+      "Papel tapiz (wallpaper)": {
+        "apertura": "Cliente inicia con consulta inbound por WhatsApp solicitando información de producto específico (tono, textura, uso en alto tráfico, vida útil, garantía y servicio de instalación)",
+        "argumentos_clave": [
+          "Envío inmediato de catálogos visuales",
+          "Precio transparente: '$200 por rollo (solo material), cubre unos 5m2'",
+          "Instalación incluida como servicio adicional: '$60 por rollo dentro del GAM'",
+          "Adaptación a la realidad del cliente: cuando instalación no aplica (Puntarenas), se ofrece solo material"
+        ],
+        "manejo_objeciones": [
+          "Cliente fuera del GAM (Puntarenas): 'En este caso se le cotizaría solamente material para que pueda valorarlo, ya que la instalación la realizamos solamente en zonas dentro del área Metropolitana ¿le parece para enviarle el presupuesto de esa manera?'"
+        ],
+        "como_se_cierra": "Cliente aprueba cotización solo de material y confirma: 'Si esta bien. Si quisiéramos recibir el presupuesto'. CS envía cotización personalizada con medidas exactas facilitadas por el cliente.",
+        "onboarding": [
+          "Cotización enviada con nota explicativa de que fue calculada según las medidas facilitadas",
+          "Cotización en dólares con total al final del documento"
+        ]
+      },
+      "Cortinas / persianas (cliente recurrente)": {
+        "apertura": "Cliente recurrente retoma cotización enviada previamente (más de 1 año después) y confirma directamente sin negociar: 'Estoy de acuerdo con la cotización'",
+        "argumentos_clave": [
+          "Confianza generada en experiencia previa de compra",
+          "Descuento del 20% ya incluido en cotización para pago en efectivo o transferencia",
+          "Esquema de pago 50/50 ya conocido por el cliente: 'me imagino que le deposito el 50% y 50% cuando está instalado'"
+        ],
+        "manejo_objeciones": [],
+        "como_se_cierra": "Cliente confirma acuerdo con la cotización y solicita cuenta bancaria directamente. CS envía datos y confirma el adelanto del 50% para iniciar producción.",
+        "onboarding": [
+          "Confirmación de recibo del primer pago",
+          "Solicitud de datos de facturación separados para dos personas",
+          "Compañero de operaciones coordina instalación",
+          "Seguimiento post-cotización por Yessenia",
+          "Envío de cupón de fidelidad INNOVA de $50 con validez de 3 meses"
+        ]
+      },
+      "Piso SPC/Laminado": {
+        "apertura": "Cliente inicia con solicitud de cotización específica (producto, área y precio referencial). CS responde al día siguiente solicitando datos de contacto y ubicación.",
+        "argumentos_clave": [
+          "Descuento del 10% aplicable a pago en efectivo o transferencia",
+          "Visita presencial para corroborar medidas y mostrar muestras físicas",
+          "Múltiples opciones de color/referencia cotizadas simultáneamente (Alba, Polar, Makore)",
+          "Cotización final ajustada a medidas reales post-visita"
+        ],
+        "manejo_objeciones": [
+          "Cliente pregunta si ese es el mejor precio: CS responde directamente 'Si, ese sería el precio' sin ceder más descuento",
+          "Cliente indica preferencia por colores residenciales (evita Mediterráneo por ser comercial): CS acoge la observación y cotiza las opciones solicitadas"
+        ],
+        "como_se_cierra": "Tras la visita del asesor se envían múltiples opciones de cotización ajustadas a medidas reales. El cliente aprueba implícitamente al no objetar el precio final. El cierre formal no se captura en el chat pero el deal queda marcado WON.",
+        "onboarding": [
+          "Recordatorio de visita el día anterior: 'Le recordamos la visita de mañana con nuestro asesor'",
+          "Confirmación del nombre del asesor que visitará: 'Le estará visitando nuestro asesor Gerardo Chaves'",
+          "Envío de cotización post-visita con múltiples opciones diferenciadas por referencia y espacio"
+        ]
+      },
+      "Toldos Verticales": {
+        "apertura": "CS hace contacto proactivo saliente referenciando solicitud previa del cliente: 'Le escribo ya que nos contacto para coordinar una visita con nuestro asesor para cotizar toldos verticales.'",
+        "argumentos_clave": [
+          "Flexibilidad de horario adaptada al cliente ('Tengo problema de horario por mi trabajo...' → CS ajusta al miércoles a las 11am)",
+          "Proceso claro post-aprobación: adelanto del 50% para iniciar producción",
+          "Datos bancarios completos en múltiples monedas y bancos (BAC y BNCR en dólares)",
+          "Descuento del 20% para pago en efectivo o transferencia",
+          "Presentación de múltiples opciones para el mismo espacio",
+          "Cotización en dólares para proyectos de mayor envergadura"
+        ],
+        "manejo_objeciones": [
+          "Cliente no puede recibir visita al día siguiente por horario laboral: CS ofrece inmediatamente la alternativa del miércoles sin fricción",
+          "Cliente dice haber enviado comprobante por correo pero CS no lo encuentra: CS resuelve indicando que el pago ya fue registrado internamente y procede sin exigir el documento: 'nos indican que no es necesario que nos comparta el comprobante de pago ya que se registró a la hora que llegó'"
+        ],
+        "como_se_cierra": "Cliente responde al seguimiento de cotización: 'ya revisé la cotización y estoy de acuerdo'. CS pregunta '¿desea proceder?' y el cliente confirma. CS envía instrucciones de pago y números de cuenta.",
+        "onboarding": [
+          "Instrucciones de pago detalladas: 'Para proceder solicitamos el adelanto del 50% del valor total de la cotización'",
+          "Agradecimiento formal: 'Le agradecemos la confianza depositada en INNOVA'",
+          "Seguimiento de comprobante de pago para liberar orden de producción",
+          "Confirmación de inicio de producción: 'Hemos colocado la orden en producción'",
+          "Confirmación de pago final recibido antes de entrega"
+        ]
+      },
+      "Persianas Roller": {
+        "apertura": "Coordinación de visita presencial para tomar medidas, solicitando datos completos del cliente (nombre, correo, dirección, ubicación GPS)",
+        "argumentos_clave": [
+          "Descuento del 10-15% para pago en efectivo o transferencia",
+          "Visita presencial gratuita para asesoría y toma de medidas",
+          "Cotización enviada el mismo día de la visita",
+          "Flexibilidad en detalles técnicos (ej: cambio de lado del control)"
+        ],
+        "manejo_objeciones": [
+          "Cliente pide otro horario: CS ofrece múltiples opciones alternativas (jueves 9am, viernes 1:30pm)",
+          "Cliente pregunta duración de visita: 'Dura de 15 a 20min'",
+          "Cliente nota error en cotización (control al lado equivocado): CS ajusta cotización de inmediato sin cuestionar"
+        ],
+        "como_se_cierra": "Cliente escribe espontáneamente 'Vamos a hacer las persianas', CS responde de inmediato con instrucciones de pago (50% adelanto) y cuentas bancarias",
+        "onboarding": [
+          "Confirmación de recepción del pago del adelanto",
+          "Notificación de que operaciones coordinará la instalación",
+          "Confirmación de recepción del pago final",
+          "Atención postventa inmediata ante defectos (lámina al revés): solicitud de fotos y escalado a operaciones",
+          "Solicitud de reseña en Google post-instalación"
+        ]
+      },
+      "Persianas Blackout": {
+        "apertura": "Cliente recurrente (ya compró antes) contacta directamente con medidas e imágenes desde el inicio; CS califica con preguntas técnicas antes de cotizar",
+        "argumentos_clave": [
+          "Descuento del 20% para pago por transferencia o depósito",
+          "Cotización inicial remota basada en medidas del cliente",
+          "Opción de visita presencial para rectificación de medidas y presupuesto final",
+          "Reconocimiento implícito del historial del cliente"
+        ],
+        "manejo_objeciones": [
+          "Cliente duda si necesitan visita: CS ofrece cotización inicial remota y luego propone visita para afinar",
+          "Cliente envía roller deteriorado como referencia: CS lo usa para entender el producto deseado"
+        ],
+        "como_se_cierra": "CS envía cotización inicial con descuento aplicado y hace seguimiento 8 días después con mensaje personalizado de Yessenia",
+        "onboarding": [
+          "Seguimiento proactivo a los 8 días: '¿Hay algún detalle que quiera aclarar o ajustar antes de continuar?'"
+        ]
+      },
+      "Persiana arrollable blackout (venta presencial con visita)": {
+        "apertura": "Visita presencial coordinada por asesor (Gerardo Chaves), seguida de cotización enviada por WhatsApp el mismo día de la visita",
+        "argumentos_clave": [
+          "Descuento del 15% para pago en efectivo o transferencia",
+          "Cotización en dólares con total claro al final del documento",
+          "Instalación incluida en el precio de la cotización",
+          "Flexibilidad para cotizar por fases (primero lo urgente, luego el resto)"
+        ],
+        "manejo_objeciones": [
+          "Cliente no puede a la hora coordinada: 'Esta bien, después de las 10am / No hay problema'",
+          "Cliente quiere reducir alcance por presupuesto: Se emite cotización parcial sin fricciones (solo puerta dormitorio, sistema manual)",
+          "Cliente pregunta si instalación es aparte: 'Si, la cotización incluye la instalación'"
+        ],
+        "como_se_cierra": "Cliente solicita número de cuenta directamente ('Ud me podría pasar el número de cuenta por favor'), CS envía datos bancarios de inmediato, cliente hace depósito del 50% y envía comprobante",
+        "onboarding": [
+          "CS confirma recepción del pago: 'Le confirmo de recibido, vamos a procesar la orden'",
+          "Se informa que operaciones contactará para coordinar instalación",
+          "Seguimiento post-venta por WhatsApp para confirmar fecha de instalación",
+          "Atención de garantía/soporte técnico cuando el producto presenta fallas (solicitud de foto/video del problema)"
+        ]
+      },
+      "Persiana arrollable blackout (venta remota sin instalación)": {
+        "apertura": "Cliente inicia con medidas específicas (203cm x 220cm) y solicitud directa de cotización por WhatsApp",
+        "argumentos_clave": [
+          "Descuento del 20% para pago en efectivo o transferencia",
+          "Flexibilidad de retiro en tienda o envío por encomienda",
+          "Envío de catálogo fotográfico de colores de tela disponibles",
+          "Confirmación visual del color elegido por el cliente antes de producir"
+        ],
+        "manejo_objeciones": [
+          "Cliente en zona sin cobertura de instalación: 'En este caso se le realizaría el envío del producto sin la instalación, ya que a esa zona no ofrecemos el servicio de instalación'",
+          "Cliente sugiere envío por bus: 'Por medio de sistema de autobús no realizamos envíos por seguridad de la persiana... realizamos envíos solo por medio de servicio únicamente de encomiendas'"
+        ],
+        "como_se_cierra": "Cliente confirma color, CS envía cotización final con instrucciones de pago (50% adelanto, 50% antes del envío) y solicita dirección exacta; cliente deposita y envía comprobante",
+        "onboarding": [
+          "Confirmación de recepción del pago",
+          "Operaciones coordina fecha de entrega",
+          "Solicitud de dirección física exacta para encomienda"
+        ]
+      },
+      "Deck": {
+        "apertura": "Cliente contacta desde landing page con link específico del producto; CS responde con brochure, precios desglosados y opciones de visita",
+        "argumentos_clave": [
+          "Precio transparente por m2: '$115 – 10%: $103.50'",
+          "Instalación cotizada por separado: '$22 por m2'",
+          "Posibilidad de estructura en perling cotizada aparte",
+          "Visita del asesor para rectificar medidas antes de cotización final",
+          "Descuento del 10% durante el mes vigente",
+          "Precio por m2 claramente indicado: $103.50m2",
+          "Especificaciones técnicas detalladas (medidas de láminas, espesor)",
+          "Flexibilidad para asegurar precio con adelanto aunque la instalación sea meses después",
+          "Posibilidad de programar instalación según disponibilidad del cliente"
+        ],
+        "manejo_objeciones": [
+          "Cliente quiere martes en la tarde (no disponible): CS ofrece martes 8:00am o viernes 7:30am como alternativas concretas",
+          "Cliente quiere cotizar producto adicional (toldo retráctil): CS incorpora ambos productos en la misma visita sin fricción",
+          "Cliente fuera del país y necesita tiempo para decidir: CS acepta esperar y retoma el lunes siguiente",
+          "Casa no entregada por 3 meses: CS ofrece asegurar cotización con adelanto y programar instalación cuando el cliente avise con 22 días de anticipación",
+          "Cliente con agenda ocupada para visita de selección de telas: CS ofrece mismo día tarde, mañana o sábado, acepta reprogramación sin fricción"
+        ],
+        "como_se_cierra": "Conversación termina en confirmación de visita; el cierre económico no es visible en el chat pero el deal está marcado como WON",
+        "onboarding": [
+          "Confirmación de visita con nombre del asesor, fecha y hora exacta: 'Le confirmo la visita del asesor Gerardo Chaves para el martes 14 de mayo a las 8:00a.m.'",
+          "Confirmar recibo del adelanto",
+          "Rectificación de medidas previo a instalación",
+          "Operaciones coordina fecha de instalación con 22 días de anticipación",
+          "Seguimiento post-instalación para recibir saldo pendiente",
+          "Solicitud de reseña en Google post-instalación"
+        ]
+      },
+      "Persianas black-out": {
+        "apertura": "Cliente envía fotos del espacio, indica zona geográfica, tipo de persiana deseada y correo electrónico",
+        "argumentos_clave": [
+          "Descuento del 20% para pago en efectivo o transferencia",
+          "Pre-cotización inmediata con medidas aproximadas proporcionadas por el cliente",
+          "Visita de asesor (Gerardo Chaves) para rectificación de medidas y cotización final",
+          "Recordatorio de visita enviado el día anterior"
+        ],
+        "manejo_objeciones": [
+          "Solicitud de servicio no ofrecido (limpieza de persianas): 'No, servicio de limpieza de persianas no ofrecemos' + honestidad sobre no poder recomendar a nadie",
+          "Solicitud de servicio no ofrecido (puertas corredizas): 'Puertas corredizas no manejamos' + envío inmediato de catálogo de persianas para mantener engagement"
+        ],
+        "como_se_cierra": "Cliente envía comprobante de pago (archivo adjunto) el día siguiente a la cotización post-visita; venta cerrada en 5 días desde el primer contacto",
+        "onboarding": [
+          "Confirmar recepción del pago",
+          "Indicar que operaciones contactará para coordinar instalación",
+          "Solicitar segundo apellido y datos para facturación electrónica (nombre empresa, cédula jurídica, correo, teléfono, dirección)",
+          "Enviar solicitud de reseña en Google 9 días después de la venta"
+        ]
+      },
+      "Pisos y Rodapié": {
+        "apertura": "Cliente existente (post-instalación) contacta por faltante en su pedido de piso y consulta adicional sobre rodapié",
+        "argumentos_clave": [
+          "Resolución proactiva del faltante de piso sin fricción",
+          "Cotización inmediata de rodapié con imagen del producto",
+          "Disponibilidad confirmada en color específico solicitado (perla)",
+          "Eliminación espontánea del costo de transporte: 'no se le va a cobrar el transporte para llevarles el rodapié hasta la casa'"
+        ],
+        "manejo_objeciones": [
+          "Cliente quería recoger el producto para evitar costo de envío: CS elimina el costo de envío proactivamente ('no se le va a cobrar el transporte'), acelerando el cierre inmediato"
+        ],
+        "como_se_cierra": "Cliente responde 'Ayy que bueno muchísimas gracias!! Ya le transfiero!' y envía comprobante de pago en menos de 30 minutos tras eliminar la barrera del costo de envío",
+        "onboarding": [
+          "Confirmar recepción del pago",
+          "Indicar que operaciones coordinará la entrega",
+          "Emitir factura",
+          "Enviar solicitud de reseña en Google 4 días después"
+        ]
+      },
+      "Persianas arrollables": {
+        "apertura": "CS inicia ofreciendo descuento del 20% del mes o responde a urgencia del cliente confirmando recepción y procesamiento inmediato de orden",
+        "argumentos_clave": [
+          "Descuento del 20% aplicado directamente en la cotización (no hay que negociarlo)",
+          "Descuento válido por 30 días para generar urgencia",
+          "Pago por transferencia como condición para el descuento",
+          "Plazo de instalación claro: 9 a 11 días hábiles desde el adelanto",
+          "Visita previa gratuita con asesor nombrado (Gerardo Chaves)"
+        ],
+        "manejo_objeciones": [
+          "Cliente pide descuento adicional: 'El costo de la cotización enviada se mantiene, ese sería el costo final'",
+          "Cliente pregunta si el descuento ya está aplicado: 'el 20% ya está aplicado en la cotización enviada por lo que $808,36 sería el costo final'",
+          "Cliente no puede en el horario propuesto: CS ofrece alternativa inmediata dentro del mismo día o siguiente disponible",
+          "Cliente pregunta monto exacto del adelanto: CS confirma el 50% con cifra exacta '$763,25'"
+        ],
+        "como_se_cierra": "Cliente solicita número de cuenta → CS responde con datos bancarios completos → Cliente transfiere y envía comprobante → CS confirma recibido y anuncia contacto de operaciones para coordinar instalación",
+        "onboarding": [
+          "CS confirma recepción del adelanto por escrito",
+          "CS informa que operaciones contactará para coordinar instalación",
+          "CS envía archivo adjunto (probablemente orden de producción o recibo)",
+          "Operaciones contacta directamente al cliente con nombre y datos del encargado",
+          "CS confirma recepción del saldo final",
+          "CS envía solicitud de reseña en Google 1-2 días después de la instalación"
+        ]
+      },
+      "Toldos verticales": {
+        "apertura": "Se cotiza junto con persianas arrollables tras visita del asesor; se adjunta cotización separada por producto",
+        "argumentos_clave": [
+          "Descuento del 20% aplicado en cotización",
+          "Cotización separada por tipo de producto permite al cliente elegir solo lo que necesita",
+          "Visita presencial como punto de partida para cotización personalizada"
+        ],
+        "manejo_objeciones": [
+          "Cliente tiene dos cotizaciones y no especifica cuál pagar: CS pregunta proactivamente '¿cuál de las dos cotizaciones enviadas?' antes de procesar"
+        ],
+        "como_se_cierra": "Cliente indica interés en una de las cotizaciones específicas → CS confirma cuál aplica → Confirma adelanto recibido → Inicia proceso de producción",
+        "onboarding": [
+          "CS confirma recepción del adelanto",
+          "CS envía correo copiando a operaciones con datos del encargado (Esteban Vargas)",
+          "Se comunica plazo de instalación y requisito de presencia del cliente"
+        ]
+      },
+      "Cortinas y Persianas Arrollables Blackout": {
+        "apertura": "Cliente llega con necesidad definida (cotizar ventanas específicas) o revisando una cotización previa; CS agenda visita de medición o confirma materiales/colores",
+        "argumentos_clave": [
+          "Visita de asesor personalizado en domicilio (ej: 'Le estará atendiendo nuestro asesor Gerardo Chaves')",
+          "Descuento del 20% aplicado sobre cotización, válido por 30 días",
+          "Proceso claro: adelanto 50% → producción → coordinación de instalación",
+          "Envío de catálogos y fotos de materiales para confirmar colores antes de proceder",
+          "Posibilidad de ajustar cotización según necesidades del cliente (sin cenefas, cambios de último momento)"
+        ],
+        "manejo_objeciones": [
+          "Cliente pide cambio de hora de visita confirmada: 'No, hay problema. La visita queda a las 8:00a.m.'",
+          "Cliente duda sobre tono de color ('¿Es como blanco hueso o más gris?'): CS envía foto y describe 'Es como blanco hueso', ofrece alternativa 'Tergal Marfil' con catálogo",
+          "Cliente quiere modificar cotización post-visita: CS conecta directamente con el asesor ('le adjuntamos el número') y actualiza cotización sin fricción"
+        ],
+        "como_se_cierra": "Cliente confirma textualmente su decisión ('Hemos elegido la oferta de ustedes'), envía comprobante del 50% de adelanto vía WhatsApp y queda en espera de coordinación de instalación",
+        "onboarding": [
+          "CS confirma recibo del adelanto: 'Le confirmo de recibido, el compañero de operaciones le estará contactando para coordinar la fecha y hora de instalación'",
+          "Recordatorio de visita de instalación el día previo: 'Le recordamos la visita de mañana con nuestro asesor'",
+          "Envío de cotización actualizada post-instalación si hay segunda compra",
+          "Solicitud de reseña en Google post-instalación: 'Tu feedback es muy importante para nosotros. ¿Te tomarías un minuto para dejar una reseña en Google?'",
+          "Emisión de factura coordinada con contabilidad tras pago final"
+        ]
+      },
+      "Toldos Retráctiles": {
+        "apertura": "Cliente inicia pidiendo cotización directamente. CS responde en menos de 40 minutos con precios estándar, descuento activo del 10% y opciones de visita.",
+        "argumentos_clave": [
+          "Descuento del 10% vigente ese mes en manuales y motorizados",
+          "Precios escalonados por tamaño presentados claramente: $470 / $580 / $850",
+          "Medidas estándar ajustables a medida del cliente ('la medida de 3.95m ancho se puede ajustar a un ancho máximo de 3.30m')",
+          "Visita sin costo: 'la misma no tiene ningún costo'",
+          "Dos opciones de cotización post-visita (Opción A y Opción B) para facilitar decisión"
+        ],
+        "manejo_objeciones": [
+          "Cliente duda si hacen medidas intermedias: 'manejamos estas medidas estándar, la medida de 3.95m ancho se puede ajustar a un ancho máximo de 3.30m'",
+          "Obstáculo físico (canoa): CS no descarta, propone visita para evaluar in situ y entrega cotización ajustada a 3.28m"
+        ],
+        "como_se_cierra": "Post-visita se envían dos opciones de cotización con descuento aplicado y vigencia de 30 días. Cliente elige Opción B el mismo día. CS solicita 50% de adelanto e indica cuentas bancarias. Cliente transfiere y confirma pago.",
+        "onboarding": [
+          "CS confirma recepción del pago: 'Le confirmo de recibido, vamos a procesar la orden'",
+          "Se avisa que operaciones contactará para coordinar instalación",
+          "Recordatorio de segunda transferencia (saldo) confirmado por CS",
+          "Envío de comprobante/factura adjunta",
+          "Solicitud de reseña en Google post-instalación con link directo"
+        ]
+      },
+      "Persianas Blackout con Rieles Laterales": {
+        "apertura": "Cliente llega con problema específico (luz que se filtra) habiendo visto un video de Innova en redes. CS no vende producto genérico, sino que diagnostica la necesidad.",
+        "argumentos_clave": [
+          "Explicación técnica honesta del producto: 'su función es cubrir los costados y la parte inferior para que no se filtre la luz por esas áreas'",
+          "Identificación de que el cliente tiene 2 cuartos con el mismo problema = oportunidad de venta doble",
+          "Visita presencial propuesta para evaluar compatibilidad con persianas existentes de otro proveedor",
+          "Descuento del 15% en persianas aplicado post-visita"
+        ],
+        "manejo_objeciones": [
+          "Persianas instaladas por otro proveedor: CS no lo descarta, evalúa compatibilidad con rieles adicionales",
+          "No necesita cenefa: 'La cenefa no es necesario porque hay cortineo' — CS acepta y adapta solución"
+        ],
+        "como_se_cierra": "Visita coordinada mismo día del contacto. Post-visita se envía cotización con notas técnicas detalladas (costos condicionales por desinstalación, requerimiento de electricista). Conversación marcada como WON.",
+        "onboarding": [
+          "Cotización enviada con notas técnicas claras sobre costos adicionales posibles",
+          "Advertencia sobre necesidad de electricista del lado del cliente para empalmes",
+          "Nota sobre valoración previa antes de instalación para evitar sorpresas"
+        ]
+      }
+    },
+    "voz_y_tono": {
+      "formalidad": "mixto",
+      "emojis": [
+        "🎄🙌🏻: mensaje de cierre por vacaciones de fin de año",
+        "👍🏻: respuesta del cliente confirmando recepción (no usado por CS)",
+        "☺️: usado por el cliente para expresar satisfacción, no por CS",
+        "!: CS usa signos de exclamación para transmitir energía positiva: 'Con gusto, para servirle!', 'Perfecto, quedamos atentos!'",
+        "😊: mensajes de seguimiento automatizados y cierres cordiales",
+        "☺️: respuestas automáticas fuera de horario",
+        "😊: seguimiento amigable y mensajes de fidelización",
+        "🎄✨: felicitaciones navideñas institucionales",
+        "😊: mensajes de seguimiento, respuestas automáticas fuera de horario y cierres amigables",
+        "🤩: reacción positiva del cliente al recibir datos bancarios (usado por cliente, no CS)",
+        "😊: al enviar mensajes de seguimiento post-cotización",
+        "😊: al suavizar mensajes administrativos o de cobro",
+        "👍: usado por clientes para confirmar, no por CS",
+        "😊: en mensajes de seguimiento y mensajes automáticos fuera de horario",
+        "😊: saludo de bienvenida o cierre amigable",
+        "☃️🎅: mensaje de temporada (fiestas de fin de año)",
+        "🙏🏼: usado por cliente para agradecer o pedir algo con cortesía",
+        "😊: al inicio de mensajes de seguimiento o saludo ('Hola 😊!')",
+        "☺️: en mensajes automáticos de fuera de horario",
+        "☺️: en mensajes automáticos/bots de respuesta fuera de horario"
+      ],
+      "frases_cs": [
+        "Reciba un cordial saludo de parte de INNOVA",
+        "Estamos para servirle",
+        "Con gusto",
+        "Con mucho gusto",
+        "Esperando que el presupuesto esté dentro de sus expectativas",
+        "Hemos aplicado un descuento del 20% el cual aplica para pago en efectivo o transferencia",
+        "Se ha cotizado en US $. El total se muestra al final de la cotización",
+        "Cualquier consulta estamos para servirle",
+        "Le confirmo de recibido vamos a procesar la orden y el compañero de operaciones le estará contactando para coordinar la instalación",
+        "Nuestro compañero de operaciones le estará contactando para coordinar la instalación",
+        "Le adjunto los datos de las cuentas bancarias",
+        "Para confirmar la visita requerimos nos indique su nombre completo y correo electrónico, dirección física del lugar y la ubicación vía waze o Google map del lugar",
+        "Le estará visitando nuestro asesor Gerardo Chaves",
+        "Para poder proceder con la instalación para el miércoles o jueves requerimos la confirmación y el adelanto del 50% antes de medio día para iniciar la producción",
+        "Quedamos atentos",
+        "esperando que el presupuesto esté dentro de sus expectativas",
+        "Gerencia nos aprobó un beneficio adicional del 5% sobre su cotización anterior, válido por los próximos 5 días",
+        "Estamos listos para darle vida a su proyecto",
+        "Puede aprovecharlo para confirmar su pedido y asegurar la fecha de instalación",
+        "Buen día. Reciba un cordial saludo de parte de INNOVA",
+        "Le confirmo de recibido vamos a procesar la orden y el compañero de operaciones le estará contactando para coordinar la entrega",
+        "A partir del día que se realice el Adelanto son 48 horas para que se Aliste el pedido",
+        "Apartir del día que se realice el adelanto son de 10 a 12 días hábiles para que le realicen la instalación",
+        "Se deben corroborar las medidas primero y escoger las telas para enviarle la cotización",
+        "Puede ser que estén lista en menos del tiempo estimado",
+        "Claro, quedamos atentos",
+        "Esta bien. Comprendemos",
+        "Hemos aplicado un descuento adicional del 5% el cual aplica para pago en efectivo o transferencia",
+        "Le confirmo de recibido vamos a procesar la orden",
+        "El compañero de operaciones le estará contactando para coordinar la instalación",
+        "Vamos a ver la posibilidad que sea antes",
+        "Creamos espacios con alma, hechos a su medida.",
+        "¿Hay algún detalle que quiera aclarar o ajustar antes de continuar? Estoy disponible para cualquier duda que pueda tener.",
+        "Agradecemos su confianza.",
+        "Le compartimos la cotización solicitada, elaborada según la información que nos brindó."
+      ]
+    },
+    "objeciones": [
+      {
+        "cliente": "Yo llené el formulario de la página la semana pasada pero no me han contactado",
+        "cs": "Gracias por contactarnos le estaremos respondiendo sus consultas el día de Lunes. Estamos para servirle."
+      },
+      {
+        "cliente": "La visita del asesor tiene un monto?",
+        "cs": "La visita no tiene ningún costo, podemos coordinar si gusta."
+      },
+      {
+        "cliente": "Esque no me habían enviado la factura para saber cuanto era el monto, pues la cotización que me habían enviado al inicio era sin el lavado del toldo",
+        "cs": "Muchas gracias si gusta nos facilita la info para la factura y enviarsela una vez realizada la cancelación"
+      },
+      {
+        "cliente": "Yo lo que ocupaba es que el toldo tenga 3 anclajes de resorte en cada toldo / Es que me pusiste dos y un kit",
+        "cs": "Le adjuntamos la cotización con los dos kit de resorte (uno por cada toldo adicional)"
+      },
+      {
+        "cliente": "Queremos el Black Out que abra a los lados (desde el medio) y el tergal es el único que queremos que recoge de lado a lado, hay diferencia en precios?",
+        "cs": "Si, en este caso le vamos a modificar la cotización"
+      },
+      {
+        "cliente": "Vieras que por motivos de trabajo entre semana se nos complica. Podrá ser el sábado 11?",
+        "cs": "Si podemos coordinar para ese sábado 11 a las 8 a.m. ¿Le parece?"
+      },
+      {
+        "cliente": "La visita tiene algún costo?",
+        "cs": "No, la visita no tiene ningún costo"
+      },
+      {
+        "cliente": "¿Cómo qué sin instalación? / ¿El total de la instalación cuánto es?",
+        "cs": "Se le cotizó material e instalación para todas las áreas vistas en la visita [+ desglose detallado por pared e imagen aclaratoria]"
+      },
+      {
+        "cliente": "Se debe poner algo en especifico en el detalle de la transferencia",
+        "cs": "No, puede colocar el número de cotización nada más. Pero con sólo que nos adjunte el comprobante por este medio ya procesamos la orden"
+      },
+      {
+        "cliente": "Debo esperar a que realicen un trabajo de fontanería y luego le puedo informar para cuando haría la compra",
+        "cs": "Perfecto, quedamos atentos!"
+      },
+      {
+        "cliente": "¿A partir de este punto cómo funciona? ¿Debemos hacer algún otro trámite?",
+        "cs": "Le confirmo de recibido vamos a procesar la orden y el compañero de operaciones le estará contactando para coordinar la instalación. De momento ese sería el trámite."
+      },
+      {
+        "cliente": "Sería el valor de aquí pero sin el transporte de 55 dólares cierto?",
+        "cs": "Le adjunto la cotización sin el transporte [ajuste inmediato sin cuestionamiento]"
+      },
+      {
+        "cliente": "Y bueno me faltó decir el color, que es el rústico",
+        "cs": "Le adjunto la cotización con el color escogido [nueva cotización emitida de inmediato]"
+      },
+      {
+        "cliente": "Es posible que realice el pago hoy para que empiecen con la producción?",
+        "cs": "Se deben corroborar las medidas primero y escoger las telas para enviarle la cotización con todo listo y el costo total para poder enviarla a producción"
+      },
+      {
+        "cliente": "Si me pudieran ayudar a darle prioridad en la confección la verdad es que se los agradecería muchísimo",
+        "cs": "Puede ser que estén lista en menos del tiempo estimado [valida la urgencia sin comprometerse a una fecha imposible]"
+      },
+      {
+        "cliente": "Aún no me ha escrito la persona de la entrega para coordinar",
+        "cs": "El compañero le adjunto el mismo el día de ayer [correo electrónico] / Me indican que puede pasar a retirarlo el jueves por la tarde después de 12md"
+      },
+      {
+        "cliente": "En realidad si fuera posible en sábado sería mucho mejor con para nosotros",
+        "cs": "Las visitas las realizamos de lunes a viernes apartir de las 7 a.m. ¿podría ser entre semana?"
+      },
+      {
+        "cliente": "Puede ser pero debo antes ver q sus entre semana puedo",
+        "cs": "Claro, quedamos atentos podría ser miércoles, jueves o viernes."
+      },
+      {
+        "cliente": "solo espero q me lo impriman para revisarlo y les confirmo",
+        "cs": "Claro, quedamos atentos"
+      },
+      {
+        "cliente": "Gerardo nos mencionó que nos podrían ayudar a que fuera lo más rápido posible dado que nos urgen ! Ustedes nos ayudarían ?",
+        "cs": "Apenas nos facilite el Adelanto vamos a procesar la orden para que la puedan producir"
+      },
+      {
+        "cliente": "cuál es el plazo aproximado?",
+        "cs": "El plazo es de 10 a 12 días hábiles para que le realicen la instalación. Pero vamos a ver la posibilidad que sea antes."
+      },
+      {
+        "cliente": "Cómo funciona en este caso que ya hay una instalación y un tergal? Solo se reemplazan el tergal?",
+        "cs": "Si, sería reemplazar el tergal solamente?"
+      },
+      {
+        "cliente": "Favor envie esto a Natalia Benavides, en JOROSA, ella está a cargo de este proyecto",
+        "cs": "Respuesta automática fuera de horario, sin gestión documentada del redireccionamiento"
+      },
+      {
+        "cliente": "¿Y traiga todas las muestras de telas?",
+        "cs": "Si, el asesor lleva las muestras de tela"
+      },
+      {
+        "cliente": "Pienso hay otra ventana para revisar también, en adición",
+        "cs": "si, no hay problema usted le indica al asesor cuales serían para que las pueda medir todas"
+      },
+      {
+        "cliente": "¿Es incluido instalaciones?",
+        "cs": "Si, la instalación está incluida"
+      },
+      {
+        "cliente": "Cuál de estos me sirve para este objetivo? (limpiar con niños)",
+        "cs": "El papel tapiz que manejamos no puede estar expuesto a humedad o agua / Por lo que no se podría limpiar"
+      },
+      {
+        "cliente": "No tienen un tipo vinílico?",
+        "cs": "No, de ese tipo no manejamos"
+      },
+      {
+        "cliente": "Es posible hacer una cambia? (cambio de orden ya en producción)",
+        "cs": "Esta bien. Con gusto"
+      },
+      {
+        "cliente": "Existe la posibilidad de hacerlo esta semana?",
+        "cs": "Respuesta implícita con adjuntos de seguimiento y posteriormente confirmación de disponibilidad operativa"
+      }
+    ],
+    "patrones_exito": [
+      "Visita técnica gratuita como gancho de entrada: elimina fricción inicial y permite medición precisa",
+      "Asesor nombrado explícitamente ('Le estará visitando nuestro asesor Gerardo Chaves') para generar confianza y accountability",
+      "Cotización enviada el mismo día o al día siguiente de la visita para mantener momentum",
+      "Descuento del 20% condicionado a método de pago específico (efectivo/transferencia) como incentivo de cierre",
+      "Uso de urgencia legítima vinculada a producción: 'requerimos la confirmación y el adelanto del 50% antes de medio día para iniciar la producción'",
+      "Recolección de datos completos para visita en un solo mensaje (nombre, correo, dirección, ubicación Waze/Google Maps)",
+      "Presentación de múltiples opciones simultáneas (Opción A / Opción B) para no perder al cliente indeciso",
+      "Confirmación explícita de cada pago recibido para dar seguridad al cliente",
+      "Seguimiento proactivo de saldos pendientes con estado de cuenta adjunto",
+      "Adaptación rápida de cotizaciones ante cambios de especificación del cliente sin resistencia",
+      "Uso de referencias de clientes previos del mismo condominio como validación social implícita",
+      "Relación de largo plazo: cliente de 2020 regresa en 2021 para nuevas compras (Chat 760143)",
+      "CS pregunta siempre la ubicación geográfica antes de coordinar visita, para validar cobertura",
+      "CS solicita datos completos en un solo mensaje: nombre, correo, dirección física y enlace Waze/Google Maps",
+      "CS confirma el nombre del asesor asignado, generando confianza y personalización: 'le estará atendiendo nuestro asesor Gerardo Chaves'"
+    ],
+    "areas_mejora_cs": [
+      "Demora inicial sin contacto: Cliente del Chat 757730 tuvo que ser él quien contactara porque nadie lo llamó después de llenar el formulario web, lo cual pudo haber resultado en pérdida del lead",
+      "Respuestas automáticas fuera de horario poco personalizadas: el mensaje 'Gracias por contactarnos le estaremos respondiendo sus consultas el día de mañana' se repite de forma robótica incluso después de mensajes importantes del cliente como confirmaciones de pago",
+      "No se confirma explícitamente el monto exacto del adelanto solicitado al cliente antes de pedir la transferencia, lo que generó confusión en Chat 760143 sobre cuánto debía pagar",
+      "En Chat 760143, la cotización se envió sin incluir el servicio de lavado del toldo que el cliente esperaba, lo que generó fricción innecesaria en el cobro final",
+      "Falta de seguimiento proactivo post-cotización: en ninguna conversación CS hace un seguimiento explícito tipo '¿Tuvo oportunidad de revisar la cotización?' cuando el cliente no responde en 24-48 horas",
+      "La confirmación de visita se hizo en partes en mensajes separados (nombre, luego correo, luego dirección, luego ubicación) en Chat 786187, cuando ya existía una plantilla consolidada usada en Chat 757730; inconsistencia en el proceso",
+      "En Chat 786187 el asesor llegó antes de la hora acordada (de 12:40 se adelantó a 10:15 y luego a 9:45) sin verificar si era conveniente para el cliente, lo que podría haber resultado en una mala experiencia",
+      "No se aprovecha el cierre del chat para solicitar reseña, referido o retroalimentación del servicio, desaprovechando el momentum positivo post-instalación",
+      "En Chat 759969, el cliente preguntó '¿La visita tiene algún costo?' dos veces (07:15 y 08:33) sin haber recibido respuesta la primera vez; CS debió responder esa pregunta de inmediato para no generar incertidumbre",
+      "En Chat 759969, la cotización generó confusión porque el ítem decía 'Sin Instalación' cuando sí incluía instalación en otro ítem; el formato de cotización debería ser más claro para evitar fricción y llamadas innecesarias",
+      "En Chat 759969, el cliente pidió explícitamente 'me puede llamar? por favor' y no hay registro de que CS haya llamado; atender solicitudes de llamada mejora la experiencia y reduce abandono",
+      "En Chat 1190088, hay un mensaje de CS a las 16:18 del 2022-02-18 que dice 'Sr. Erick este sería la cancelación de pago restante de la instalación de hoy?' con redacción confusa; los mensajes de confirmación de pagos deberían ser más claros y directos",
+      "No hay estandarización en el tiempo de respuesta: en Chat 892835 CS tardó casi 2 horas en responder preguntas simples de coordinación; se recomienda definir SLA de respuesta máximo",
+      "En ninguna conversación CS solicita retroalimentación o valoración del servicio post-instalación, lo cual sería una oportunidad para generar referidos y detectar problemas tempranos",
+      "No existe manual de instalación para pisos: cliente lo solicita post-venta y CS confirma que no hay. Debería crearse material de apoyo básico o video de instalación",
+      "El bot automático respondió fuera de horario al cliente que ya había pagado ('Gracias por contactarnos le estaremos respondiendo el día de mañana'), generando una experiencia fría en un momento crítico de fidelización",
+      "Doble envío del mismo mensaje en Chat 1414818: 'Me indican que puede pasar a retirarlo el jueves por la tarde después de 12md' fue enviado dos veces consecutivas, lo que denota falta de revisión antes de enviar",
+      "En Chat 1414818, el cliente tuvo que escribir múltiples veces (3 mensajes en menos de 24 horas) para obtener los datos bancarios; el proceso de envío de datos de pago debería ser más inmediato",
+      "En Chat 1840194 el historial disponible es muy corto y termina en coordinación logística; no hay seguimiento documentado del cierre completo ni del pago, lo que sugiere que parte de la gestión se hace fuera del chat",
+      "CS no ofrece proactivamente el contacto de operaciones al inicio del proceso post-venta; el cliente de Chat 1414818 tuvo que reclamar falta de contacto un día después de pagar"
+    ]
+  },
+  "lost": {
+    "productos_de_interes": [
+      "Cortinas blackout personalizadas",
+      "Cortinas de onda perfecta (blackout/tergal)",
+      "Cortinas personalizadas",
+      "Cortinas y Persianas",
+      "Cortinas y persianas personalizadas",
+      "Cortinas y persianas personalizadas (Chat 51477863)",
+      "Material para deck (madera compuesta / WPC)",
+      "Papel Tapiz",
+      "Papel Tapiz (general)",
+      "Papel Tapiz efecto madera",
+      "Papel Tapiz imitación mármol gris",
+      "Papel tapiz",
+      "Papel tapiz (Chat 50874432)",
+      "Papel tapiz / murales de pared",
+      "Perfiladores de piso SPC",
+      "Persiana arrollable blackout manual (2 paños)",
+      "Persiana arrollable blackout motorizada",
+      "Persianas arrollables screen",
+      "Persianas personalizadas",
+      "Piso Laminado SPC click (Piedra y PVC)",
+      "Piso laminado SPC 8mm (Chat 51227321)",
+      "Pisos Laminados",
+      "Pisos Laminados SPC",
+      "Pisos Laminados SPC Click (color gris/smoke)",
+      "Pisos en general",
+      "Pisos laminados SPC click",
+      "Pisos laminados SPC click (Piedra y PVC)",
+      "Producto desconocido (chat sin mensaje inicial del cliente)",
+      "Producto no especificado (chat 49759428)",
+      "Roller Zebra (anchos 2.4m y 2.6m)",
+      "Sombrillas con apoyo lateral (modelo Marsella)",
+      "Toldo Retráctil Manual 3.95m x 2.50m",
+      "Toldo vertical transparente (tela screen)",
+      "Toldos",
+      "Toldos Exteriores / Toldos Verticales",
+      "Toldos Retráctiles (manual o motorizado)",
+      "Toldos Retráctiles (manual y motorizado)",
+      "Toldos Verticales",
+      "Toldos exteriores (resistentes a viento y agua)",
+      "Toldos retráctiles (alero/manual)",
+      "Toldos retráctiles (manual y motorizado)",
+      "Toldos retráctiles manuales y motorizados"
+    ],
+    "razones_perdida": [
+      {
+        "razon": "Cliente con restricción de presupuesto o compra fraccionada, sin plan de retención o facilidad ofrecida",
+        "frecuencia": "alta",
+        "ejemplo": "Necesito comprar de 10 en 10 por semana, no puedo comprarlo todo de un solo"
+      },
+      {
+        "razon": "Producto no disponible en la medida requerida por el cliente, sin alternativa creativa propuesta",
+        "frecuencia": "alta",
+        "ejemplo": "Si, es que del tamaño indicado no ofrecemos. Solamente manejamos los tamaños indicado en la información enviada"
+      },
+      {
+        "razon": "Conversación abandonada sin seguimiento efectivo tras cotización enviada",
+        "frecuencia": "alta",
+        "ejemplo": "Chat 43732303: 3 meses sin respuesta del cliente tras cotización, solo un follow-up genérico el 05/03"
+      },
+      {
+        "razon": "CS no resuelve la necesidad puntual del cliente con agilidad, generando fricción en el proceso",
+        "frecuencia": "media",
+        "ejemplo": "Para 10 m2 cuanto es? Es que necesito comprar de 10 en 10 por semana — pregunta repetida que ya había sido aclarada"
+      },
+      {
+        "razon": "Ausencia de catálogo visual interactivo o referencia de diseños al inicio, retrasando la decisión",
+        "frecuencia": "media",
+        "ejemplo": "Hola, necesito un papel tapiz imitación mármol gris. Tendrán algún catálogo?"
+      },
+      {
+        "razon": "Respuestas genéricas con plantilla que no personalizan según la consulta del cliente",
+        "frecuencia": "alta",
+        "ejemplo": "Cliente de chat 46943897 preguntó específicamente por garantía, instalación y cotización de 45m2, y CS respondió con el mensaje estándar de descuento sin mencionar garantía ni instalación"
+      },
+      {
+        "razon": "Falta de cierre activo o llamada a la acción concreta tras entregar la cotización",
+        "frecuencia": "alta",
+        "ejemplo": "Chat 46943897: Cliente dice 'Muchas gracias por la información!' y CS responde solo 'con gusto', sin empujar hacia el siguiente paso"
+      },
+      {
+        "razon": "Seguimiento débil y tardío que no genera urgencia ni resolución de dudas",
+        "frecuencia": "alta",
+        "ejemplo": "Chat 46823966: Seguimiento enviado el 10 de enero (3 días después), y en chat 46943897 el seguimiento fue el 16 de enero (8 días después), sin resultado"
+      },
+      {
+        "razon": "Conversación truncada sin resolución en chat 47187348 (CS no dio respuesta completa o el cliente abandonó tras la primera respuesta automatizada)",
+        "frecuencia": "media",
+        "ejemplo": "Chat 47187348: Cliente especificó exactamente lo que quería (toldo 4m x 2.5m manual) y CS respondió con medidas estándar que no coinciden exactamente, sin ofrecer alternativa personalizada ni preguntar si alguna opción le funciona"
+      },
+      {
+        "razon": "Preguntas de calificación ignoradas o respondidas sin agregar valor diferencial",
+        "frecuencia": "media",
+        "ejemplo": "Chat 46943897: La garantía fue preguntada explícitamente por el cliente y nunca fue respondida en ningún momento de la conversación"
+      },
+      {
+        "razon": "Falta de seguimiento efectivo y tardío: el cliente no responde después de recibir la cotización y CS no hace un seguimiento oportuno ni personalizado",
+        "frecuencia": "alta",
+        "ejemplo": "Chat 3251261: cotización enviada el 2022-09-15, próximo contacto de CS el 2026-01-28 (más de 3 años después)"
+      },
+      {
+        "razon": "Respuestas genéricas y automatizadas que no enganchan al cliente ni crean conversación real",
+        "frecuencia": "alta",
+        "ejemplo": "Chat 48090496: 'Creamos espacios con alma, hechos a su medida.' sin preguntar qué producto específico quería el cliente"
+      },
+      {
+        "razon": "No se cierra el ciclo de venta: después del envío de catálogo o cotización, no hay llamado a la acción concreto ni urgencia",
+        "frecuencia": "alta",
+        "ejemplo": "Chat 47935327: CS envía 6 archivos adjuntos y luego solo pregunta '¿hay algo específico que le gustaría aclarar?' sin proponer siguiente paso"
+      },
+      {
+        "razon": "El cliente no recibió respuesta a preguntas técnicas específicas antes de pedir datos personales, generando fricción y posible abandono",
+        "frecuencia": "media",
+        "ejemplo": "Chat 3251261: Cliente pregunta '¿Qué grueso, largo y ancho tiene el material?' y CS responde pidiendo nombre, ubicación y correo en lugar de responder la pregunta"
+      },
+      {
+        "razon": "Tiempo de respuesta inicial largo (entre 19 y 117 minutos), lo que enfría el interés del cliente",
+        "frecuencia": "media",
+        "ejemplo": "Chat 3251261: Cliente escribe a las 13:13, CS responde a las 13:32 (19 min); Chat 48090496: Cliente escribe a las 06:24, CS responde a las 08:21 (117 min)"
+      },
+      {
+        "razon": "Envío masivo de archivos adjuntos sin contexto ni explicación personalizada, puede resultar abrumador o poco profesional en chat",
+        "frecuencia": "media",
+        "ejemplo": "Chat 47935327: CS envía 6 archivos adjuntos consecutivos sin ningún texto explicativo adicional"
+      },
+      {
+        "razon": "No se detectó ni aprovechó la señal de recompra: el mismo cliente regresó dos veces (2022 y 2024) y nunca se convirtió",
+        "frecuencia": "baja",
+        "ejemplo": "Chat 3251261: Manuel Quirós contacta en agosto 2022, septiembre 2022 y mayo 2024 sin que ninguna interacción resulte en venta"
+      },
+      {
+        "razon": "Cliente nunca regresó tras comprometerse a tomar medidas, sin seguimiento efectivo",
+        "frecuencia": "alta",
+        "ejemplo": "Chat 48303455 - Cliente: 'Ok voy a tomar las medidas' → silencio por 2 días → seguimiento genérico sin resultado"
+      },
+      {
+        "razon": "Cierre de conversación abrupto por respuesta que elimina garantía sin ofrecer alternativa ni solución",
+        "frecuencia": "alta",
+        "ejemplo": "Chat 48602449 - CS: 'al realizar la instalación usted el producto perdería la garantía' → cliente no responde más"
+      },
+      {
+        "razon": "Ausencia total de seguimiento después de enviar precios",
+        "frecuencia": "alta",
+        "ejemplo": "Chat 48757877 - CS envía lista de precios el 2026-02-05 08:24 y no hay ningún mensaje posterior de seguimiento"
+      }
+    ],
+    "errores_cs": [
+      {
+        "error": "Cotizar una cantidad diferente a la solicitada por el cliente sin confirmarlo previamente",
+        "momento": "Fase de cotización",
+        "ejemplo": "Cliente pidió cotización para 10 m2 y CS adjuntó cotización sin aclarar si incluía los 98 m2 o los 10 m2 hasta que el cliente preguntó dos veces"
+      },
+      {
+        "error": "No ofrecer ninguna solución alternativa cuando el producto no está disponible en la medida requerida",
+        "momento": "Cierre / resolución de objeción",
+        "ejemplo": "Si, es que del tamaño indicado no ofrecemos. Solamente manejamos los tamaños indicado — conversación termina ahí"
+      },
+      {
+        "error": "Respuesta inicial con plantilla genérica que no responde la pregunta concreta del cliente sobre catálogo",
+        "momento": "Primer contacto",
+        "ejemplo": "Cliente pregunta por catálogo de papel tapiz mármol gris y CS responde con precios generales y descuento sin mostrar el catálogo de inmediato"
+      },
+      {
+        "error": "Follow-up tardío y genérico, sin referencia personalizada a la cotización enviada",
+        "momento": "Seguimiento post-cotización",
+        "ejemplo": "¿Hay algún detalle que quiera aclarar o ajustar antes de continuar? — enviado 7 días después sin contexto"
+      },
+      {
+        "error": "No indagar sobre la restricción financiera del cliente ni proponer soluciones como apartado, plan de pagos o compra por fases",
+        "momento": "Detección de necesidad / manejo de objeción económica",
+        "ejemplo": "Cliente dice que comprará 10 m2 por semana y CS solo pregunta si desea agregar el 10% de desperdicio, ignorando la problemática de fondo"
+      },
+      {
+        "error": "Solicitar datos personales (nombre, correo) antes de dar información de valor, generando fricción innecesaria",
+        "momento": "Calificación del cliente",
+        "ejemplo": "Para ayudarle con el presupuesto requerimos nos indique su nombre completo y correo electrónico"
+      },
+      {
+        "error": "Ignorar preguntas específicas del cliente y responder con plantilla genérica",
+        "momento": "Primer contacto / respuesta inicial",
+        "ejemplo": "Chat 46943897: Cliente preguntó '¿qué garantía tiene, incluye instalación?', CS respondió con el bloque estándar de descuento sin abordar ninguna de las dos preguntas"
+      },
+      {
+        "error": "Envío masivo de archivos adjuntos sin contexto ni explicación de su contenido",
+        "momento": "Respuesta inicial en los tres chats",
+        "ejemplo": "Chat 46823966 y 46943897: Se enviaron 7 archivos adjuntos sin indicar qué contiene cada uno, lo que genera confusión y reduce la probabilidad de que el cliente los revise"
+      },
+      {
+        "error": "No aprovechar el momento de cierre natural tras entrega de cotización",
+        "momento": "Post-cotización",
+        "ejemplo": "Chat 46943897: Tras entregar cotización y recibir 'Muchas gracias!', CS solo dijo 'con gusto' en lugar de preguntar por objeciones, plazos o próximos pasos"
+      },
+      {
+        "error": "Seguimiento genérico y sin diferenciador que no reactiva al cliente",
+        "momento": "Fase de seguimiento",
+        "ejemplo": "Chat 46943897 [2026-01-16]: '¿Hay algún detalle que quiera aclarar o ajustar?' — mensaje vago que no aporta nueva información ni incentivo para responder"
+      },
+      {
+        "error": "Ofrecer medidas estándar sin reconocer la discrepancia con lo solicitado por el cliente",
+        "momento": "Respuesta a especificación del cliente",
+        "ejemplo": "Chat 47187348: Cliente pidió 4m x 2.5m y CS ofreció 3.95m x 2.50m sin explicar si es posible ajustar la medida o si 3.95m es la opción más cercana disponible"
+      },
+      {
+        "error": "Repetición de pregunta ya enviada sin notar que fue duplicada",
+        "momento": "Proceso de calificación",
+        "ejemplo": "Chat 46943897: CS preguntó '¿Los 45m2 ya contemplan desperdicio?' dos veces seguidas antes de que el cliente respondiera la primera vez"
+      },
+      {
+        "error": "No recopilar datos de contacto en chat 46823966 a pesar de haber avanzado en la conversación",
+        "momento": "Calificación inicial",
+        "ejemplo": "Chat 46823966: No se solicitó nombre ni correo del cliente, lo que limita la capacidad de seguimiento por otros canales"
+      },
+      {
+        "error": "Solicitar datos personales (nombre, correo, ubicación) antes de responder la pregunta técnica del cliente, generando fricción innecesaria",
+        "momento": "Fase de calificación / primera respuesta",
+        "ejemplo": "Chat 3251261: Cliente pregunta dimensiones del material y CS responde: 'requerimos nos indique su nombre completo, ¿en que parte del país requeriría la entrega? e adjuntarnos un correo electrónico'"
+      },
+      {
+        "error": "No identificar que el cliente es recurrente: Manuel Quirós contactó en 3 ocasiones distintas y CS lo trató como cliente nuevo cada vez, sin reconocimiento ni historial",
+        "momento": "Fase de apertura / bienvenida",
+        "ejemplo": "Chat 3251261 [2024-05-29]: CS responde con el mismo guión de recolección de datos ignorando que ya tenían sus datos desde 2022"
+      },
+      {
+        "error": "Seguimiento automatizado y frío, sin personalización ni referencia a la cotización enviada anteriormente",
+        "momento": "Fase de seguimiento post-cotización",
+        "ejemplo": "Chat 47935327 [2026-01-24]: '¿Cómo ha estado? Quería confirmar si recibió la información.' sin mencionar el producto, el precio ni ningún detalle específico"
+      },
+      {
+        "error": "No responder a la consulta puntual del cliente: el cliente de Chat 48090496 pide 'más información sobre sus productos' y CS responde con una plantilla de descuento en cortinas sin preguntar qué producto necesita",
+        "momento": "Fase de descubrimiento / necesidad del cliente",
+        "ejemplo": "Chat 48090496: Cliente: 'me interesa más información sobre sus productos ¿Me pueden ayudar?' CS: responde con plantilla de cortinas y persianas sin validar interés"
+      },
+      {
+        "error": "Seguimiento tardío o inexistente: en Chat 3251261, el seguimiento llega 3 años después de la última cotización, lo que evidencia ausencia de un proceso de seguimiento estructurado",
+        "momento": "Fase de seguimiento post-cotización",
+        "ejemplo": "Chat 3251261: Cotización enviada en septiembre 2022, próximo mensaje de CS en enero 2026"
+      },
+      {
+        "error": "No aprovechar la oportunidad de venta cruzada cuando el cliente mostró interés en múltiples productos en la misma conversación",
+        "momento": "Fase de necesidades / cotización",
+        "ejemplo": "Chat 3251261: El cliente consulta deck en agosto y toldo en septiembre; CS nunca conectó ambas necesidades para ofrecer un paquete o priorizar cuál era más urgente"
+      },
+      {
+        "error": "Seguimiento vago y sin urgencia real, no reactiva al cliente ni propone siguiente paso concreto",
+        "momento": "Fase de seguimiento post-interés inicial",
+        "ejemplo": "Chat 48303455 - CS: '¿Hay algo específico que le gustaría aclarar para que podamos seguir adelante?' sin recordar descuento, sin proponer fecha, sin alternativa si no tiene medidas"
+      }
+    ],
+    "objeciones_no_resueltas": [
+      {
+        "objecion": "Quiero ir comprando 10 metros por semana, no puedo comprarlo todo de un solo",
+        "respuesta_cs": "Solo cotizó los 10 m2 sin ofrecer ninguna solución a la limitación financiera del cliente",
+        "mejor_respuesta": "Entendemos perfectamente, Maricela. Podemos reservar el stock completo (108 m2) a nombre suyo con el precio del descuento actual, y usted retira en las cantidades que le sean convenientes cada semana. ¿Le gustaría que coordinemos eso?"
+      },
+      {
+        "objecion": "El tamaño que necesito no está disponible en el catálogo de toldos",
+        "respuesta_cs": "CS confirmó que no se ofrece ese tamaño y no propuso ninguna alternativa",
+        "mejor_respuesta": "Lamentamos que ese tamaño exacto no esté en nuestro catálogo estándar. Sin embargo, podemos explorar una solución personalizada o combinar dos unidades para cubrir su área. ¿Podría compartirme las medidas exactas del espacio para analizarlo con nuestro equipo técnico?"
+      },
+      {
+        "objecion": "Necesito un papel tapiz imitación mármol gris, ¿tienen catálogo?",
+        "respuesta_cs": "CS respondió con plantilla de precios y descuentos, sin mostrar catálogo específico de mármol hasta adjuntar archivos sin contexto",
+        "mejor_respuesta": "¡Claro que sí, Esteban! Aquí le comparto nuestros diseños de papel tapiz con acabado mármol gris disponibles en inventario [adjuntar catálogo filtrado]. ¿Cuál de estos se acerca más a lo que tiene en mente?"
+      },
+      {
+        "objecion": "¿Qué garantía tiene el piso SPC?",
+        "respuesta_cs": "No fue respondida. CS envió plantilla genérica con precio y descuento.",
+        "mejor_respuesta": "El piso SPC que manejamos tiene garantía de fabricante de X años contra defectos de fabricación y resistencia al desgaste. Al ser un material compuesto de Piedra y PVC, también ofrece mayor durabilidad en zonas húmedas. ¿Le gustaría que incluyera esta información en su cotización?"
+      },
+      {
+        "objecion": "¿Incluye instalación?",
+        "respuesta_cs": "No fue respondida directamente. Solo se mencionó en la plantilla que 'el precio no incluye instalación' pero sin ofrecer alternativa ni costo referencial.",
+        "mejor_respuesta": "El precio del material no incluye instalación, pero podemos cotizarla por separado. Para 45m2 el costo de instalación aproximado es de $X. ¿Le interesa que le incluya ambos en una cotización completa para que tenga el costo total del proyecto?"
+      },
+      {
+        "objecion": "El cliente solicitó toldo de 4m x 2.5m y CS ofreció 3.95m x 2.5m sin aclaración",
+        "respuesta_cs": "CS presentó las medidas estándar disponibles sin reconocer la diferencia ni ofrecer alternativa personalizada o medida a pedido.",
+        "mejor_respuesta": "La medida estándar más cercana a lo que busca es de 3.95m x 2.50m, que cubre prácticamente el mismo espacio. Si requiere exactamente 4m, también trabajamos con medidas personalizadas con un tiempo de fabricación de X días. ¿Cuál opción le conviene más?"
+      },
+      {
+        "objecion": "Silencio del cliente tras recibir cotización (señal de precio alto o duda no expresada)",
+        "respuesta_cs": "CS interpretó el silencio como interés pendiente y envió seguimiento genérico días después.",
+        "mejor_respuesta": "Enrique, ¿tuvo oportunidad de revisar la cotización? Quería saber si el precio o alguna condición le generó dudas. A veces podemos explorar opciones de pago o ajuste de materiales según su presupuesto. ¿Me comparte qué rango tenía en mente?"
+      },
+      {
+        "objecion": "El cliente pregunta características técnicas del producto antes de avanzar: '¿Qué grueso, largo y ancho tiene el material?'",
+        "respuesta_cs": "CS ignora la pregunta y pide datos personales para cotizar",
+        "mejor_respuesta": "Responder primero la pregunta técnica: 'El deck WPC que manejamos tiene un espesor de X mm, ancho de X cm y largo de X metros. ¿Le gustaría que le enviara las opciones disponibles? Para prepararle la cotización exacta solo necesito su nombre y correo.'"
+      },
+      {
+        "objecion": "Cliente indica que está en proceso de construcción ('estamos en procesos finales de construcción'), lo que puede significar que no está listo para comprar aún",
+        "respuesta_cs": "CS envía la cotización directamente sin indagar en el plazo ni crear urgencia o agenda de seguimiento",
+        "mejor_respuesta": "Validar el plazo: '¡Qué emocionante que estén en la etapa final! ¿Cuándo aproximadamente estarían listos para instalar? Así le agendo un recordatorio y puedo reservarle el precio actual con el descuento del 20%.'"
+      },
+      {
+        "objecion": "El cliente de Chat 47935327 no responde después de recibir información sobre pisos SPC, posiblemente porque el precio o el producto no se ajustó a su necesidad real",
+        "respuesta_cs": "Seguimiento genérico: '¿Hay algo específico que le gustaría aclarar para que podamos seguir adelante?'",
+        "mejor_respuesta": "Seguimiento con propuesta de valor concreta: '¿Le pareció bien el precio de $30/m²? Si el presupuesto es una preocupación, tenemos opciones desde $X. ¿Me puede decir cuántos m² aproximadamente necesita cubrir?'"
+      },
+      {
+        "objecion": "Cliente de Chat 48090496 no responde tras recibir información genérica de cortinas, probablemente porque no era lo que buscaba o sintió que no lo escucharon",
+        "respuesta_cs": "Seguimiento genérico sin hacer referencia al producto específico del cliente",
+        "mejor_respuesta": "Preguntar primero: '¡Hola! Con mucho gusto. Para orientarle mejor, ¿qué área o espacio desea mejorar? ¿Tiene en mente cortinas, persianas, toldos o pisos?' Luego hacer seguimiento personalizado mencionando el producto que mostró interés."
+      },
+      {
+        "objecion": "Si yo quisiera optar por la opción de instalarlo yo misma, ¿cómo o dónde puedo comprar el papel tapiz?",
+        "respuesta_cs": "Envió un archivo adjunto (contenido desconocido, probablemente catálogo o info de precios sin instalación)",
+        "mejor_respuesta": "Claro, con gusto le vendemos el producto sin instalación. Le recomendamos considerar que ofrecemos instalación profesional con garantía incluida desde $X, lo que protege su inversión. Si aun así prefiere instalarlo usted misma, le enviamos el precio del rollo y un tutorial básico de instalación para que tenga el mejor resultado posible. ¿Le interesa conocer la diferencia de costo entre ambas opciones?"
+      },
+      {
+        "objecion": "Ustedes tienen garantía?",
+        "respuesta_cs": "En este caso al realizar la instalación usted el producto perdería la garantía",
+        "mejor_respuesta": "¡Excelente pregunta! Nuestro producto tiene garantía de fábrica cuando es instalado por nuestro equipo certificado. Si prefiere instalarlo usted misma, el producto sigue siendo de alta calidad, aunque la garantía por instalación no aplicaría. Para proteger completamente su compra, la instalación profesional tiene un costo de $X e incluye garantía total. ¿Le gustaría que le agregue esa opción a la cotización para que compare y decida?"
+      },
+      {
+        "objecion": "Cliente en Chat 48757877 pide medida específica de 5m x 3m y CS no confirma si pueden fabricarla ni cuánto costaría",
+        "respuesta_cs": "CS envía lista de precios con medidas estándar (2.90m y 3.95m) sin mencionar la medida solicitada",
+        "mejor_respuesta": "Para un toldo de 5m de frente x 3m de extensión trabajamos bajo pedido a medida. El precio estimado sería de $X (manual) o $X (motorizado), incluyendo instalación de $110. ¿Le gustaría que le preparemos una cotización formal con esas dimensiones exactas? También podemos coordinar una visita de asesoría sin costo."
+      },
+      {
+        "objecion": "voy a enviarla al constructor",
+        "respuesta_cs": "Buenas tardes! Claro, quedamos atentos!",
+        "mejor_respuesta": "¡Perfecto! Para facilitarle el proceso, ¿le gustaría que preparáramos una cotización formal que pueda compartir directamente con su constructor? También podemos coordinar una visita técnica conjunta para que el asesor resuelva dudas de instalación en sitio. ¿Cuándo sería conveniente para usted?"
+      },
+      {
+        "objecion": "me estoy cotisando más obsiones",
+        "respuesta_cs": "con gusto",
+        "mejor_respuesta": "¡Claro, es importante comparar opciones! Para ayudarle en esa decisión, ¿qué aspectos son más importantes para usted: precio, tiempo de entrega, variedad de diseños o garantía? Así puedo orientarle mejor sobre en qué nos diferenciamos. Además, recuerde que el 15% de descuento vigente este mes podría ser una ventaja importante en su comparativa."
+      },
+      {
+        "objecion": "¿Por casualidad no venden con diseño imitando la madera?",
+        "respuesta_cs": "no, solamente los diseños de los catálogos enviados",
+        "mejor_respuesta": "En este momento nuestro catálogo disponible en inventario local no incluye ese diseño específico, sin embargo realizamos pedidos de importación cada primera semana del mes. ¿Le gustaría que revisemos si existe algún diseño similar entre nuestros proveedores? También puedo mostrarle opciones de pisos laminados o vinílicos con efecto madera que podrían complementar lo que busca. ¿Cuál es el espacio que desea decorar?"
+      },
+      {
+        "objecion": "Precios y colores uno mismo lo puede poner instalar en la casa",
+        "respuesta_cs": "CS ignoró completamente la consulta sobre autoinstalación y respondió con plantilla de descuentos y visitas de asesor",
+        "mejor_respuesta": "¡Claro que sí! Nuestro piso SPC click es un sistema de ensamble tipo puzzle, ideal para instalación propia sin pegamento ni herramientas especiales. Le compartimos un video guía y las consideraciones básicas (nivelado de superficie). Si prefiere, también podemos coordinar instalación profesional. ¿Cuántos m² necesita cubrir para darle el precio exacto?"
+      },
+      {
+        "objecion": "El cliente de chat 49571828 nunca respondió tras recibir la información (silencio = objeción implícita de precio, relevancia o desinterés)",
+        "respuesta_cs": "Follow-up genérico 3 días después sin personalización",
+        "mejor_respuesta": "Hola, quería compartirle que esta semana aún aplica el 15% de descuento en pisos SPC. Con solo los m² de su espacio le preparo una cotización exacta en minutos. ¿Me puede confirmar el área aproximada? También puedo enviarle una muestra física si está en zona GAM."
+      },
+      {
+        "objecion": "Cliente de chat 49759428 solicitó cotización pero no dio detalles del producto (silencio después del primer contacto)",
+        "respuesta_cs": "CS preguntó por producto y medidas pero no obtuvo respuesta antes de enviar plantilla genérica horas después",
+        "mejor_respuesta": "Perfecto, con gusto le cotizamos. Para agilizar el proceso, ¿podría indicarme: 1) ¿Qué producto le interesa (cortinas, pisos, toldos)? 2) ¿Las medidas aproximadas del espacio? 3) ¿Zona de ubicación? Con eso tengo su cotización lista en menos de 30 minutos."
+      }
+    ],
+    "oportunidades_perdidas": [
+      "Chat 51216331: Ofrecer un plan de reserva de stock garantizado con el precio de descuento vigente para que Maricela retire por fases semanales",
+      "Chat 51216331: Proponer la instalación como servicio adicional una vez que el cliente tenga todo el material, generando un segundo ticket de venta",
+      "Chat 43732303: Recontactar al cliente a los 3-5 días de enviada la cotización con un seguimiento personalizado referenciando el diseño de mármol gris específico",
+      "Chat 43732303: Aprovechar el recontacto del cliente en febrero (3 meses después) para validar si el proyecto seguía en pie y qué frenó la decisión inicial",
+      "Chat 46709752: Ofrecer visita técnica gratuita para medir el espacio y explorar si una solución combinada o personalizada era posible antes de cerrar la conversación",
+      "Chat 46709752: Preguntar las medidas exactas del espacio del cliente antes de responder con el catálogo estándar, para identificar si alguna opción se adaptaba",
+      "En los 3 casos: Nunca se preguntó al cliente cuál era su principal motivación o urgencia (remodelación, proyecto nuevo, fecha límite), información clave para personalizar el cierre",
+      "En chat 46943897: Preguntar al cliente cuál es su presupuesto objetivo para el proyecto y ajustar la cotización o proponer alternativas más económicas",
+      "En chat 46943897: Ofrecer cotización completa (material + instalación) de forma proactiva para simplificar la decisión del cliente y aumentar el ticket",
+      "En los tres chats: No se exploró urgencia ni fecha estimada de inicio de proyecto ('¿Para cuándo necesita el piso listo?'), lo que habría permitido crear urgencia real",
+      "En chat 46823966: No se capturaron datos del cliente (nombre, correo, teléfono), perdiendo la posibilidad de seguimiento multicanal",
+      "En chat 47187348: No se ofreció una visita de asesoría en sitio para dimensionar correctamente el toldo y cerrar en persona",
+      "En los tres chats: No se mencionaron casos de éxito, testimonios o proyectos similares para generar confianza y reducir la fricción de compra",
+      "En chat 46943897 seguimiento del 16 de enero: CS pudo haber informado de nueva promoción, stock limitado o vencimiento próximo del descuento para reactivar al cliente con urgencia concreta",
+      "En ningún chat se ofreció una videollamada o demo visual de los productos para clientes que aún están en fase de evaluación"
+    ],
+    "patron_abandono": [
+      "Los clientes se pierden principalmente en la fase post-cotización: CS envía el presupuesto pero no gestiona activamente las objeciones de fondo (restricción económica, medidas no estándar, indecisión por falta de opciones alternativas). El abandono ocurre cuando el cliente percibe que CS no tiene capacidad de adaptarse a su necesidad real y solo ofrece lo estándar del catálogo. Un segundo patrón es el primer contacto: respuestas genéricas que no enganchan la pregunta específica del cliente generan desinterés antes de llegar siquiera a la cotización.",
+      "Los clientes se pierden principalmente en la fase post-cotización: reciben el presupuesto, agradecen la información con frases como 'Muchas gracias' y no regresan. CS no detecta esta señal como una despedida encubierta y responde con 'con gusto', cerrando la conversación de facto. El seguimiento posterior es genérico, tardío y no introduce ningún elemento nuevo (urgencia, beneficio adicional, resolución de objeción), por lo que el cliente no tiene razón para responder. Adicionalmente, hay abandono en la fase de primer contacto cuando las preguntas específicas del cliente no son respondidas y se recibe una plantilla genérica, lo que reduce la confianza y la percepción de atención personalizada.",
+      "Los clientes se pierden principalmente en la fase post-cotización: CS envía el presupuesto (a veces con múltiples archivos sin explicación), el cliente no responde y el único seguimiento es un mensaje genérico automatizado días después que no genera reacción. El segundo punto crítico de abandono ocurre en la fase de calificación inicial, cuando CS prioriza recopilar datos personales antes de responder las preguntas técnicas del cliente, generando fricción que enfría el interés. En resumen: el funnel se rompe entre 'cotización enviada' y 'decisión de compra' por ausencia de seguimiento oportuno, personalizado y con propuesta de valor clara.",
+      "La mayoría de los clientes se pierden en dos momentos críticos: (1) tras el primer intercambio de información, cuando el cliente dice 'voy a verificar' o 'voy a tomar medidas' y CS no genera un compromiso concreto con fecha o alternativa de acción (abandono por fricción pasiva); y (2) inmediatamente después de recibir la cotización o precio final, cuando CS no hace seguimiento proactivo y el cliente no tiene un motivo urgente para decidir. El funnel colapsa en la transición de 'interés' a 'decisión' por falta de acompañamiento activo, urgencia real y manejo de objeciones que conviertan dudas en razones de compra.",
+      "Los clientes se pierden principalmente en dos momentos críticos: (1) Fase de interés inicial, cuando CS responde con plantillas genéricas que no atienden la pregunta específica del cliente, generando frialdad y desconexión inmediata; y (2) Fase de consideración/cierre, cuando el cliente expresa una barrera (tercero involucrado, comparación de opciones, producto no disponible) y CS responde de forma pasiva o negativa sin intentar rescatar la venta. En los 3 casos el funnel se rompe antes de llegar a cotización formal, reflejando una tasa de conversión muy baja desde el primer contacto.",
+      "Los clientes se pierden principalmente en la fase de 'presentación de información': CS entrega una respuesta genérica con plantilla + múltiples adjuntos, el cliente responde una vez más (o no responde), y la conversación muere sin que CS haya logrado obtener las medidas del espacio ni un compromiso concreto. El punto crítico es el momento post-precio o post-información, donde CS cierra con mensajes pasivos ('con gusto', 'estoy a su disposición') en lugar de impulsar activamente el siguiente paso del funnel (cotización formal, visita agendada o muestra física).",
+      "Los clientes se pierden principalmente en dos momentos críticos: (1) inmediatamente después del primer mensaje de CS, cuando la respuesta genérica y no personalizada no genera engagement suficiente para que el cliente continúe la conversación; y (2) en la transición hacia el cierre o agendamiento, cuando el cliente da una señal de intención concreta (pedir visita, preguntar ubicación) y CS responde con preguntas abiertas sin comprometerse a un próximo paso claro, dejando la carga de avanzar en el cliente. El funnel se rompe entre el primer contacto y la calificación de necesidades, y entre la intención de compra y el agendamiento de la visita comercial.",
+      "Los clientes se pierden principalmente en la fase post-cotización: reciben el presupuesto, responden con agradecimiento neutro ('Gracias', 'Muchas gracias') o silencio, y CS no logra identificar ni resolver la objeción real antes de que el interés decaiga. El segundo punto crítico de abandono es la fase de consideración prolongada, donde CS acepta pasivamente la indecisión del cliente ('Claro, comprendemos') sin generar urgencia, valor adicional ni propuesta de siguiente paso concreto. En el caso más extremo (chat 43677003), este patrón se extendió por más de 5 meses sin cierre.",
+      "Los clientes abandonan principalmente en dos momentos críticos: (1) inmediatamente después de recibir la cotización, cuando CS no da seguimiento activo ni propone un paso concreto siguiente (cierre sin llamada a la acción), y (2) al hacer una pregunta logística simple —ubicación, teléfono, muestras— que CS responde de forma incompleta, con un archivo adjunto sin contexto, o con un mensaje plantilla que no responde la pregunta real. En ambos casos el cliente queda sin un próximo paso claro y la conversación muere por inercia. El funnel se rompe en la transición entre 'cotización enviada' y 'decisión de compra', etapa donde no existe un protocolo de seguimiento estructurado.",
+      "Los clientes se pierden principalmente en dos momentos críticos: (1) inmediatamente después del primer contacto, cuando CS responde con templates genéricos que no responden la pregunta real del cliente, generando frialdad desde el inicio; y (2) tras la entrega de la cotización, donde no existe un proceso de seguimiento consultivo — el CS abandona la responsabilidad de cierre en el cliente, haciendo preguntas pasivas en lugar de proponer pasos concretos. En todos los casos analizados, el cliente llegó con intención de compra activa y CS no logró sostener esa energía más allá del segundo intercambio.",
+      "Los clientes se pierden principalmente en dos momentos críticos: (1) después de recibir la primera información/catálogo sin una pregunta de cualificación o propuesta de siguiente paso clara — el prospecto queda en pausa indefinida; y (2) después de recibir la cotización formal, cuando CS se limita a 'quedar atentos' sin proponer una fecha, urgencia o acción concreta. En el caso más crítico (chat 17290958), la falla ocurrió en la fase de entrega de cotización inicial en 2024, nunca llegó al cliente, y el lead se enfrió completamente por ausencia de seguimiento en CRM durante 2 años.",
+      "Los clientes se pierden principalmente en dos momentos críticos: (1) entre la solicitud inicial y la primera respuesta de CS, cuando la respuesta tarda demasiado o no corresponde a lo pedido, generando pérdida de interés inmediata; y (2) después de recibir la cotización, cuando CS no hace seguimiento oportuno (menos de 72 horas) ni ofrece una propuesta de acción concreta para cerrar. El funnel colapsa en la fase de 'presentación-cotización' por falta de personalización, y en la fase de 'cierre' por seguimientos tardíos y genéricos.",
+      "Los clientes se pierden principalmente en dos momentos críticos: (1) Durante la fase de calificación, cuando CS hace múltiples preguntas en cadena antes de dar cualquier orientación de precio, generando fricción y sensación de burocracia en clientes con intención de compra inmediata. (2) Inmediatamente después de recibir la cotización formal, sin que haya un seguimiento personalizado y oportuno (48-72h) que aborde posibles objeciones de precio o proceso. El funnel colapsa entre 'solicitud de precio' y 'cierre', no en la etapa de conciencia ni en la de interés inicial.",
+      "Los clientes se pierden principalmente en la fase post-cotización inicial: CS envía precios e información (frecuentemente en bloque con múltiples restricciones), el cliente no responde, y no existe un seguimiento rápido, personalizado ni con propuesta de valor concreta. El ciclo típico de abandono es: cliente interesado → CS responde con plantilla genérica → silencio del cliente → sin seguimiento o seguimiento tardío/impersonal → conversación muerta. En ninguno de los 3 casos CS logró pasar de la etapa informativa a la etapa de cierre o compromiso (visita agendada, medidas confirmadas, o señal de intención de compra).",
+      "Los clientes se pierden principalmente en dos momentos críticos: (1) inmediatamente después de recibir el precio, cuando CS no hace seguimiento activo ni valida si el monto se ajusta al presupuesto del cliente, y (2) al momento de la objeción de precio, donde CS acepta el rechazo sin ofrecer alternativas (fases, financiamiento, materiales alternativos). El funnel colapsa en la etapa de presentación de cotización → cierre, agravado por procesos de levantamiento de información fragmentados que desgastan al cliente antes de que siquiera llegue al precio.",
+      "Los clientes se pierden en la fase POST-COTIZACIÓN: reciben el presupuesto, expresan conformidad superficial ('gracias', 'está bien'), pero no hay un siguiente paso concreto propuesto por CS. El silencio de 7 días consolida la inercia de no-decisión. El seguimiento tardío y genérico no reactiva el interés, y ante la respuesta 'estoy analizando', CS capitula sin intentar descubrir ni resolver las barreras reales de compra."
+    ]
+  }
+}
