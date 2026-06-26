@@ -48,7 +48,7 @@ function Label({ children }: { children: React.ReactNode }) {
 function PriceItems({ clientId, items, setItems }: { clientId: string; items: PriceItem[]; setItems: (v: PriceItem[]) => void }) {
   const [activeTab, setActiveTab] = useState(CATEGORIES[0])
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ name: '', unit: 'm²', price_min: '', price_max: '', currency: 'USD', notes: '' })
+  const [form, setForm] = useState({ name: '', unit: 'm²', price_min: '', currency: 'USD', notes: '' })
   const [editId, setEditId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -62,7 +62,7 @@ function PriceItems({ clientId, items, setItems }: { clientId: string; items: Pr
   }, [items])
 
   function startAdd() {
-    setForm({ name: '', unit: 'm²', price_min: '', price_max: '', currency: 'USD', notes: '' })
+    setForm({ name: '', unit: 'm²', price_min: '', currency: 'USD', notes: '' })
     setEditId(null)
     setShowForm(true)
   }
@@ -72,7 +72,6 @@ function PriceItems({ clientId, items, setItems }: { clientId: string; items: Pr
       name: item.name,
       unit: item.unit ?? 'm²',
       price_min: item.price_min?.toString() ?? '',
-      price_max: item.price_max?.toString() ?? '',
       currency: item.currency,
       notes: item.notes ?? '',
     })
@@ -90,7 +89,7 @@ function PriceItems({ clientId, items, setItems }: { clientId: string; items: Pr
         unit: form.unit,
         currency: form.currency,
         price_min: form.price_min ? parseFloat(form.price_min) : null,
-        price_max: form.price_max ? parseFloat(form.price_max) : null,
+        price_max: null,
         notes: form.notes || null,
         client_id: clientId,
       }
@@ -168,10 +167,10 @@ function PriceItems({ clientId, items, setItems }: { clientId: string; items: Pr
             />
           </div>
 
-          {/* Row 2: prices + currency + unit */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto auto', gap: 12, marginBottom: 14, alignItems: 'end' }}>
+          {/* Row 2: price + currency + unit */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 12, marginBottom: 14, alignItems: 'end' }}>
             <div>
-              <Label>Precio mínimo</Label>
+              <Label>Precio</Label>
               <div style={{ position: 'relative' }}>
                 <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', fontSize: 13 }}>
                   {form.currency === 'CRC' ? '₡' : '$'}
@@ -183,22 +182,6 @@ function PriceItems({ clientId, items, setItems }: { clientId: string; items: Pr
                   style={{ paddingLeft: 22 }}
                   value={form.price_min}
                   onChange={e => setForm(f => ({ ...f, price_min: e.target.value }))}
-                />
-              </div>
-            </div>
-            <div>
-              <Label>Precio máximo</Label>
-              <div style={{ position: 'relative' }}>
-                <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', fontSize: 13 }}>
-                  {form.currency === 'CRC' ? '₡' : '$'}
-                </span>
-                <input
-                  className="form-control"
-                  type="number"
-                  placeholder="igual que mínimo"
-                  style={{ paddingLeft: 22 }}
-                  value={form.price_max}
-                  onChange={e => setForm(f => ({ ...f, price_max: e.target.value }))}
                 />
               </div>
             </div>
