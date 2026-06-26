@@ -26,10 +26,12 @@ const CATEGORIES = ['Persianas', 'Verticales', 'Cortinas', 'Toldos Retráctiles'
 
 function fmtPrice(item: PriceItem) {
   const sym = item.currency === 'CRC' ? '₡' : '$'
-  if (item.price_min && item.price_max)
-    return `${sym}${Number(item.price_min).toLocaleString()} – ${sym}${Number(item.price_max).toLocaleString()}`
-  if (item.price_min) return `desde ${sym}${Number(item.price_min).toLocaleString()}`
-  if (item.price_max) return `hasta ${sym}${Number(item.price_max).toLocaleString()}`
+  const unit = item.unit ? ` / ${item.unit}` : ''
+  const fmt = (n: number) => sym + Number(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+  if (item.price_min && item.price_max && item.price_min !== item.price_max)
+    return `${fmt(item.price_min)} – ${fmt(item.price_max)}${unit}`
+  if (item.price_min) return `${fmt(item.price_min)}${unit}`
+  if (item.price_max) return `${fmt(item.price_max)}${unit}`
   return <span style={{ color: 'var(--muted)' }}>Sin precio</span>
 }
 
@@ -46,7 +48,7 @@ function Label({ children }: { children: React.ReactNode }) {
 function PriceItems({ clientId, items, setItems }: { clientId: string; items: PriceItem[]; setItems: (v: PriceItem[]) => void }) {
   const [activeTab, setActiveTab] = useState(CATEGORIES[0])
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ name: '', price_min: '', price_max: '', currency: 'USD', notes: '' })
+  const [form, setForm] = useState({ name: '', unit: 'm²', price_min: '', price_max: '', currency: 'USD', notes: '' })
   const [editId, setEditId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -60,7 +62,7 @@ function PriceItems({ clientId, items, setItems }: { clientId: string; items: Pr
   }, [items])
 
   function startAdd() {
-    setForm({ name: '', price_min: '', price_max: '', currency: 'USD', notes: '' })
+    setForm({ name: '', unit: 'm²', price_min: '', price_max: '', currency: 'USD', notes: '' })
     setEditId(null)
     setShowForm(true)
   }
@@ -68,6 +70,7 @@ function PriceItems({ clientId, items, setItems }: { clientId: string; items: Pr
   function startEdit(item: PriceItem) {
     setForm({
       name: item.name,
+      unit: item.unit ?? 'm²',
       price_min: item.price_min?.toString() ?? '',
       price_max: item.price_max?.toString() ?? '',
       currency: item.currency,
@@ -84,7 +87,7 @@ function PriceItems({ clientId, items, setItems }: { clientId: string; items: Pr
       const payload = {
         category: activeTab,
         name: form.name,
-        unit: 'm²',
+        unit: form.unit,
         currency: form.currency,
         price_min: form.price_min ? parseFloat(form.price_min) : null,
         price_max: form.price_max ? parseFloat(form.price_max) : null,
@@ -165,10 +168,10 @@ function PriceItems({ clientId, items, setItems }: { clientId: string; items: Pr
             />
           </div>
 
-          {/* Row 2: prices + currency */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 12, marginBottom: 14, alignItems: 'end' }}>
+          {/* Row 2: prices + currency + unit */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto auto', gap: 12, marginBottom: 14, alignItems: 'end' }}>
             <div>
-              <Label>Precio mínimo / m²</Label>
+              <Label>Precio mínimo</Label>
               <div style={{ position: 'relative' }}>
                 <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', fontSize: 13 }}>
                   {form.currency === 'CRC' ? '₡' : '$'}
@@ -184,7 +187,7 @@ function PriceItems({ clientId, items, setItems }: { clientId: string; items: Pr
               </div>
             </div>
             <div>
-              <Label>Precio máximo / m²</Label>
+              <Label>Precio máximo</Label>
               <div style={{ position: 'relative' }}>
                 <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', fontSize: 13 }}>
                   {form.currency === 'CRC' ? '₡' : '$'}
@@ -192,12 +195,25 @@ function PriceItems({ clientId, items, setItems }: { clientId: string; items: Pr
                 <input
                   className="form-control"
                   type="number"
-                  placeholder="0"
+                  placeholder="igual que mínimo"
                   style={{ paddingLeft: 22 }}
                   value={form.price_max}
                   onChange={e => setForm(f => ({ ...f, price_max: e.target.value }))}
                 />
               </div>
+            </div>
+            <div>
+              <Label>Unidad</Label>
+              <select
+                className="form-control"
+                value={form.unit}
+                onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}
+                style={{ height: 38 }}
+              >
+                <option value="m²">m²</option>
+                <option value="unidad">unidad</option>
+                <option value="m lineal">m lineal</option>
+              </select>
             </div>
             <div>
               <Label>Moneda</Label>
@@ -253,7 +269,7 @@ function PriceItems({ clientId, items, setItems }: { clientId: string; items: Pr
           <thead>
             <tr>
               <th>Producto</th>
-              <th>Precio por m²</th>
+              <th>Precio</th>
               <th>Notas</th>
               <th></th>
             </tr>
