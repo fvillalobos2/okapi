@@ -169,6 +169,24 @@ def delete_lead(phone: str, business_id: Optional[str] = None) -> bool:
         return False
 
 
+def update_lead_fields_if_empty(phone: str, fields: dict, business_id: Optional[str] = None):
+    """Update lead fields only if they are currently null/empty — never overwrite existing data."""
+    b = _bid(business_id)
+    if not b or not fields:
+        return
+    try:
+        r = _sb().table('leads').select('name,email,phone').eq('phone', phone).eq('business_id', b).limit(1).execute()
+        if not r.data:
+            return
+        current = r.data[0]
+        to_update = {k: v for k, v in fields.items() if v and not current.get(k)}
+        if to_update:
+            _sb().table('leads').update(to_update).eq('phone', phone).eq('business_id', b).execute()
+            print(f'  ✓ Lead fields updated: {list(to_update.keys())}')
+    except Exception as e:
+        print(f'  ⚠ update_lead_fields_if_empty: {e}')
+
+
 # ─── CONVERSATION STORE ───────────────────────────────────────────────────────
 
 def get_history(phone: str, business_id: Optional[str] = None) -> list:

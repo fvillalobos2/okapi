@@ -140,6 +140,20 @@ Examples (assume 4-day rental):
 
 Return ONLY valid JSON. No explanation."""
 
+CONTACT_EXTRACT_PROMPT = """Extract contact information from a WhatsApp conversation between a booking agent and a customer.
+
+Look through ALL messages and extract:
+- name: the customer's full name (if explicitly stated)
+- email: the customer's email address (if explicitly stated)
+- phone: the customer's phone number (only if explicitly stated AND different from their WhatsApp number)
+
+Return ONLY a JSON object with exactly three fields:
+{"name": "John Smith", "email": "john@example.com", "phone": null}
+
+Use null for any field not found. NEVER guess or infer — only extract explicitly stated information.
+Names are given in response to "what is your name?" or volunteered by the customer.
+Emails look like xxx@xxx.xxx"""
+
 # ─── TILOPAY ─────────────────────────────────────────────────────────────────
 
 _token_cache: dict = {'token': None, 'expires': 0.0}
@@ -358,6 +372,35 @@ def _extract_price(provider_message: str, pickup: str, dropoff: str):
                 print(f'  ⚠ Regex fallback: {currency} {price}')
 
     return available, price, currency
+
+
+def update_lead_contact_info(from_number: str, business_id: Optional[str] = None):
+    """Extract name/email from recent conversation and update lead if fields are missing."""
+    existing = store.get_lead_by_phone(from_number, business_id)
+    if existing and existing.get('name') and existing.get('email'):
+        return  # both already set — skip Claude call
+    history = store.get_history(from_number, business_id)
+    if not history:
+        return
+    recent = history[-10:]
+    transcript = '\n'.join(
+        f"[{'Customer' if m['role'] == 'user' else 'Agent'}]: {m.get('content', '')}"
+        for m in recent
+    )
+    try:
+        resp = claude_client.messages.create(
+            model='claude-sonnet-4-6',
+            max_tokens=128,
+            system=CONTACT_EXTRACT_PROMPT,
+            messages=[{'role': 'user', 'content': transcript}],
+        )
+        raw = resp.content[0].text.strip()
+        parsed = json.loads(raw)
+        fields = {k: v for k, v in parsed.items() if v and k in ('name', 'email')}
+        if fields:
+            store.update_lead_fields_if_empty(from_number, fields, business_id)
+    except Exception as e:
+        print(f'  ⚠ update_lead_contact_info: {e}')
 
 
 def relay_quote_to_client(provider_message: str, booking_text: str,
@@ -1192,6 +1235,7 @@ def handle_inbound(from_number: str, body: str,
                          'as soon as possible. 🏖️' + after_hours_note('en'))
 
     store.append_message(from_number, 'assistant', reply, bid)
+    update_lead_contact_info(from_number, bid)
     print(f'  → {from_number}: {reply[:80]}')
     return reply
 
