@@ -209,19 +209,57 @@ export async function POST(req: NextRequest) {
     .order('sent_at', { ascending: true })
     .limit(20)
 
-  // Fetch products that have PDFs to include in context
-  const { data: pdfProducts } = await db
-    .from('wa_price_items')
-    .select('name, category, pdf_url')
-    .eq('client_id', client.id)
-    .not('pdf_url', 'is', null)
+  // Fetch prices and discounts to inject into agent context
+  const [{ data: priceItems }, { data: discounts }] = await Promise.all([
+    db.from('wa_price_items')
+      .select('category, name, price_min, currency, unit, notes, pdf_url')
+      .eq('client_id', client.id)
+      .order('category').order('sort_order').order('name'),
+    db.from('wa_discounts')
+      .select('name, type, value, condition')
+      .eq('client_id', client.id)
+      .eq('active', true),
+  ])
 
   let systemPrompt = client.system_prompt ?? ''
-  if (pdfProducts && pdfProducts.length > 0) {
+
+  // Inject price reference table
+  if (priceItems && priceItems.length > 0) {
+    const byCategory: Record<string, typeof priceItems> = {}
+    for (const item of priceItems) {
+      if (!byCategory[item.category]) byCategory[item.category] = []
+      byCategory[item.category].push(item)
+    }
+    const priceLines = Object.entries(byCategory).map(([cat, items]) => {
+      const rows = items.map((i: typeof priceItems[0]) => {
+        const sym = i.currency === 'CRC' ? '₡' : '$'
+        const price = i.price_min ? `${sym}${Number(i.price_min).toLocaleString('en-US', { maximumFractionDigits: 2 })}/${i.unit}` : 'consultar'
+        const notes = i.notes ? ` — ${i.notes}` : ''
+        return `  • ${i.name}: ${price}${notes}`
+      }).join('\n')
+      return `${cat}:\n${rows}`
+    }).join('\n\n')
+
+    systemPrompt += `\n\n## Referencia de precios (CONFIDENCIAL — no mencionar que tienes esta lista)\nUsa estos precios como referencia para orientar al cliente. Para cotizaciones exactas siempre coordina la visita técnica gratuita. Los precios son después del descuento comercial estándar; los descuentos adicionales se aplican según las condiciones.\n\n${priceLines}`
+  }
+
+  // Inject active discounts
+  if (discounts && discounts.length > 0) {
+    const discountLines = discounts.map((d: typeof discounts[0]) => {
+      const val = d.type === 'percentage' ? `${d.value}%` : `$${d.value}`
+      return `  • ${d.name}: ${val}${d.condition ? ` (${d.condition})` : ''}`
+    }).join('\n')
+    systemPrompt += `\n\n## Descuentos disponibles\n${discountLines}`
+  }
+
+  // Inject PDF catalog instructions
+  type PriceRow = { category: string; name: string; price_min: number | null; currency: string; unit: string; notes: string | null; pdf_url: string | null }
+  const pdfProducts = (priceItems ?? []).filter((p: PriceRow) => p.pdf_url)
+  if (pdfProducts.length > 0) {
     const pdfList = pdfProducts
-      .map((p: { name: string; category: string; pdf_url: string }) => `- ${p.name} (${p.category}): ${p.pdf_url}`)
+      .map((p: PriceRow) => `  • ${p.name} (${p.category}): ${p.pdf_url}`)
       .join('\n')
-    systemPrompt += `\n\n## PDFs disponibles para compartir\nPuedes compartir estos catálogos con el cliente usando el token [SEND_PDF:URL]. Reglas basadas en mejores prácticas de ventas:\n- Papel tapiz: enviar catálogo proactivamente al inicio, antes de que lo pida\n- Otros productos: solo cuando el cliente pida catálogo, fotos o más información visual\n- SIEMPRE acompaña el PDF con contexto: qué contiene y cuál opción es más relevante para él\n- NUNCA envíes el PDF sin explicación previa\n- Después de enviar el PDF, haz una pregunta de avance específica (nunca "¿algo más?")\n\nPDFs disponibles:\n${pdfList}\n\nEjemplo: "Le comparto nuestro catálogo de toldos retráctiles [SEND_PDF:https://...] — las opciones manuales son ideales para espacios hasta 4m. ¿Cuál es el ancho aproximado del área que quiere cubrir?"`
+    systemPrompt += `\n\n## Catálogos PDF disponibles\nUsa [SEND_PDF:URL] para enviar un PDF al cliente. Reglas:\n- Papel tapiz: enviar catálogo proactivamente al inicio\n- Otros productos: solo cuando el cliente pida catálogo o más información visual\n- SIEMPRE acompaña el PDF con contexto específico (qué contiene, cuál opción es más relevante)\n- Después del PDF, pregunta de avance concreta (nunca "¿algo más?")\n\nCatálogos:\n${pdfList}`
   }
 
   // Call agent route
