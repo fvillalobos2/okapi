@@ -209,12 +209,27 @@ export async function POST(req: NextRequest) {
     .order('sent_at', { ascending: true })
     .limit(20)
 
+  // Fetch products that have PDFs to include in context
+  const { data: pdfProducts } = await db
+    .from('wa_price_items')
+    .select('name, category, pdf_url')
+    .eq('client_id', client.id)
+    .not('pdf_url', 'is', null)
+
+  let systemPrompt = client.system_prompt ?? ''
+  if (pdfProducts && pdfProducts.length > 0) {
+    const pdfList = pdfProducts
+      .map((p: { name: string; category: string; pdf_url: string }) => `- ${p.name} (${p.category}): ${p.pdf_url}`)
+      .join('\n')
+    systemPrompt += `\n\n## PDFs disponibles para compartir\nPuedes compartir estos catálogos con el cliente usando el token [SEND_PDF:URL]. Reglas basadas en mejores prácticas de ventas:\n- Papel tapiz: enviar catálogo proactivamente al inicio, antes de que lo pida\n- Otros productos: solo cuando el cliente pida catálogo, fotos o más información visual\n- SIEMPRE acompaña el PDF con contexto: qué contiene y cuál opción es más relevante para él\n- NUNCA envíes el PDF sin explicación previa\n- Después de enviar el PDF, haz una pregunta de avance específica (nunca "¿algo más?")\n\nPDFs disponibles:\n${pdfList}\n\nEjemplo: "Le comparto nuestro catálogo de toldos retráctiles [SEND_PDF:https://...] — las opciones manuales son ideales para espacios hasta 4m. ¿Cuál es el ancho aproximado del área que quiere cubrir?"`
+  }
+
   // Call agent route
   const agentRes = await fetch(new URL('/api/agent', req.url).toString(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      system_prompt: client.system_prompt,
+      system_prompt: systemPrompt,
       history: history ?? [],
       message: body,
     }),
@@ -245,16 +260,26 @@ export async function POST(req: NextRequest) {
     }).catch(err => console.error('Pipedrive error:', err))
   }
 
+  // Extract [SEND_PDF:url] tokens from reply
+  const pdfTokenRegex = /\[SEND_PDF:(https?:\/\/[^\]]+)\]/g
+  const pdfUrls: string[] = []
+  const cleanReply = reply.replace(pdfTokenRegex, (_, url) => { pdfUrls.push(url); return '' }).trim()
+
   // Store outbound message
   await db.from('wa_messages').insert({
     conversation_id: conv.id,
     direction: 'outbound',
-    body: reply,
+    body: cleanReply,
     approved: true,
   })
 
-  // Send via Twilio
-  await twilioClient.messages.create({ from: to, to: from, body: reply })
+  // Send text reply
+  await twilioClient.messages.create({ from: to, to: from, body: cleanReply })
+
+  // Send each PDF as a separate Twilio media message
+  for (const pdfUrl of pdfUrls) {
+    await twilioClient.messages.create({ from: to, to: from, mediaUrl: [pdfUrl], body: '' })
+  }
 
   return twimlOk()
 }

@@ -11,6 +11,7 @@ type PriceItem = {
   price_max: number | null
   currency: string
   notes: string | null
+  pdf_url: string | null
 }
 
 type Discount = {
@@ -51,6 +52,22 @@ function PriceItems({ clientId, items, setItems }: { clientId: string; items: Pr
   const [form, setForm] = useState({ name: '', unit: 'm²', price_min: '', currency: 'USD', notes: '' })
   const [editId, setEditId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [uploadingId, setUploadingId] = useState<string | null>(null)
+
+  async function uploadPdf(item: PriceItem, file: File) {
+    setUploadingId(item.id)
+    const fd = new FormData()
+    fd.append('file', file)
+    const r = await fetch(`/api/prices/${item.id}/pdf`, { method: 'POST', body: fd })
+    const data = await r.json()
+    if (data.pdf_url) setItems(items.map(i => i.id === item.id ? { ...i, pdf_url: data.pdf_url } : i))
+    setUploadingId(null)
+  }
+
+  async function removePdf(item: PriceItem) {
+    await fetch(`/api/prices/${item.id}/pdf`, { method: 'DELETE' })
+    setItems(items.map(i => i.id === item.id ? { ...i, pdf_url: null } : i))
+  }
 
   const byCategory = useMemo(() => {
     const map: Record<string, PriceItem[]> = {}
@@ -254,13 +271,14 @@ function PriceItems({ clientId, items, setItems }: { clientId: string; items: Pr
               <th>Producto</th>
               <th>Precio</th>
               <th>Notas</th>
+              <th>PDF</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             {displayed.length === 0 && (
               <tr>
-                <td colSpan={4} style={{ textAlign: 'center', color: 'var(--muted)', padding: 36 }}>
+                <td colSpan={5} style={{ textAlign: 'center', color: 'var(--muted)', padding: 36 }}>
                   Sin productos en {activeTab} — click <strong>+ Agregar producto</strong>
                 </td>
               </tr>
@@ -269,7 +287,32 @@ function PriceItems({ clientId, items, setItems }: { clientId: string; items: Pr
               <tr key={item.id}>
                 <td style={{ fontWeight: 500 }}>{item.name}</td>
                 <td style={{ fontFamily: 'monospace', fontSize: 13, color: 'var(--success)' }}>{fmtPrice(item)}</td>
-                <td style={{ color: 'var(--muted)', fontSize: 12, maxWidth: 240 }}>{item.notes ?? '—'}</td>
+                <td style={{ color: 'var(--muted)', fontSize: 12, maxWidth: 200 }}>{item.notes ?? '—'}</td>
+                <td style={{ whiteSpace: 'nowrap' }}>
+                  {item.pdf_url ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <a href={item.pdf_url} target="_blank" rel="noreferrer"
+                        style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M4 2h6l4 4v8a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M10 2v4h4"/>
+                        </svg>
+                        PDF
+                      </a>
+                      <button onClick={() => removePdf(item)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 11, padding: '2px 4px' }}
+                        title="Quitar PDF">✕</button>
+                    </div>
+                  ) : (
+                    <label style={{ cursor: 'pointer' }}>
+                      <input type="file" accept="application/pdf" style={{ display: 'none' }}
+                        onChange={e => { const f = e.target.files?.[0]; if (f) uploadPdf(item, f); e.target.value = '' }} />
+                      <span style={{ fontSize: 11, color: uploadingId === item.id ? 'var(--accent)' : 'var(--muted)',
+                        border: '1px dashed var(--border)', borderRadius: 5, padding: '3px 8px', whiteSpace: 'nowrap' }}>
+                        {uploadingId === item.id ? 'Subiendo…' : '+ PDF'}
+                      </span>
+                    </label>
+                  )}
+                </td>
                 <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                   <button className="btn btn-ghost btn-sm" style={{ marginRight: 6 }} onClick={() => startEdit(item)}>Editar</button>
                   <button className="btn btn-danger btn-sm" onClick={() => remove(item.id)}>Eliminar</button>
