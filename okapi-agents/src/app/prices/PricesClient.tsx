@@ -23,7 +23,7 @@ type Discount = {
   active: boolean
 }
 
-const CATEGORIES = ['Persianas', 'Verticales', 'Cortinas', 'Toldos Retráctiles', 'Piso Laminado SPC', 'Deck', 'Papel Tapiz']
+const CATEGORIES = ['Persianas', 'Verticales', 'Cortinas', 'Toldos Retráctiles', 'Toldos Verticales', 'Piso Laminado SPC', 'Deck', 'Papel Tapiz']
 
 function fmtPrice(item: PriceItem) {
   const sym = item.currency === 'CRC' ? '₡' : '$'
