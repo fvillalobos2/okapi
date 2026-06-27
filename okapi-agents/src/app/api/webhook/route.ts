@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import twilio from 'twilio'
 import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 import { db } from '@/lib/supabase'
 
 const twilioClient = twilio(
@@ -9,6 +10,7 @@ const twilioClient = twilio(
 )
 
 const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
 
 function twimlOk() {
   return new NextResponse(
@@ -108,13 +110,49 @@ async function createPipedriveDeal({
   console.log(`Pipedrive deal ${dealId} created for ${cleanPhone}`)
 }
 
+async function transcribeAudio(mediaUrl: string): Promise<string> {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID!
+  const authToken  = process.env.TWILIO_AUTH_TOKEN!
+  const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64')
+
+  const audioRes = await fetch(mediaUrl, { headers: { Authorization: `Basic ${auth}` } })
+  const audioBuffer = await audioRes.arrayBuffer()
+  const contentType = audioRes.headers.get('content-type') ?? 'audio/ogg'
+  const ext = contentType.includes('mp4') ? 'mp4' : contentType.includes('mpeg') ? 'mp3' : 'ogg'
+
+  const file = new File([audioBuffer], `audio.${ext}`, { type: contentType })
+  const result = await openai.audio.transcriptions.create({
+    file,
+    model: 'whisper-1',
+    language: 'es',
+  })
+  return result.text
+}
+
 export async function POST(req: NextRequest) {
   const formData = await req.formData()
-  const from = formData.get('From') as string
-  const body = formData.get('Body') as string
-  const to   = formData.get('To')   as string
+  const from         = formData.get('From') as string
+  const to           = formData.get('To')   as string
+  const rawBody      = (formData.get('Body') as string) ?? ''
+  const numMedia     = parseInt((formData.get('NumMedia') as string) ?? '0', 10)
+  const mediaUrl     = formData.get('MediaUrl0') as string | null
+  const mediaType    = (formData.get('MediaContentType0') as string | null) ?? ''
 
-  if (!from || !body || !to) return new NextResponse('Bad Request', { status: 400 })
+  if (!from || !to) return new NextResponse('Bad Request', { status: 400 })
+
+  // Transcribe audio if present
+  let body = rawBody
+  if (numMedia > 0 && mediaUrl && mediaType.startsWith('audio/')) {
+    try {
+      const transcript = await transcribeAudio(mediaUrl)
+      body = transcript ? `[Nota de voz]: ${transcript}` : rawBody
+    } catch (e) {
+      console.error('Whisper transcription error:', e)
+      body = rawBody || '[Nota de voz no transcribible]'
+    }
+  }
+
+  if (!body) return twimlOk() // e.g. image with no caption — skip for now
 
   // Validate Twilio signature in production
   if (process.env.NODE_ENV === 'production') {
