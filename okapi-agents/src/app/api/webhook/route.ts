@@ -253,8 +253,9 @@ export async function POST(req: NextRequest) {
     systemPrompt += `\n\n## Catálogos PDF disponibles\nUsa [SEND_PDF:URL] para enviar un PDF al cliente. Reglas:\n- Papel tapiz: enviar catálogo proactivamente al inicio\n- Otros productos: solo cuando el cliente pida catálogo o más información visual\n- SIEMPRE acompaña el PDF con contexto específico (qué contiene, cuál opción es más relevante)\n- Después del PDF, pregunta de avance concreta (nunca "¿algo más?")\n\nCatálogos:\n${pdfList}`
   }
 
-  // Call agent route
-  const agentRes = await fetch(new URL('/api/agent', req.url).toString(), {
+  // Call agent route (use APP_URL to avoid Railway internal SSL mismatch)
+  const baseUrl = process.env.APP_URL ?? `https://${req.headers.get('host')}`
+  const agentRes = await fetch(`${baseUrl}/api/agent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
