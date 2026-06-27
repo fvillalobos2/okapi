@@ -158,10 +158,12 @@ export async function POST(req: NextRequest) {
   if (process.env.NODE_ENV === 'production') {
     const authToken = process.env.TWILIO_AUTH_TOKEN!
     const signature = req.headers.get('x-twilio-signature') ?? ''
-    const url       = req.url
+    // Use the configured public URL to avoid Railway internal URL mismatch
+    const publicUrl = `${process.env.APP_URL ?? 'https://innova.projectokapi.com'}/api/webhook`
     const params: Record<string, string> = {}
     formData.forEach((v, k) => { params[k] = v as string })
-    if (!twilio.validateRequest(authToken, signature, url, params)) {
+    if (!twilio.validateRequest(authToken, signature, publicUrl, params)) {
+      console.error('Twilio signature validation failed', { signature, publicUrl })
       return new NextResponse('Forbidden', { status: 403 })
     }
   }
