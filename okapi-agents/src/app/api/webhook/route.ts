@@ -19,22 +19,70 @@ function twimlOk() {
   )
 }
 
+// Parse UTM params embedded in the first WhatsApp message
+// Landing pages can embed them via: wa.me/...?text=utm_source%3Dgoogle%26...
+function parseUtm(body: string): Record<string, string> | null {
+  const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'gclid', 'fbclid']
+  const found: Record<string, string> = {}
+  try {
+    const params = new URLSearchParams(body.replace(/\s+/g, '&'))
+    for (const key of utmKeys) {
+      const val = params.get(key)
+      if (val) found[key] = val
+    }
+  } catch {}
+  // Also try regex match for embedded params anywhere in the body
+  for (const key of utmKeys) {
+    if (!found[key]) {
+      const match = body.match(new RegExp(`${key}[=:]([\\w-]+)`, 'i'))
+      if (match) found[key] = match[1]
+    }
+  }
+  return Object.keys(found).length > 0 ? found : null
+}
+
+async function updatePipedriveContact(
+  personId: number,
+  info: { name?: string; email?: string; phone?: string }
+) {
+  const token = process.env.PIPEDRIVE_API_TOKEN
+  if (!token || !personId) return
+  const body: Record<string, unknown> = {}
+  if (info.name)  body.name  = info.name
+  if (info.email) body.email = [{ value: info.email, primary: true }]
+  if (info.phone) body.phone = [{ value: info.phone, primary: false, label: 'mobile' }]
+  if (!Object.keys(body).length) return
+  await fetch(`https://api.pipedrive.com/v1/persons/${personId}?api_token=${token}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
 async function createPipedriveDeal({
   convId,
   phone,
   customerName,
+  customerEmail,
   history,
+  utm,
+  pipelineId = 3,
+  stageId = 19,
 }: {
   convId: string
   phone: string
   customerName: string | null
+  customerEmail: string | null
   history: { direction: string; body: string }[]
-}) {
+  utm: Record<string, string> | null
+  pipelineId?: number
+  stageId?: number
+}): Promise<{ dealId: number; personId: number | null } | null> {
   const token = process.env.PIPEDRIVE_API_TOKEN
-  if (!token) return
+  if (!token) return null
 
   const appUrl = process.env.APP_URL ?? 'https://innova.projectokapi.com'
-  const convUrl = `${appUrl}/conversations/${convId}`
+  const convUrl = `${appUrl}/clients/innova/${convId}`
   const cleanPhone = phone.replace('whatsapp:', '')
 
   // Generate conversation summary
@@ -63,14 +111,20 @@ async function createPipedriveDeal({
     const searchData = await searchRes.json()
     if (searchData.data?.items?.length > 0) {
       personId = searchData.data.items[0].item.id
+      // Update name/email if we have them
+      if (customerName || customerEmail) {
+        await updatePipedriveContact(personId!, { name: customerName ?? undefined, email: customerEmail ?? undefined })
+      }
     } else {
+      const personBody: Record<string, unknown> = {
+        name: customerName ?? cleanPhone,
+        phone: [{ value: cleanPhone, primary: true }],
+      }
+      if (customerEmail) personBody.email = [{ value: customerEmail, primary: true }]
       const createRes = await fetch(`https://api.pipedrive.com/v1/persons?api_token=${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: customerName ?? cleanPhone,
-          phone: [{ value: cleanPhone, primary: true }],
-        }),
+        body: JSON.stringify(personBody),
       })
       const personData = await createRes.json()
       personId = personData.data?.id ?? null
@@ -79,14 +133,17 @@ async function createPipedriveDeal({
     console.error('Pipedrive person error:', e)
   }
 
+  // Build UTM label for deal title
+  const utmLabel = utm?.utm_campaign ? ` [${utm.utm_campaign}]` : ''
+
   // Create Deal in Prospecto (pipeline 1, stage 1)
   const dealRes = await fetch(`https://api.pipedrive.com/v1/deals?api_token=${token}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      title: dealTitle,
-      pipeline_id: 1,
-      stage_id: 1,
+      title: `${dealTitle}${utmLabel}`,
+      pipeline_id: pipelineId,
+      stage_id: stageId,
       ...(personId ? { person_id: personId } : {}),
     }),
   })
@@ -94,20 +151,27 @@ async function createPipedriveDeal({
   const dealId = dealData.data?.id
   if (!dealId) {
     console.error('Pipedrive deal creation failed:', dealData)
-    return
+    return null
   }
 
-  // Add note: summary + link
+  // Build note: summary + UTM info + link
+  const utmLines = utm
+    ? Object.entries(utm).map(([k, v]) => `${k}: ${v}`).join('\n')
+    : ''
+  const noteContent = [
+    summary,
+    utmLines ? `\n📊 Campaña:\n${utmLines}` : '',
+    `\n🔗 Conversación: ${convUrl}`,
+  ].join('\n')
+
   await fetch(`https://api.pipedrive.com/v1/notes?api_token=${token}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      content: `${summary}\n\n🔗 Conversación: ${convUrl}`,
-      deal_id: dealId,
-    }),
+    body: JSON.stringify({ content: noteContent, deal_id: dealId }),
   })
 
   console.log(`Pipedrive deal ${dealId} created for ${cleanPhone}`)
+  return { dealId, personId }
 }
 
 async function transcribeAudio(mediaUrl: string): Promise<string> {
@@ -131,12 +195,12 @@ async function transcribeAudio(mediaUrl: string): Promise<string> {
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData()
-  const from         = formData.get('From') as string
-  const to           = formData.get('To')   as string
-  const rawBody      = (formData.get('Body') as string) ?? ''
-  const numMedia     = parseInt((formData.get('NumMedia') as string) ?? '0', 10)
-  const mediaUrl     = formData.get('MediaUrl0') as string | null
-  const mediaType    = (formData.get('MediaContentType0') as string | null) ?? ''
+  const from      = formData.get('From') as string
+  const to        = formData.get('To')   as string
+  const rawBody   = (formData.get('Body') as string) ?? ''
+  const numMedia  = parseInt((formData.get('NumMedia') as string) ?? '0', 10)
+  const mediaUrl  = formData.get('MediaUrl0') as string | null
+  const mediaType = (formData.get('MediaContentType0') as string | null) ?? ''
 
   if (!from || !to) return new NextResponse('Bad Request', { status: 400 })
 
@@ -152,15 +216,26 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  if (!body) return twimlOk() // e.g. image with no caption — skip for now
+  if (!body) return twimlOk()
 
-  // TODO: re-enable signature validation after testing
-  // Twilio signature validation disabled temporarily for debugging
+  // Twilio signature validation
+  const appUrl = process.env.APP_URL
+  if (appUrl && process.env.TWILIO_AUTH_TOKEN) {
+    const webhookUrl = `${appUrl}/api/webhook`
+    const params: Record<string, string> = {}
+    for (const [k, v] of formData.entries()) params[k] = v as string
+    const signature = req.headers.get('x-twilio-signature') ?? ''
+    const valid = twilio.validateRequest(process.env.TWILIO_AUTH_TOKEN, signature, webhookUrl, params)
+    if (!valid) {
+      console.warn('Invalid Twilio signature — request rejected')
+      return new NextResponse('Forbidden', { status: 403 })
+    }
+  }
 
   // Resolve client by Twilio number
   const { data: client } = await db
     .from('wa_clients')
-    .select('id, system_prompt')
+    .select('id, system_prompt, name, website, instagram, facebook, phone_display, email, address, city, country, business_hours, description, financing_info, warranty_info, service_area, pipedrive_pipeline_id, pipedrive_stage_id, sales_whatsapp')
     .eq('twilio_number', to)
     .limit(1)
     .single()
@@ -177,12 +252,21 @@ export async function POST(req: NextRequest) {
       { client_id: client.id, customer_phone: from, updated_at: new Date().toISOString() },
       { onConflict: 'client_id,customer_phone' }
     )
-    .select('id, status, customer_name')
+    .select('id, status, customer_name, customer_email, pipedrive_deal_id, pipedrive_person_id, utm_source, utm_campaign')
     .single()
 
   if (convErr || !conv) {
     console.error('conversation upsert error', convErr)
     return twimlOk()
+  }
+
+  // Parse UTM from first message (only if not already captured)
+  const isFirstMessage = !conv.utm_source && !conv.utm_campaign
+  if (isFirstMessage) {
+    const utm = parseUtm(body)
+    if (utm) {
+      await db.from('wa_conversations').update(utm).eq('id', conv.id)
+    }
   }
 
   // Store inbound message
@@ -200,7 +284,7 @@ export async function POST(req: NextRequest) {
     .order('sent_at', { ascending: true })
     .limit(20)
 
-  // Fetch prices and discounts to inject into agent context
+  // Fetch prices and discounts
   const [{ data: priceItems }, { data: discounts }] = await Promise.all([
     db.from('wa_price_items')
       .select('category, name, price_min, currency, unit, notes, pdf_url')
@@ -213,6 +297,25 @@ export async function POST(req: NextRequest) {
   ])
 
   let systemPrompt = client.system_prompt ?? ''
+
+  // Inject business profile
+  const profileLines: string[] = []
+  if (client.name)           profileLines.push(`Negocio: ${client.name}`)
+  if (client.description)    profileLines.push(`Descripción: ${client.description}`)
+  if (client.phone_display)  profileLines.push(`Teléfono: ${client.phone_display}`)
+  if (client.email)          profileLines.push(`Email: ${client.email}`)
+  if (client.website)        profileLines.push(`Sitio web: ${client.website}`)
+  if (client.instagram)      profileLines.push(`Instagram: ${client.instagram}`)
+  if (client.facebook)       profileLines.push(`Facebook: ${client.facebook}`)
+  if (client.address)        profileLines.push(`Dirección: ${client.address}`)
+  if (client.city || client.country) profileLines.push(`Ubicación: ${[client.city, client.country].filter(Boolean).join(', ')}`)
+  if (client.service_area)   profileLines.push(`Área de servicio: ${client.service_area}`)
+  if (client.business_hours) profileLines.push(`Horario: ${client.business_hours}`)
+  if (client.financing_info) profileLines.push(`Financiamiento: ${client.financing_info}`)
+  if (client.warranty_info)  profileLines.push(`Garantía: ${client.warranty_info}`)
+  if (profileLines.length > 0) {
+    systemPrompt += `\n\n## Información del negocio\n${profileLines.join('\n')}`
+  }
 
   // Inject price reference table
   if (priceItems && priceItems.length > 0) {
@@ -231,7 +334,7 @@ export async function POST(req: NextRequest) {
       return `${cat}:\n${rows}`
     }).join('\n\n')
 
-    systemPrompt += `\n\n## Referencia de precios (CONFIDENCIAL — no mencionar que tienes esta lista)\nUsa estos precios como referencia para orientar al cliente. Para cotizaciones exactas siempre coordina la visita técnica gratuita. Los precios son después del descuento comercial estándar; los descuentos adicionales se aplican según las condiciones.\n\n${priceLines}`
+    systemPrompt += `\n\n## Referencia de precios (CONFIDENCIAL — no mencionar que tienes esta lista)\nUsa estos precios como referencia. Para cotizaciones exactas coordina la visita técnica gratuita.\n\n${priceLines}`
   }
 
   // Inject active discounts
@@ -250,10 +353,16 @@ export async function POST(req: NextRequest) {
     const pdfList = pdfProducts
       .map((p: PriceRow) => `  • ${p.name} (${p.category}): ${p.pdf_url}`)
       .join('\n')
-    systemPrompt += `\n\n## Catálogos PDF disponibles\nUsa [SEND_PDF:URL] para enviar un PDF al cliente. Reglas:\n- Papel tapiz: enviar catálogo proactivamente al inicio\n- Otros productos: solo cuando el cliente pida catálogo o más información visual\n- SIEMPRE acompaña el PDF con contexto específico (qué contiene, cuál opción es más relevante)\n- Después del PDF, pregunta de avance concreta (nunca "¿algo más?")\n\nCatálogos:\n${pdfList}`
+    systemPrompt += `\n\n## Catálogos PDF disponibles\nUsa [SEND_PDF:URL] para enviar un PDF. Solo cuando el cliente pida más información visual o catálogos.\n\nCatálogos:\n${pdfList}`
   }
 
-  // Call agent route (use APP_URL to avoid Railway internal SSL mismatch)
+  // Contact collection instructions
+  systemPrompt += `\n\n## Recopilación de datos de contacto\nCuando el cliente mencione su nombre, correo electrónico o un número de teléfono adicional (distinto al de WhatsApp), agrega al FINAL de tu respuesta (oculto, no parte del mensaje visible):\n[CONTACT:{"name":"...","email":"...","phone":"..."}]\nSolo incluye los campos que el cliente acaba de compartir en este mensaje. Si no compartió ninguno, no incluyas el token.`
+
+  // WhatsApp formatting rules — must be last so they override everything
+  systemPrompt += `\n\n## REGLAS DE FORMATO WHATSAPP (OBLIGATORIAS)\n- NUNCA uses markdown: sin **, sin *, sin #, sin tablas, sin ---\n- NUNCA uses listas con guion ni asterisco al inicio de línea\n- Usa emojis con moderación para separar puntos: ✅ 📋 💡\n- Escribe en párrafos cortos y naturales, como un humano escribiría por WhatsApp\n- Si debes listar items, sepáralos con saltos de línea simples o números (1. 2. 3.)\n- Los precios en formato simple: ₡15.000/m² no en tabla`
+
+  // Call agent
   const baseUrl = process.env.APP_URL ?? `https://${req.headers.get('host')}`
   const agentRes = await fetch(`${baseUrl}/api/agent`, {
     method: 'POST',
@@ -275,25 +384,100 @@ export async function POST(req: NextRequest) {
     needs_human: boolean
   }
 
-  // Flag conversation and create Pipedrive deal (only on first escalation)
+  // Extract [CONTACT:{...}] token and update conversation + Pipedrive
+  const contactTokenRegex = /\[CONTACT:(\{[^}]*\})\]/g
+  let contactUpdate: { name?: string; email?: string; phone?: string } = {}
+  let replyWithoutContact = reply.replace(contactTokenRegex, (_, json) => {
+    try {
+      const parsed = JSON.parse(json) as { name?: string; email?: string; phone?: string }
+      if (parsed.name)  contactUpdate.name  = parsed.name
+      if (parsed.email) contactUpdate.email = parsed.email
+      if (parsed.phone) contactUpdate.phone = parsed.phone
+    } catch {}
+    return ''
+  }).trim()
+
+  if (Object.keys(contactUpdate).length > 0) {
+    const convUpdate: Record<string, string> = {}
+    if (contactUpdate.name  && !conv.customer_name)  convUpdate.customer_name      = contactUpdate.name
+    if (contactUpdate.email && !conv.customer_email) convUpdate.customer_email     = contactUpdate.email
+    if (contactUpdate.phone)                         convUpdate.customer_phone_alt = contactUpdate.phone
+    if (Object.keys(convUpdate).length > 0) {
+      await db.from('wa_conversations').update(convUpdate).eq('id', conv.id)
+    }
+    if (conv.pipedrive_person_id) {
+      updatePipedriveContact(conv.pipedrive_person_id, contactUpdate).catch(console.error)
+    }
+  }
+
+  // Extract [SEND_PDF:url] tokens
+  const pdfTokenRegex = /\[SEND_PDF:(https?:\/\/[^\]]+)\]/g
+  const pdfUrls: string[] = []
+  const cleanReply = replyWithoutContact.replace(pdfTokenRegex, (_, url) => { pdfUrls.push(url); return '' }).trim()
+
+  // Fetch UTM state (may have just been written above)
+  const { data: convUtm } = await db
+    .from('wa_conversations')
+    .select('utm_source, utm_medium, utm_campaign, utm_content, utm_term, gclid, fbclid, customer_email')
+    .eq('id', conv.id)
+    .single()
+
+  const utmData = convUtm?.utm_source ? {
+    utm_source:   convUtm.utm_source,
+    utm_medium:   convUtm.utm_medium ?? undefined,
+    utm_campaign: convUtm.utm_campaign ?? undefined,
+    utm_content:  convUtm.utm_content ?? undefined,
+    utm_term:     convUtm.utm_term ?? undefined,
+    gclid:        convUtm.gclid  ?? undefined,
+    fbclid:       convUtm.fbclid ?? undefined,
+  } : null
+
+  // Flag conversation and create Pipedrive deal on first escalation
   if (needs_human && conv.status === 'active') {
     await db
       .from('wa_conversations')
       .update({ status: 'pending_human' })
       .eq('id', conv.id)
 
+    const finalName  = contactUpdate.name  ?? conv.customer_name  ?? null
+    const finalEmail = contactUpdate.email ?? convUtm?.customer_email ?? null
+
     createPipedriveDeal({
       convId: conv.id,
       phone: from,
-      customerName: conv.customer_name ?? null,
+      customerName: finalName,
+      customerEmail: finalEmail,
       history: history ?? [],
+      utm: utmData,
+      pipelineId: client.pipedrive_pipeline_id ?? 3,
+      stageId:    client.pipedrive_stage_id    ?? 19,
+    }).then(async result => {
+      if (result) {
+        await db.from('wa_conversations')
+          .update({
+            pipedrive_deal_id:   result.dealId,
+            pipedrive_person_id: result.personId,
+            pipedrive_sent_at:   new Date().toISOString(),
+          })
+          .eq('id', conv.id)
+
+        // Notify sales team on WhatsApp
+        if (client.sales_whatsapp) {
+          const appUrl = process.env.APP_URL ?? 'https://innova.projectokapi.com'
+          const convUrl = `${appUrl}/conversations/${conv.id}`
+          const cleanPhone = from.replace('whatsapp:', '')
+          const contactLine = finalName ? `👤 ${finalName} — ${cleanPhone}` : `📱 ${cleanPhone}`
+          const campaignLine = utmData?.utm_campaign ? `\n📊 Campaña: ${utmData.utm_campaign}` : ''
+          const notif = `🔔 Nuevo lead en WhatsApp\n${contactLine}${campaignLine}\n\nVer conversación: ${convUrl}`
+          twilioClient.messages.create({
+            from: to,
+            to: client.sales_whatsapp,
+            body: notif,
+          }).catch(e => console.error('Sales notification error:', e))
+        }
+      }
     }).catch(err => console.error('Pipedrive error:', err))
   }
-
-  // Extract [SEND_PDF:url] tokens from reply
-  const pdfTokenRegex = /\[SEND_PDF:(https?:\/\/[^\]]+)\]/g
-  const pdfUrls: string[] = []
-  const cleanReply = reply.replace(pdfTokenRegex, (_, url) => { pdfUrls.push(url); return '' }).trim()
 
   // Store outbound message
   await db.from('wa_messages').insert({
@@ -306,7 +490,7 @@ export async function POST(req: NextRequest) {
   // Send text reply
   await twilioClient.messages.create({ from: to, to: from, body: cleanReply })
 
-  // Send each PDF as a separate Twilio media message
+  // Send each PDF
   for (const pdfUrl of pdfUrls) {
     await twilioClient.messages.create({ from: to, to: from, mediaUrl: [pdfUrl], body: '' })
   }

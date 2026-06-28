@@ -25,10 +25,28 @@ export default function ConversationChat({ conversationId, initialMessages, stat
   const [sending, setSending] = useState(false)
   const [resolving, setResolving] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const seenIds = useRef(new Set(initialMessages.map(m => m.id)))
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  useEffect(() => {
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/conversations/${conversationId}/messages`)
+        if (!res.ok) return
+        const { messages: fresh } = await res.json() as { messages: Message[] }
+        const newOnes = fresh.filter(m => !seenIds.current.has(m.id))
+        if (newOnes.length > 0) {
+          newOnes.forEach(m => seenIds.current.add(m.id))
+          setMessages(prev => [...prev, ...newOnes])
+        }
+      } catch {}
+    }
+    const timer = setInterval(poll, 5000)
+    return () => clearInterval(timer)
+  }, [conversationId])
 
   async function sendReply() {
     if (!reply.trim() || sending) return

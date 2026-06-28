@@ -6,7 +6,7 @@ import { useState } from 'react'
 
 const nav = [
   {
-    section: 'Operations',
+    section: 'Principal',
     links: [
       {
         href: '/',
@@ -20,7 +20,7 @@ const nav = [
       },
       {
         href: '/conversations',
-        label: 'Conversations',
+        label: 'Conversaciones',
         icon: (
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M14 10a2 2 0 01-2 2H4l-3 3V3a2 2 0 012-2h9a2 2 0 012 2v7z"/>
@@ -30,7 +30,7 @@ const nav = [
     ],
   },
   {
-    section: 'Config',
+    section: 'Configuración',
     links: [
       {
         href: '/prices',
@@ -44,11 +44,10 @@ const nav = [
       },
       {
         href: '/clients',
-        label: 'Clients',
+        label: 'Perfil',
         icon: (
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <rect x="1" y="6" width="14" height="9" rx="1"/><path d="M5 6V4a3 3 0 016 0v2"/>
-            <circle cx="8" cy="11" r="1.5"/>
+            <circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.31 2.686-6 6-6s6 2.69 6 6"/>
           </svg>
         ),
       },

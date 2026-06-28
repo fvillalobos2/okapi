@@ -1,66 +1,93 @@
 import { db } from '@/lib/supabase'
-
-export const dynamic = 'force-dynamic'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ConversationChat from './ConversationChat'
+import ConversationPanel from '@/app/clients/[slug]/[conversationId]/ConversationPanel'
 
-async function getConversation(id: string) {
-  const { data } = await db
-    .from('wa_conversations')
-    .select('*, wa_clients(name, twilio_number)')
-    .eq('id', id)
-    .single()
-  return data
-}
-
-async function getMessages(conversationId: string) {
-  const { data } = await db
-    .from('wa_messages')
-    .select('id, direction, body, sent_at, needs_approval, approved')
-    .eq('conversation_id', conversationId)
-    .order('sent_at', { ascending: true })
-  return data ?? []
-}
+export const dynamic = 'force-dynamic'
 
 export default async function ConversationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const [conv, messages] = await Promise.all([getConversation(id), getMessages(id)])
+
+  const { data: conv } = await db
+    .from('wa_conversations')
+    .select('id, customer_phone, customer_name, customer_email, customer_phone_alt, status, archived, pipedrive_deal_id, pipedrive_person_id, pipedrive_sent_at, utm_source, utm_medium, utm_campaign, utm_content, utm_term, gclid, fbclid, wa_clients(name, twilio_number, slug)')
+    .eq('id', id)
+    .single()
 
   if (!conv) notFound()
 
-  const statusBadge: Record<string, string> = {
-    active:        'badge-active',
-    pending_human: 'badge-pending',
-    closed:        'badge-closed',
+  const { data: messages } = await db
+    .from('wa_messages')
+    .select('id, direction, body, sent_at, needs_approval, approved')
+    .eq('conversation_id', id)
+    .order('sent_at', { ascending: true })
+
+  const client = conv.wa_clients as unknown as { name: string; twilio_number: string; slug: string } | null
+
+  const statusStyle: Record<string, { bg: string; color: string }> = {
+    active:        { bg: '#dcfce7', color: '#15803d' },
+    pending_human: { bg: '#fef3c7', color: '#b45309' },
+    closed:        { bg: '#f4f4f5', color: '#71717a' },
   }
+  const ss = statusStyle[conv.status] ?? statusStyle.closed
 
   return (
-    <>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <a href="/conversations" style={{ color: 'var(--muted)', textDecoration: 'none', fontSize: 13 }}>← Back</a>
-          <div>
-            <h1 style={{ fontSize: 16, fontWeight: 700 }}>
-              {conv.customer_name ?? conv.customer_phone.replace('whatsapp:', '')}
-            </h1>
-            <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
-              {conv.customer_phone.replace('whatsapp:', '')} ·{' '}
-              <span className={`badge ${statusBadge[conv.status] ?? 'badge-closed'}`} style={{ fontSize: 10 }}>
-                {conv.status.replace('_', ' ')}
-              </span>
-            </div>
-          </div>
+      <div style={{
+        background: 'var(--surface)',
+        borderBottom: '1px solid var(--border)',
+        padding: '11px 20px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        flexShrink: 0,
+      }}>
+        <Link href="/conversations" style={{ color: 'var(--muted)', fontSize: 13, textDecoration: 'none' }}>
+          ← Conversaciones
+        </Link>
+        <span style={{ color: 'var(--border)' }}>/</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontWeight: 600, fontSize: 14, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {conv.customer_name ?? conv.customer_phone.replace('whatsapp:', '')}
+          </p>
+          {conv.customer_email && (
+            <p style={{ fontSize: 11, color: 'var(--muted)', margin: '1px 0 0' }}>{conv.customer_email}</p>
+          )}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {conv.utm_campaign && (
+            <span style={{ fontSize: 10, fontWeight: 500, padding: '2px 7px', borderRadius: 20, background: '#f0fdf4', color: '#16a34a' }}>
+              📊 {conv.utm_campaign}
+            </span>
+          )}
+          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 20, background: ss.bg, color: ss.color }}>
+            {conv.status === 'pending_human' ? 'Requiere vendedor' : conv.status === 'active' ? 'Activa' : 'Cerrada'}
+          </span>
         </div>
       </div>
 
-      <ConversationChat
-        conversationId={id}
-        initialMessages={messages}
-        status={conv.status}
-        customerPhone={conv.customer_phone}
-        twilioNumber={(conv as any).wa_clients?.twilio_number ?? process.env.TWILIO_WA_NUMBER ?? ''}
-      />
-    </>
+      {/* Body */}
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        {/* Chat column */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <ConversationChat
+            conversationId={id}
+            initialMessages={messages ?? []}
+            status={conv.status}
+            customerPhone={conv.customer_phone}
+            twilioNumber={client?.twilio_number ?? process.env.TWILIO_WA_NUMBER ?? ''}
+          />
+        </div>
+
+        {/* Right panel */}
+        <ConversationPanel
+          conv={conv}
+          backPath="/conversations"
+        />
+      </div>
+    </div>
   )
 }
