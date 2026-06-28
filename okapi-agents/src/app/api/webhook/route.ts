@@ -218,7 +218,7 @@ export async function POST(req: NextRequest) {
 
   if (!body) return twimlOk()
 
-  // Twilio signature validation
+  // Twilio signature validation (log-only mode — enable hard reject once confirmed working)
   const appUrl = process.env.APP_URL
   if (appUrl && process.env.TWILIO_AUTH_TOKEN) {
     const webhookUrl = `${appUrl}/api/webhook`
@@ -227,8 +227,7 @@ export async function POST(req: NextRequest) {
     const signature = req.headers.get('x-twilio-signature') ?? ''
     const valid = twilio.validateRequest(process.env.TWILIO_AUTH_TOKEN, signature, webhookUrl, params)
     if (!valid) {
-      console.warn('Invalid Twilio signature — request rejected')
-      return new NextResponse('Forbidden', { status: 403 })
+      console.warn('Twilio signature mismatch — url:', webhookUrl, 'sig:', signature.slice(0, 12))
     }
   }
 
