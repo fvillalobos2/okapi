@@ -33,6 +33,15 @@ const nav = [
     section: 'Configuración',
     links: [
       {
+        href: '/costos',
+        label: 'Costos',
+        icon: (
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
+            <circle cx="8" cy="8" r="6.5"/><path d="M8 3.5v9M5.5 5.5h4a1.5 1.5 0 010 3h-3a1.5 1.5 0 000 3h4"/>
+          </svg>
+        ),
+      },
+      {
         href: '/prices',
         label: 'Precios',
         icon: (
