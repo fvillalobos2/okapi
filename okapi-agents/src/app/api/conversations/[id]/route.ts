@@ -52,7 +52,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
         if ('deal_value' in body && body.deal_value != null) {
           pipedriveUpdate.value = body.deal_value
-          pipedriveUpdate.currency = 'CRC'
+          pipedriveUpdate.currency = 'USD'
         }
 
         if (Object.keys(pipedriveUpdate).length > 0) {

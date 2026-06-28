@@ -248,12 +248,12 @@ export default function ConversationPanel({
             />
           </div>
           <div>
-            <label style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 3 }}>Valor estimado (₡)</label>
+            <label style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 3 }}>Valor estimado ($)</label>
             <input
               type="number"
               value={dealValue}
               onChange={e => setDealValue(e.target.value)}
-              placeholder="150000"
+              placeholder="500"
               style={{ width: '100%', padding: '6px 10px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg)', color: 'var(--fg)', boxSizing: 'border-box', fontFamily: 'inherit' }}
             />
           </div>
