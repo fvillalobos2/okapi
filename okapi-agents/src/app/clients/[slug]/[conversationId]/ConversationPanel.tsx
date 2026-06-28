@@ -9,6 +9,8 @@ type Conv = {
   customer_name: string | null
   customer_email: string | null
   customer_phone_alt: string | null
+  product_interest: string | null
+  deal_value: number | null
   status: string
   archived: boolean
   pipedrive_deal_id: number | null
@@ -45,9 +47,11 @@ export default function ConversationPanel({
   backPath?: string
 }) {
   const router = useRouter()
-  const [name,     setName]     = useState(conv.customer_name      ?? '')
-  const [email,    setEmail]    = useState(conv.customer_email     ?? '')
-  const [phoneAlt, setPhoneAlt] = useState(conv.customer_phone_alt ?? '')
+  const [name,        setName]        = useState(conv.customer_name      ?? '')
+  const [email,       setEmail]       = useState(conv.customer_email     ?? '')
+  const [phoneAlt,    setPhoneAlt]    = useState(conv.customer_phone_alt ?? '')
+  const [product,     setProduct]     = useState(conv.product_interest   ?? '')
+  const [dealValue,   setDealValue]   = useState(conv.deal_value?.toString() ?? '')
   const [saving,   setSaving]   = useState(false)
   const [saved,    setSaved]    = useState(false)
   const [discarding, setDiscarding] = useState(false)
@@ -66,9 +70,11 @@ export default function ConversationPanel({
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customer_name:      name     || null,
-          customer_email:     email    || null,
-          customer_phone_alt: phoneAlt || null,
+          customer_name:      name        || null,
+          customer_email:     email       || null,
+          customer_phone_alt: phoneAlt    || null,
+          product_interest:   product     || null,
+          deal_value:         dealValue ? parseFloat(dealValue) : null,
         }),
       })
       setSaved(true)
@@ -228,6 +234,26 @@ export default function ConversationPanel({
               value={phoneAlt}
               onChange={e => setPhoneAlt(e.target.value)}
               placeholder="+506 8888-0000"
+              style={{ width: '100%', padding: '6px 10px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg)', color: 'var(--fg)', boxSizing: 'border-box', fontFamily: 'inherit' }}
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 3 }}>Producto de interés</label>
+            <input
+              type="text"
+              value={product}
+              onChange={e => setProduct(e.target.value)}
+              placeholder="Ej. Persiana Roller, Piso Vinílico…"
+              style={{ width: '100%', padding: '6px 10px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg)', color: 'var(--fg)', boxSizing: 'border-box', fontFamily: 'inherit' }}
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 3 }}>Valor estimado (₡)</label>
+            <input
+              type="number"
+              value={dealValue}
+              onChange={e => setDealValue(e.target.value)}
+              placeholder="150000"
               style={{ width: '100%', padding: '6px 10px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, background: 'var(--bg)', color: 'var(--fg)', boxSizing: 'border-box', fontFamily: 'inherit' }}
             />
           </div>

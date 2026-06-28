@@ -11,7 +11,7 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
 
   const { data: conv } = await db
     .from('wa_conversations')
-    .select('id, customer_phone, customer_name, customer_email, customer_phone_alt, status, archived, pipedrive_deal_id, pipedrive_person_id, pipedrive_sent_at, utm_source, utm_medium, utm_campaign, utm_content, utm_term, gclid, fbclid, wa_clients(name, twilio_number, slug)')
+    .select('id, customer_phone, customer_name, customer_email, customer_phone_alt, product_interest, deal_value, status, archived, pipedrive_deal_id, pipedrive_person_id, pipedrive_sent_at, utm_source, utm_medium, utm_campaign, utm_content, utm_term, gclid, fbclid, wa_clients(name, twilio_number, slug)')
     .eq('id', id)
     .single()
 
