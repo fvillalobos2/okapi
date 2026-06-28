@@ -146,11 +146,10 @@ async function bootstrapPipedriveDeal({
   return { dealId, personId }
 }
 
-/** Move deal to escalation stage + add summary note + create task */
+/** On escalation: add summary note + create task (deal stays in current stage) */
 async function escalatePipedriveDeal({
   dealId,
   personId,
-  escalationStageId,
   customerName,
   phone,
   history,
@@ -159,7 +158,6 @@ async function escalatePipedriveDeal({
 }: {
   dealId: number
   personId: number | null
-  escalationStageId: number
   customerName: string | null
   phone: string
   history: { direction: string; body: string }[]
@@ -182,17 +180,14 @@ async function escalatePipedriveDeal({
   })
   const summary = summaryRes.content[0].type === 'text' ? summaryRes.content[0].text : ''
 
-  // Move deal to escalation stage
-  await pdFetch(`/deals/${dealId}`, 'PUT', { stage_id: escalationStageId })
-
-  // Add summary note
+  // Add summary note (deal stage unchanged — vendedor decides where it goes)
   const utmLines = utm ? `\n📊 Campaña:\n${Object.entries(utm).map(([k, v]) => `${k}: ${v}`).join('\n')}` : ''
   await pdFetch('/notes', 'POST', {
     content: `🔔 Requiere atención de vendedor\n\n${summary}${utmLines}\n\n🔗 Ver conversación: ${appUrl}/conversations/${convId}`,
     deal_id: dealId,
   })
 
-  // Create task/activity on the deal
+  // Create task so it appears in the vendedor's to-do list
   const today = new Date().toISOString().slice(0, 10)
   const displayName = customerName ?? cleanPhone
   await pdFetch('/activities', 'POST', {
@@ -204,7 +199,7 @@ async function escalatePipedriveDeal({
     note: summary,
   })
 
-  console.log(`Pipedrive deal ${dealId} escalated to stage ${escalationStageId}`)
+  console.log(`Pipedrive deal ${dealId} escalated — task created for ${displayName}`)
 }
 
 async function transcribeAudio(mediaUrl: string): Promise<string> {
@@ -472,14 +467,12 @@ export async function POST(req: NextRequest) {
     const finalEmail = contactUpdate.email ?? freshConv?.customer_email ?? conv.customer_email ?? null
     const dealId     = freshConv?.pipedrive_deal_id   ?? null
     const personId   = freshConv?.pipedrive_person_id ?? null
-    const escalationStageId = client.pipedrive_escalation_stage_id ?? 23
 
     if (dealId) {
-      // Deal already exists (from bootstrap) — escalate it
+      // Deal already exists (from bootstrap) — add note + task
       escalatePipedriveDeal({
         dealId,
         personId,
-        escalationStageId,
         customerName: finalName,
         phone: from,
         history: history ?? [],
@@ -487,14 +480,14 @@ export async function POST(req: NextRequest) {
         convId: conv.id,
       }).catch(e => console.error('Pipedrive escalation error:', e))
     } else {
-      // Bootstrap didn't finish yet — create full deal + escalate
+      // Bootstrap didn't finish yet — create deal then escalate
       bootstrapPipedriveDeal({
         convId: conv.id,
         phone: from,
         customerName: finalName,
         utm: utmData,
         pipelineId: client.pipedrive_pipeline_id ?? 3,
-        stageId: escalationStageId,
+        stageId: client.pipedrive_stage_id ?? 19,
       }).then(async result => {
         if (result) {
           await db.from('wa_conversations').update({
@@ -502,11 +495,9 @@ export async function POST(req: NextRequest) {
             pipedrive_person_id: result.personId,
             pipedrive_sent_at:   new Date().toISOString(),
           }).eq('id', conv.id)
-          // Add summary note + task
           await escalatePipedriveDeal({
             dealId: result.dealId,
             personId: result.personId,
-            escalationStageId,
             customerName: finalName,
             phone: from,
             history: history ?? [],
