@@ -123,7 +123,7 @@ export default function ConversationChat({ conversationId, initialMessages, stat
                   lineHeight: 1.55,
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
-                  background: isOut ? '#1d4ed8' : 'var(--surface2)',
+                  background: isOut ? '#D91E2A' : 'var(--surface)',
                   color: isOut ? '#fff' : 'var(--text)',
                   borderBottomRightRadius: isOut ? 3 : 14,
                   borderBottomLeftRadius: isOut ? 14 : 3,

@@ -81,8 +81,8 @@ export default async function ConversationPage({
                     padding: '10px 14px',
                     fontSize: 13,
                     lineHeight: 1.45,
-                    background: isOut ? 'var(--fg)' : 'var(--surface)',
-                    color: isOut ? 'var(--bg)' : 'var(--fg)',
+                    background: isOut ? '#D91E2A' : 'var(--surface)',
+                    color: isOut ? '#fff' : 'var(--fg)',
                     border: isOut ? 'none' : '1px solid var(--border)',
                   }}>
                     <p style={{ margin: 0 }}>{msg.body}</p>
