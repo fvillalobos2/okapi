@@ -74,23 +74,6 @@ const nav = [
   },
 ]
 
-function InnovaIcon() {
-  return (
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="32" height="32" rx="7" fill="url(#innova-grad)"/>
-      <defs>
-        <linearGradient id="innova-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#E8192C"/>
-          <stop offset="100%" stopColor="#8B0A10"/>
-        </linearGradient>
-      </defs>
-      {/* Left column (i/l shape) */}
-      <rect x="7" y="8" width="4.5" height="16" rx="2.25" fill="white"/>
-      {/* Right arch (n shape) */}
-      <path d="M14 24V14.5C14 11.46 16.46 9 19.5 9C22.54 9 25 11.46 25 14.5V24H20.5V14.5C20.5 13.95 20.05 13.5 19.5 13.5C18.95 13.5 18.5 13.95 18.5 14.5V24H14Z" fill="white"/>
-    </svg>
-  )
-}
 
 export default function Sidebar() {
   const pathname = usePathname()
@@ -138,10 +121,9 @@ export default function Sidebar() {
           alignItems: 'center',
           gap: 10,
         }}>
-          <InnovaIcon />
+          <img src="/innova-logo.png" alt="Innova" style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }} />
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-.2px', color: 'var(--text)' }}>innova</div>
-            <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 1, letterSpacing: '.02em' }}>Agente WhatsApp IA</div>
+            <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: '-.2px', color: 'var(--muted)' }}>Agente WhatsApp IA</div>
           </div>
         </div>
 
