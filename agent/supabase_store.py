@@ -14,9 +14,9 @@ except ImportError as _e:
     print(f"[supabase_store] FATAL: supabase not installed: {_e}", flush=True)
     raise
 
-SUPABASE_URL = os.getenv('SUPABASE_URL', 'https://ountexamwcnkmzkabhjv.supabase.co')
+SUPABASE_URL = os.getenv('SUPABASE_URL', 'https://bzdaxldhvxsnolzkcgrs.supabase.co')
 SUPABASE_KEY = os.getenv('SUPABASE_SERVICE_KEY',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91bnRleGFtd2Nua216a2FiaGp2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTkwMDE5NiwiZXhwIjoyMDk3NDc2MTk2fQ.hXsQmY6ITsufcHGutbgmxr5PW1KuBnwMeO51iwoeArM')
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6ZGF4bGRodnhzbm9semtjZ3JzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4Mjc2NjcxMSwiZXhwIjoyMDk4MzQyNzExfQ.ZqK1LOuN-aEmjA4J2oCBfUY-q3d5vm4ZLPIr8v3rQWI')
 
 DEFAULT_BUSINESS_SLUG = os.getenv('DEFAULT_BUSINESS_SLUG', 'golfcartrentalscr')
 
