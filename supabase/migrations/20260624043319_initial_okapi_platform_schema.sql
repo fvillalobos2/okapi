@@ -82,7 +82,8 @@ CREATE TABLE IF NOT EXISTS providers (
   avg_response_time_minutes numeric(8,2),
   acceptance_rate numeric(5,2) DEFAULT 100.0,
   total_bookings int DEFAULT 0,
-  total_rejected int DEFAULT 0
+  total_rejected int DEFAULT 0,
+  whatsapp_verified boolean DEFAULT false
 );
 
 -- ─── BOOKINGS ─────────────────────────────────────────────────────────────────
@@ -114,7 +115,8 @@ CREATE TABLE IF NOT EXISTS bookings (
   link_sent boolean DEFAULT false,
   follow_up_sent boolean DEFAULT false,
   payment_processed boolean DEFAULT false,
-  created_at timestamptz DEFAULT now()
+  created_at timestamptz DEFAULT now(),
+  provider_messages jsonb DEFAULT '[]'
 );
 
 -- ─── PENDING CANCELLATIONS ────────────────────────────────────────────────────
@@ -139,6 +141,19 @@ CREATE TABLE IF NOT EXISTS prompt_versions (
   is_active boolean DEFAULT false
 );
 
+-- ─── NOTIFICATIONS ───────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS notifications (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id uuid REFERENCES businesses(id),
+  type text NOT NULL,
+  title text NOT NULL,
+  body text,
+  booking_id uuid REFERENCES bookings(id),
+  lead_phone text,
+  read_at timestamptz,
+  created_at timestamptz DEFAULT now()
+);
+
 -- ─── INDEXES ──────────────────────────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS idx_conversations_phone ON conversations(phone);
 CREATE INDEX IF NOT EXISTS idx_conversations_business ON conversations(business_id);
@@ -151,6 +166,7 @@ CREATE INDEX IF NOT EXISTS idx_bookings_client ON bookings(client_phone);
 CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(business_id, payment_status);
 CREATE INDEX IF NOT EXISTS idx_providers_number ON providers(whatsapp_number);
 CREATE INDEX IF NOT EXISTS idx_providers_location ON providers(business_id, location_name);
+CREATE INDEX IF NOT EXISTS idx_notifications_business_created ON notifications(business_id, created_at DESC);
 
 -- ─── DISABLE RLS (backend-only app) ──────────────────────────────────────────
 ALTER TABLE businesses DISABLE ROW LEVEL SECURITY;
@@ -162,4 +178,5 @@ ALTER TABLE providers DISABLE ROW LEVEL SECURITY;
 ALTER TABLE bookings DISABLE ROW LEVEL SECURITY;
 ALTER TABLE pending_cancellations DISABLE ROW LEVEL SECURITY;
 ALTER TABLE prompt_versions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications DISABLE ROW LEVEL SECURITY;
 ;
