@@ -1,0 +1,21 @@
+{
+  "name": "crypto-advisor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Standalone Binance market-context advisor that sends a WhatsApp digest (DCA reminder + factual indicators). Sends context, not predictions.",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dry": "tsx src/index.ts --dry-run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "twilio": "^6.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "tsx": "^4.19.2",
+    "typescript": "^5"
+  }
+}

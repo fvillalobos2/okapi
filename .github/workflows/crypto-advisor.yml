@@ -1,0 +1,36 @@
+name: Crypto Advisor Digest
+
+on:
+  schedule:
+    # 13:00 UTC = 07:00 Costa Rica (UTC-6). GitHub cron is always UTC.
+    - cron: '0 13 * * *'
+  workflow_dispatch: # lets you run it manually from the Actions tab
+
+jobs:
+  send-digest:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: crypto-advisor
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: crypto-advisor/package-lock.json
+
+      - run: npm ci
+
+      - name: Send WhatsApp digest
+        run: npm start
+        env:
+          BINANCE_API_KEY: ${{ secrets.BINANCE_API_KEY }}
+          BINANCE_API_SECRET: ${{ secrets.BINANCE_API_SECRET }}
+          BINANCE_BASE: ${{ secrets.BINANCE_BASE }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_WHATSAPP_FROM: ${{ secrets.TWILIO_WHATSAPP_FROM }}
+          ALERT_WHATSAPP_TO: ${{ secrets.ALERT_WHATSAPP_TO }}
+          MONTHLY_BUDGET: ${{ secrets.MONTHLY_BUDGET }}
