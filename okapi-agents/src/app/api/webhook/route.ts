@@ -21,6 +21,17 @@ function twimlOk() {
   )
 }
 
+/** Returns true if current time is within Innova business hours (Mon–Sat 7am–8pm, Costa Rica UTC-6) */
+function isWithinBusinessHours(): boolean {
+  const crMs = Date.now() - 6 * 60 * 60 * 1000
+  const cr = new Date(crMs)
+  const hour = cr.getUTCHours()
+  const day  = cr.getUTCDay()
+  if (day === 0) return false
+  if (hour < 7 || hour >= 20) return false
+  return true
+}
+
 function parseUtm(body: string): Record<string, string> | null {
   const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'gclid', 'fbclid']
   const found: Record<string, string> = {}
@@ -61,7 +72,6 @@ async function findOrCreatePerson(
     const search = await pdFetch(`/persons/search?term=${encodeURIComponent(phone)}&fields=phone`)
     if (search.data?.items?.length > 0) {
       const personId = search.data.items[0].item.id
-      // Update name/email if available
       const update: Record<string, unknown> = {}
       if (name)  update.name  = name
       if (email) update.email = [{ value: email, primary: true }]
@@ -94,7 +104,6 @@ async function updatePipedriveContact(
   await pdFetch(`/persons/${personId}`, 'PUT', body)
 }
 
-/** Create deal on first contact — no summary yet */
 async function bootstrapPipedriveDeal({
   convId,
   phone,
@@ -132,7 +141,6 @@ async function bootstrapPipedriveDeal({
   const dealId = deal.data?.id
   if (!dealId) { console.error('Pipedrive deal creation failed:', deal); return null }
 
-  // Initial note with UTM + link
   const utmLines = utm ? Object.entries(utm).map(([k, v]) => `${k}: ${v}`).join('\n') : ''
   const noteContent = [
     `📱 Nuevo contacto por WhatsApp`,
@@ -146,7 +154,6 @@ async function bootstrapPipedriveDeal({
   return { dealId, personId }
 }
 
-/** On escalation: add summary note + create task (deal stays in current stage) */
 async function escalatePipedriveDeal({
   dealId,
   personId,
@@ -167,7 +174,6 @@ async function escalatePipedriveDeal({
   const appUrl = process.env.APP_URL ?? 'https://innova.projectokapi.com'
   const cleanPhone = phone.replace('whatsapp:', '')
 
-  // Generate conversation summary
   const transcript = history
     .map(m => `[${m.direction === 'inbound' ? 'Cliente' : 'Agente'}]: ${m.body}`)
     .join('\n')
@@ -180,14 +186,12 @@ async function escalatePipedriveDeal({
   })
   const summary = summaryRes.content[0].type === 'text' ? summaryRes.content[0].text : ''
 
-  // Add summary note (deal stage unchanged — vendedor decides where it goes)
   const utmLines = utm ? `\n📊 Campaña:\n${Object.entries(utm).map(([k, v]) => `${k}: ${v}`).join('\n')}` : ''
   await pdFetch('/notes', 'POST', {
     content: `🔔 Requiere atención de vendedor\n\n${summary}${utmLines}\n\n🔗 Ver conversación: ${appUrl}/conversations/${convId}`,
     deal_id: dealId,
   })
 
-  // Create task so it appears in the vendedor's to-do list
   const today = new Date().toISOString().slice(0, 10)
   const displayName = customerName ?? cleanPhone
   await pdFetch('/activities', 'POST', {
@@ -221,6 +225,25 @@ async function transcribeAudio(mediaUrl: string): Promise<string> {
   return result.text
 }
 
+async function downloadImageAsBase64(mediaUrl: string): Promise<{ base64: string; mediaType: string } | null> {
+  try {
+    const accountSid = process.env.TWILIO_ACCOUNT_SID!
+    const authToken  = process.env.TWILIO_AUTH_TOKEN!
+    const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64')
+
+    const res = await fetch(mediaUrl, { headers: { Authorization: `Basic ${auth}` } })
+    if (!res.ok) return null
+    const buffer = await res.arrayBuffer()
+    const contentType = res.headers.get('content-type') ?? 'image/jpeg'
+    const mediaType = contentType.split(';')[0].trim()
+    const base64 = Buffer.from(buffer).toString('base64')
+    return { base64, mediaType }
+  } catch (e) {
+    console.error('Image download error:', e)
+    return null
+  }
+}
+
 // ── Main webhook ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -234,7 +257,7 @@ export async function POST(req: NextRequest) {
 
   if (!from || !to) return new NextResponse('Bad Request', { status: 400 })
 
-  // Twilio signature validation (log-only — enable hard reject once confirmed working)
+  // Twilio signature validation
   const appUrl = process.env.APP_URL
   if (appUrl && process.env.TWILIO_AUTH_TOKEN) {
     const webhookUrl = `${appUrl}/api/webhook`
@@ -244,24 +267,14 @@ export async function POST(req: NextRequest) {
     const valid = twilio.validateRequest(process.env.TWILIO_AUTH_TOKEN, signature, webhookUrl, params)
     if (!valid) {
       console.warn('Twilio signature mismatch — url:', webhookUrl, 'sig:', signature.slice(0, 12))
+      // Enable TWILIO_SIG_STRICT=true in env to reject invalid requests
+      if (process.env.TWILIO_SIG_STRICT === 'true') {
+        return new NextResponse('Forbidden', { status: 403 })
+      }
     }
   }
 
-  // Transcribe audio if present
-  let body = rawBody
-  if (numMedia > 0 && mediaUrl && mediaType.startsWith('audio/')) {
-    try {
-      const transcript = await transcribeAudio(mediaUrl)
-      body = transcript ? `[Nota de voz]: ${transcript}` : rawBody
-    } catch (e) {
-      console.error('Whisper transcription error:', e)
-      body = rawBody || '[Nota de voz no transcribible]'
-    }
-  }
-
-  if (!body) return twimlOk()
-
-  // Resolve client
+  // Resolve client first (needed for business hours check)
   const { data: client } = await db
     .from('wa_clients')
     .select('id, system_prompt, name, website, instagram, facebook, phone_display, email, address, city, country, business_hours, description, financing_info, warranty_info, service_area, pipedrive_pipeline_id, pipedrive_stage_id, pipedrive_escalation_stage_id, sales_whatsapp')
@@ -281,6 +294,32 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (convErr || !conv) { console.error('conversation upsert error', convErr); return twimlOk() }
+
+  // Handle media: images (vision) and audio (transcription)
+  let body = rawBody
+  let imageBase64: string | undefined
+  let imageMediaType: string | undefined
+
+  if (numMedia > 0 && mediaUrl) {
+    if (mediaType.startsWith('audio/')) {
+      try {
+        const transcript = await transcribeAudio(mediaUrl)
+        body = transcript ? `[Nota de voz]: ${transcript}` : rawBody
+      } catch (e) {
+        console.error('Whisper transcription error:', e)
+        body = rawBody || '[Nota de voz no transcribible]'
+      }
+    } else if (mediaType.startsWith('image/')) {
+      const img = await downloadImageAsBase64(mediaUrl)
+      if (img) {
+        imageBase64 = img.base64
+        imageMediaType = img.mediaType
+        if (!body) body = 'El cliente envió una imagen.'
+      }
+    }
+  }
+
+  if (!body && !imageBase64) return twimlOk()
 
   // Parse UTM from first message
   const isFirstMessage = !conv.utm_source && !conv.utm_campaign
@@ -304,7 +343,7 @@ export async function POST(req: NextRequest) {
   // Store inbound message
   await db.from('wa_messages').insert({ conversation_id: conv.id, direction: 'inbound', body })
 
-  // ── Bootstrap Pipedrive deal on first contact ──────────────────────────────
+  // Bootstrap Pipedrive deal on first contact
   if (!conv.pipedrive_deal_id) {
     bootstrapPipedriveDeal({
       convId: conv.id,
@@ -327,13 +366,29 @@ export async function POST(req: NextRequest) {
     }).catch(e => console.error('Pipedrive bootstrap error:', e))
   }
 
-  // Get recent history
-  const { data: history } = await db
+  // Find the most recent "reiniciar" to scope history to the current session only
+  const { data: lastReset } = await db
+    .from('wa_messages')
+    .select('sent_at')
+    .eq('conversation_id', conv.id)
+    .eq('direction', 'inbound')
+    .ilike('body', 'reiniciar')
+    .order('sent_at', { ascending: false })
+    .limit(1)
+    .single()
+
+  let historyQuery = db
     .from('wa_messages')
     .select('direction, body')
     .eq('conversation_id', conv.id)
     .order('sent_at', { ascending: true })
-    .limit(20)
+    .limit(40)
+
+  if (lastReset?.sent_at) {
+    historyQuery = historyQuery.gte('sent_at', lastReset.sent_at)
+  }
+
+  const { data: history } = await historyQuery
 
   // Fetch prices and discounts
   const [{ data: priceItems }, { data: discounts }] = await Promise.all([
@@ -406,6 +461,26 @@ export async function POST(req: NextRequest) {
   // Contact capture instructions
   systemPrompt += `\n\n## Recopilación de datos de contacto\nCuando el cliente mencione su nombre, correo electrónico o un número de teléfono adicional, agrega al FINAL de tu respuesta:\n[CONTACT:{"name":"...","email":"...","phone":"..."}]\nSolo incluye los campos que el cliente acaba de compartir. Si no compartió ninguno, no incluyas el token.`
 
+  // BANT framework
+  systemPrompt += `\n\n## Calificación de prospectos (BANT)\nDurante la conversación, recoge naturalmente esta información sin parecer un cuestionario:\n- Presupuesto: si tienen rango de inversión o buscan financiamiento\n- Autoridad: si hablan con quien toma la decisión de compra del hogar\n- Necesidad: exactamente qué producto necesitan y para qué espacio\n- Tiempo: cuándo planean hacer el proyecto\nIntegra estas preguntas de forma fluida y conversacional.`
+
+  // Escalation + business hours context
+  const inHours = isWithinBusinessHours()
+  const hoursStr = client.business_hours ?? 'lunes a sábado de 7am a 8pm hora Costa Rica'
+  if (inHours) {
+    systemPrompt += `\n\n## Horario de atención humana\nCuando el cliente necesite un vendedor, indícale que un asesor le atenderá. El horario de atención es: ${hoursStr}.`
+  } else {
+    systemPrompt += `\n\n## Horario de atención humana\nESTAMOS FUERA DE HORARIO ahora mismo. Si el cliente necesita un vendedor, indícale que nuestro horario de atención es ${hoursStr} y que un asesor le contactará cuando abramos. Tú puedes responder preguntas generales en cualquier momento.`
+  }
+
+  // Image context for Claude
+  if (imageBase64) {
+    systemPrompt += `\n\n## Análisis de imágenes\nEl cliente puede enviar fotos de sus ventanas, espacios o referencias. Cuando recibas una imagen, describe lo que ves relevante para el producto que le puede interesar (dimensiones estimadas, tipo de ventana, estilo de decoración) y úsalo para hacer una recomendación personalizada.`
+  }
+
+  // Anti-repetition rule
+  systemPrompt += `\n\n## REGLA CRÍTICA: No repetir preguntas\nAntes de hacer cualquier pregunta, revisa TODO el historial de esta conversación. Si el cliente ya respondió algo (espacio, producto, medidas, nombre, teléfono), NO vuelvas a pedirlo. Ejemplo: si ya dijo "2 cuartos", no preguntes "¿para qué espacio?". Si ya dijo "SPC para comedor", no preguntes "¿qué producto te interesa?". Avanza siempre hacia el cierre.`
+
   // WhatsApp formatting rules
   systemPrompt += `\n\n## REGLAS DE FORMATO WHATSAPP (OBLIGATORIAS)\n- NUNCA uses markdown: sin **, sin *, sin #, sin tablas, sin ---\n- NUNCA uses listas con guion ni asterisco al inicio de línea\n- Usa emojis con moderación para separar puntos: ✅ 📋 💡\n- Escribe en párrafos cortos y naturales, como un humano escribiría por WhatsApp\n- Si debes listar items, sepáralos con saltos de línea simples o números (1. 2. 3.)\n- Los precios en formato simple: ₡15.000/m² no en tabla`
 
@@ -414,12 +489,22 @@ export async function POST(req: NextRequest) {
   const agentRes = await fetch(`${baseUrl}/api/agent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ system_prompt: systemPrompt, history: history ?? [], message: body }),
+    body: JSON.stringify({
+      system_prompt: systemPrompt,
+      history: history ?? [],
+      message: body,
+      ...(imageBase64 ? { image_base64: imageBase64, image_media_type: imageMediaType } : {}),
+    }),
   })
 
   if (!agentRes.ok) { console.error('agent error', await agentRes.text()); return twimlOk() }
 
-  const { reply, needs_human } = await agentRes.json() as { reply: string; needs_human: boolean }
+  const { reply, needs_human, input_tokens, output_tokens } = await agentRes.json() as {
+    reply: string
+    needs_human: boolean
+    input_tokens?: number
+    output_tokens?: number
+  }
 
   // Extract [CONTACT:{...}] token
   const contactTokenRegex = /\[CONTACT:(\{[^}]*\})\]/g
@@ -456,7 +541,6 @@ export async function POST(req: NextRequest) {
   if (needs_human && conv.status === 'active') {
     await db.from('wa_conversations').update({ status: 'pending_human' }).eq('id', conv.id)
 
-    // Get fresh deal/person IDs (may have been set by bootstrap above)
     const { data: freshConv } = await db
       .from('wa_conversations')
       .select('pipedrive_deal_id, pipedrive_person_id, customer_name, customer_email')
@@ -469,7 +553,6 @@ export async function POST(req: NextRequest) {
     const personId   = freshConv?.pipedrive_person_id ?? null
 
     if (dealId) {
-      // Deal already exists (from bootstrap) — add note + task
       escalatePipedriveDeal({
         dealId,
         personId,
@@ -480,7 +563,6 @@ export async function POST(req: NextRequest) {
         convId: conv.id,
       }).catch(e => console.error('Pipedrive escalation error:', e))
     } else {
-      // Bootstrap didn't finish yet — create deal then escalate
       bootstrapPipedriveDeal({
         convId: conv.id,
         phone: from,
@@ -508,7 +590,6 @@ export async function POST(req: NextRequest) {
       }).catch(e => console.error('Pipedrive full escalation error:', e))
     }
 
-    // Update person name/email if captured
     if (personId && (finalName || finalEmail)) {
       updatePipedriveContact(personId, {
         name: finalName ?? undefined,
@@ -516,7 +597,6 @@ export async function POST(req: NextRequest) {
       }).catch(console.error)
     }
 
-    // Notify sales team
     if (client.sales_whatsapp) {
       const cleanPhone = from.replace('whatsapp:', '')
       const convUrl = `${appUrl}/conversations/${conv.id}`
@@ -528,18 +608,19 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Store outbound message
+  // Store outbound message with token tracking
   await db.from('wa_messages').insert({
     conversation_id: conv.id,
     direction: 'outbound',
     body: cleanReply,
     approved: true,
+    input_tokens: input_tokens ?? null,
+    output_tokens: output_tokens ?? null,
   })
 
-  // Send reply
+  // Send reply and any PDFs
   await twilioClient.messages.create({ from: to, to: from, body: cleanReply })
 
-  // Send PDFs
   for (const pdfUrl of pdfUrls) {
     await twilioClient.messages.create({ from: to, to: from, mediaUrl: [pdfUrl], body: '' })
   }
