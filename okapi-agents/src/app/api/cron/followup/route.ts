@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       .eq('active', true)
       .order('sort_order')
 
-    if (configs?.length) {
+    if (configs && configs.length) {
       const maxStep = configs.length
 
       const { data: conversations } = await db
