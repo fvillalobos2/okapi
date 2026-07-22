@@ -37,14 +37,15 @@ export async function POST(req: NextRequest) {
 
   for (const client of clients ?? []) {
     // ── Follow-up sequences (only during business hours) ──────────────────
-    const { data: configs } = !inBusinessHours ? { data: null } : await db
+    const { data: rawConfigs } = !inBusinessHours ? { data: null } : await db
       .from('wa_follow_up_configs')
       .select('*')
       .eq('client_id', client.id)
       .eq('active', true)
       .order('sort_order')
+    const configs = rawConfigs ?? []
 
-    if (configs && configs.length) {
+    if (configs.length) {
       const maxStep = configs.length
 
       const { data: conversations } = await db
