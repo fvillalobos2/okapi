@@ -5,11 +5,13 @@ import { useState } from 'react'
 export default function SendForm({ conversationId }: { conversationId: string }) {
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   async function handleSend() {
     const body = message.trim()
     if (!body) return
     setSending(true)
+    setError(null)
     try {
       const res = await fetch('/api/send', {
         method: 'POST',
@@ -18,9 +20,13 @@ export default function SendForm({ conversationId }: { conversationId: string })
       })
       if (res.ok) {
         setMessage('')
-        // Reload to show new message
         window.location.reload()
+      } else {
+        const data = await res.json().catch(() => ({})) as { error?: string }
+        setError(data.error ?? `Error ${res.status}`)
       }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error desconocido')
     } finally {
       setSending(false)
     }
@@ -28,6 +34,9 @@ export default function SendForm({ conversationId }: { conversationId: string })
 
   return (
     <div className="bg-white border-t border-zinc-200 px-6 py-4 max-w-2xl mx-auto w-full">
+      {error && (
+        <p className="text-red-600 text-xs mb-2 font-medium">⚠ {error}</p>
+      )}
       <div className="flex gap-3">
         <textarea
           className="flex-1 resize-none rounded-xl border border-zinc-200 px-4 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"

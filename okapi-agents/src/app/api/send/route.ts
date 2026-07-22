@@ -31,15 +31,22 @@ export async function POST(req: NextRequest) {
 
   const twilio_number = (conv.wa_clients as unknown as { twilio_number: string })?.twilio_number
   if (!twilio_number) {
+    console.error('[send] no twilio_number for conv', conversation_id, JSON.stringify(conv))
     return NextResponse.json({ error: 'Client has no Twilio number' }, { status: 500 })
   }
 
-  // Send via Twilio
-  await twilioClient.messages.create({
-    from: twilio_number,
-    to: conv.customer_phone,
-    body,
-  })
+  console.log('[send] from:', twilio_number, 'to:', conv.customer_phone)
+  try {
+    await twilioClient.messages.create({
+      from: twilio_number,
+      to: conv.customer_phone,
+      body,
+    })
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error('[send] Twilio error:', msg)
+    return NextResponse.json({ error: `Twilio: ${msg}` }, { status: 502 })
+  }
 
   // Store outbound message
   await db.from('wa_messages').insert({

@@ -1,5 +1,7 @@
 import { db } from '@/lib/supabase'
 import Link from 'next/link'
+import { Suspense } from 'react'
+import SearchInput from './SearchInput'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,19 +33,27 @@ function initials(name: string | null, phone: string) {
 export default async function ConversationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>
+  searchParams: Promise<{ status?: string; q?: string }>
 }) {
-  const { status } = await searchParams
+  const { status, q } = await searchParams
 
-  let q = db
+  let query = db
     .from('wa_conversations')
-    .select('id, customer_phone, customer_name, customer_email, status, updated_at, pipedrive_deal_id, utm_campaign, archived')
+    .select('id, customer_phone, customer_name, customer_email, product_interest, status, updated_at, pipedrive_deal_id, utm_campaign, archived')
     .eq('archived', false)
     .order('updated_at', { ascending: false })
     .limit(200)
 
-  if (status) q = q.eq('status', status)
-  const { data: conversations } = await q
+  if (status) query = query.eq('status', status)
+
+  if (q) {
+    const term = `%${q}%`
+    query = query.or(
+      `customer_name.ilike.${term},customer_phone.ilike.${term},customer_email.ilike.${term},product_interest.ilike.${term}`
+    )
+  }
+
+  const { data: conversations } = await query
 
   const counts = {
     '':             conversations?.length ?? 0,
@@ -63,6 +73,11 @@ export default async function ConversationsPage({
         </span>
       </div>
 
+      {/* Search */}
+      <Suspense fallback={<div style={{ height: 38, marginBottom: 16, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }} />}>
+        <SearchInput defaultValue={q} currentStatus={status} />
+      </Suspense>
+
       {/* Filter tabs */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '1px solid var(--border)', paddingBottom: 0 }}>
         {FILTERS.map(f => {
@@ -71,7 +86,7 @@ export default async function ConversationsPage({
           return (
             <Link
               key={f.value}
-              href={f.value ? `/conversations?status=${f.value}` : '/conversations'}
+              href={f.value ? `/conversations?status=${f.value}${q ? `&q=${encodeURIComponent(q)}` : ''}` : `/conversations${q ? `?q=${encodeURIComponent(q)}` : ''}`}
               style={{
                 padding: '7px 14px',
                 fontSize: 13,
@@ -107,7 +122,7 @@ export default async function ConversationsPage({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {!conversations?.length && (
           <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--muted)', fontSize: 13 }}>
-            Sin conversaciones
+            {q ? `Sin resultados para "${q}"` : 'Sin conversaciones'}
           </div>
         )}
         {(conversations ?? []).map(conv => {
@@ -164,6 +179,7 @@ export default async function ConversationsPage({
                 <div style={{ fontSize: 12, color: 'var(--muted)', display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                   <span>{phone}</span>
                   {conv.customer_email && <><span>·</span><span>{conv.customer_email}</span></>}
+                  {conv.product_interest && <><span>·</span><span style={{ color: 'var(--accent)' }}>{conv.product_interest}</span></>}
                 </div>
               </div>
 
@@ -178,12 +194,12 @@ export default async function ConversationsPage({
                   )}
                   {conv.pipedrive_deal_id && (
                     <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 20, background: '#e8f0fe', color: '#1a56db' }}>
-                      Pipedrive
+                      PD
                     </span>
                   )}
                   {conv.status === 'pending_human' && (
                     <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 20, background: '#fef3c7', color: '#b45309' }}>
-                      ⚡ Vendedor
+                      ⚡
                     </span>
                   )}
                 </div>

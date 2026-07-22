@@ -26,6 +26,7 @@ export default function ConversationChat({ conversationId, initialMessages, stat
   const [resolving, setResolving] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const seenIds = useRef(new Set(initialMessages.map(m => m.id)))
+  const sendingRef = useRef(false)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -49,13 +50,14 @@ export default function ConversationChat({ conversationId, initialMessages, stat
   }, [conversationId])
 
   async function sendReply() {
-    if (!reply.trim() || sending) return
+    if (!reply.trim() || sendingRef.current) return
+    sendingRef.current = true
     setSending(true)
     try {
       const r = await fetch('/api/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId, to: customerPhone, from: twilioNumber, body: reply.trim() }),
+        body: JSON.stringify({ conversation_id: conversationId, body: reply.trim() }),
       })
       if (r.ok) {
         setMessages(m => [...m, {
@@ -69,6 +71,7 @@ export default function ConversationChat({ conversationId, initialMessages, stat
         setReply('')
       }
     } finally {
+      sendingRef.current = false
       setSending(false)
     }
   }
