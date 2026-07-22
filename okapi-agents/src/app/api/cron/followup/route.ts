@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   let totalSlaAlerts = 0
   const appUrl = process.env.APP_URL ?? 'https://innova.projectokapi.com'
 
-  for (const client of clients) {
+  for (const client of clients ?? []) {
     // ── Follow-up sequences (only during business hours) ──────────────────
     const { data: configs } = !inBusinessHours ? { data: null } : await db
       .from('wa_follow_up_configs')
