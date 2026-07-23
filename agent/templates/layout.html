@@ -173,10 +173,10 @@ select.form-control{cursor:pointer}
 <!-- SIDEBAR -->
 <nav class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <div class="logo-mark">Ok</div>
+    <div class="logo-mark">{{ (biz.name[:2] if biz and biz.name else 'Ok')|upper }}</div>
     <div class="logo-text-wrap">
-      <div class="logo-name">Okapi</div>
-      <div class="logo-sub">Booking Platform</div>
+      <div class="logo-name">{{ biz.name if biz and biz.name else 'Okapi' }}</div>
+      <div class="logo-sub">{{ biz.settings.get('subtitle','Agent Platform') if biz and biz.settings else 'Agent Platform' }}</div>
     </div>
   </div>
 
