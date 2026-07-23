@@ -91,13 +91,30 @@ def _load_prompt():
 
 _FILE_PROMPT = _load_prompt()
 
-def get_system_prompt(business: Optional[dict] = None) -> str:
-    """Return active prompt: DB override if set, else file prompt."""
+def get_system_prompt(business: Optional[dict] = None, product_interest: Optional[str] = None) -> str:
+    """Return active prompt with optional per-product context appended."""
+    base = _FILE_PROMPT
     if business:
         db_prompt = store.get_active_prompt(business.get('id'))
         if db_prompt:
-            return db_prompt
-    return _FILE_PROMPT
+            base = db_prompt
+
+    if not product_interest or not business:
+        return base
+
+    ctx = store.get_product_context(business.get('id'), product_interest)
+    if not ctx:
+        return base
+
+    sections = [base]
+    if ctx.get('prompt_snippet'):
+        sections.append(f"\n\n## Instrucciones específicas para {ctx['product_name']}\n{ctx['prompt_snippet']}")
+    if ctx.get('price'):
+        sections.append(f"\n\n## Precio de referencia\n{ctx['product_name']}: {ctx['currency']} {ctx['price']:,.0f}")
+    for doc in ctx.get('documents', []):
+        sections.append(f"\n\n## Información del producto ({doc['filename']})\n{doc['text'][:3000]}")
+
+    return ''.join(sections)
 
 PRICE_EXTRACT_PROMPT = """Extract rental availability, price, and currency from a provider's WhatsApp reply.
 
@@ -296,16 +313,19 @@ def ask_claude(phone: str, user_message: str, business: Optional[dict] = None) -
     messages.append({'role': 'user', 'content': user_message})
     clean_phone = phone.replace('whatsapp:', '').strip()
     today_str   = cr_now().strftime('%A, %B %d, %Y')
+
+    # Detect product interest from conversation to include product-specific context
+    lead = store.get_lead_by_phone(clean_phone, bid)
+    product_interest = (lead or {}).get('product_interest') if lead else None
+
     system = (
-        get_system_prompt(business)
-        + f'\n\n## Today\'s Date\n'
-        + f'Today is {today_str} (Costa Rica time, UTC-6). '
-        + f'Never accept pick-up or drop-off dates that are before today.\n'
-        + f'\n\n## Client\'s WhatsApp Number\n'
-        + f'This conversation is coming from: {clean_phone}\n'
-        + f'When collecting the phone number, confirm this number with the client '
-        + f'instead of asking them to type it. Example: '
-        + f'"Is {clean_phone} the best number to reach you? 📱"'
+        get_system_prompt(business, product_interest)
+        + f'\n\n## Fecha actual\n'
+        + f'Hoy es {today_str} (hora Costa Rica, UTC-6).\n'
+        + f'\n\n## WhatsApp del cliente\n'
+        + f'Esta conversación viene del número: {clean_phone}\n'
+        + f'Al confirmar el teléfono, usa este número en lugar de pedirle que lo escriba. '
+        + f'Ejemplo: "¿Es {clean_phone} el mejor número para contactarte? 📱"'
     )
     response = claude_client.messages.create(
         model='claude-sonnet-4-6',

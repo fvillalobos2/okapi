@@ -827,11 +827,60 @@ def get_active_prompt(business_id: Optional[str] = None) -> Optional[str]:
     if not b:
         return None
     try:
-        r = _sb().table('businesses').select('base_prompt').eq('id', b).limit(1).execute()
-        return (r.data[0].get('base_prompt') if r.data else None) or None
+        # Try prompt_versions first (managed by admin panel)
+        r = _sb().table('prompt_versions').select('prompt_snapshot') \
+            .eq('business_id', b).eq('is_active', True) \
+            .order('created_at', desc=True).limit(1).execute()
+        if r.data and r.data[0].get('prompt_snapshot'):
+            return r.data[0]['prompt_snapshot']
+        # Fallback to businesses.base_prompt
+        r2 = _sb().table('businesses').select('base_prompt').eq('id', b).limit(1).execute()
+        return (r2.data[0].get('base_prompt') if r2.data else None) or None
     except Exception as e:
         print(f'  ⚠ get_active_prompt: {e}')
         return None
+
+
+def get_product_context(business_id: Optional[str], product_interest: Optional[str]) -> dict:
+    """Return prompt_snippet and document texts for the detected product of interest."""
+    if not product_interest:
+        return {}
+    b = _bid(business_id)
+    if not b:
+        return {}
+    try:
+        r = _sb().table('price_items').select('id,name,prompt_snippet,product_keywords,price,currency') \
+            .eq('business_id', b).eq('active', True).execute()
+        items = r.data or []
+        kw_lower = product_interest.lower()
+        matched = None
+        for item in items:
+            keywords = item.get('product_keywords') or []
+            if any(k.lower() in kw_lower or kw_lower in k.lower() for k in keywords):
+                matched = item
+                break
+        if not matched:
+            # fuzzy match on name
+            for item in items:
+                if item['name'].lower() in kw_lower or kw_lower in item['name'].lower():
+                    matched = item
+                    break
+        if not matched:
+            return {}
+        # Fetch documents
+        d = _sb().table('product_documents').select('content_text,filename') \
+            .eq('price_item_id', matched['id']).execute()
+        docs = d.data or []
+        return {
+            'product_name': matched['name'],
+            'price': matched.get('price'),
+            'currency': matched.get('currency', 'USD'),
+            'prompt_snippet': matched.get('prompt_snippet') or '',
+            'documents': [{'filename': x['filename'], 'text': x['content_text']} for x in docs],
+        }
+    except Exception as e:
+        print(f'  ⚠ get_product_context: {e}')
+        return {}
 
 
 # ─── CLEANUP ─────────────────────────────────────────────────────────────────
