@@ -92,7 +92,7 @@ def _load_prompt():
 _FILE_PROMPT = _load_prompt()
 
 def get_system_prompt(business: Optional[dict] = None, product_interest: Optional[str] = None) -> str:
-    """Return active prompt with optional per-product context appended."""
+    """Return active prompt with optional per-product/category context appended."""
     base = _FILE_PROMPT
     if business:
         db_prompt = store.get_active_prompt(business.get('id'))
@@ -107,12 +107,40 @@ def get_system_prompt(business: Optional[dict] = None, product_interest: Optiona
         return base
 
     sections = [base]
-    if ctx.get('prompt_snippet'):
-        sections.append(f"\n\n## Instrucciones específicas para {ctx['product_name']}\n{ctx['prompt_snippet']}")
-    if ctx.get('price'):
-        sections.append(f"\n\n## Precio de referencia\n{ctx['product_name']}: {ctx['currency']} {ctx['price']:,.0f}")
-    for doc in ctx.get('documents', []):
-        sections.append(f"\n\n## Información del producto ({doc['filename']})\n{doc['text'][:3000]}")
+
+    if ctx.get('category_name'):
+        # Category-level context (new format)
+        if ctx.get('prompt_instructions'):
+            sections.append(
+                f"\n\n## Instrucciones para {ctx['category_name']}\n{ctx['prompt_instructions']}"
+            )
+        products = ctx.get('products', [])
+        if products:
+            lines = []
+            for p in products:
+                name = p['name']
+                code = f" ({p['model_code']})" if p.get('model_code') and p['model_code'] != name else ''
+                price = f": {p.get('currency','USD')} {p['price']:,.0f}" if p.get('price') else ''
+                desc = f" — {p['description']}" if p.get('description') else ''
+                lines.append(f"• {name}{code}{price}{desc}")
+            sections.append(
+                f"\n\n## Modelos disponibles — {ctx['category_name']}\n" + '\n'.join(lines)
+            )
+        for doc in ctx.get('documents', []):
+            sections.append(f"\n\n## Documentación ({doc['filename']})\n{doc['text'][:3000]}")
+
+    elif ctx.get('product_name'):
+        # Legacy per-product context
+        if ctx.get('prompt_snippet'):
+            sections.append(
+                f"\n\n## Instrucciones específicas para {ctx['product_name']}\n{ctx['prompt_snippet']}"
+            )
+        if ctx.get('price'):
+            sections.append(
+                f"\n\n## Precio de referencia\n{ctx['product_name']}: {ctx['currency']} {ctx['price']:,.0f}"
+            )
+        for doc in ctx.get('documents', []):
+            sections.append(f"\n\n## Información del producto ({doc['filename']})\n{doc['text'][:3000]}")
 
     return ''.join(sections)
 

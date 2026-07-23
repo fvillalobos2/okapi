@@ -842,17 +842,53 @@ def get_active_prompt(business_id: Optional[str] = None) -> Optional[str]:
 
 
 def get_product_context(business_id: Optional[str], product_interest: Optional[str]) -> dict:
-    """Return prompt_snippet and document texts for the detected product of interest."""
+    """Return context for detected product/category of interest.
+    Tries category-level match first, then falls back to per-product match.
+    Category context returns: category_name, prompt_instructions, products[], documents[]
+    Per-product context returns: product_name, price, currency, prompt_snippet, documents[]
+    """
     if not product_interest:
         return {}
     b = _bid(business_id)
     if not b:
         return {}
+    kw_lower = product_interest.lower()
     try:
+        # ── 1. Try matching a product category ───────────────────────────────
+        cat_r = _sb().table('product_categories').select('*').eq('business_id', b).execute()
+        categories = cat_r.data or []
+
+        matched_cat = None
+        for cat in categories:
+            keywords = cat.get('product_keywords') or []
+            if any(k.lower() in kw_lower or kw_lower in k.lower() for k in keywords):
+                matched_cat = cat
+                break
+        if not matched_cat:
+            for cat in categories:
+                if cat['name'].lower() in kw_lower or kw_lower in cat['name'].lower():
+                    matched_cat = cat
+                    break
+
+        if matched_cat:
+            prod_r = _sb().table('price_items') \
+                .select('id,name,model_code,price,currency,description') \
+                .eq('business_id', b).eq('category_id', matched_cat['id']).eq('active', True).execute()
+            doc_r = _sb().table('product_documents').select('content_text,filename') \
+                .eq('category_id', matched_cat['id']).execute()
+            return {
+                'category_name': matched_cat['name'],
+                'prompt_instructions': matched_cat.get('prompt_instructions') or '',
+                'products': prod_r.data or [],
+                'documents': [{'filename': x['filename'], 'text': x['content_text']}
+                              for x in (doc_r.data or [])],
+            }
+
+        # ── 2. Fall back to per-product matching ─────────────────────────────
         r = _sb().table('price_items').select('id,name,prompt_snippet,product_keywords,price,currency') \
             .eq('business_id', b).eq('active', True).execute()
         items = r.data or []
-        kw_lower = product_interest.lower()
+
         matched = None
         for item in items:
             keywords = item.get('product_keywords') or []
@@ -860,14 +896,13 @@ def get_product_context(business_id: Optional[str], product_interest: Optional[s
                 matched = item
                 break
         if not matched:
-            # fuzzy match on name
             for item in items:
                 if item['name'].lower() in kw_lower or kw_lower in item['name'].lower():
                     matched = item
                     break
         if not matched:
             return {}
-        # Fetch documents
+
         d = _sb().table('product_documents').select('content_text,filename') \
             .eq('price_item_id', matched['id']).execute()
         docs = d.data or []

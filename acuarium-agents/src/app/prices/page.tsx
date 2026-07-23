@@ -2,73 +2,161 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-type Doc = { id: string; filename: string; file_url: string; created_at: string }
+type Doc = { id: string; filename: string; file_url: string; created_at: string; category_id?: string | null; price_item_id?: string | null }
 type Product = {
   id: string; name: string; model_code: string; description: string
-  price: number; currency: string; category: string; active: boolean
-  prompt_snippet: string | null; product_keywords: string[] | null
-  assigned_team_id: string | null; assigned_user_id: string | null
-  image_url: string | null
+  price: number; currency: string; category_id: string | null; active: boolean
   documents: Doc[]
+}
+type Category = {
+  id: string; name: string; description: string | null
+  prompt_instructions: string | null; product_keywords: string[] | null
+  assigned_team_id: string | null; assigned_user_id: string | null
+  image_url: string | null; products: Product[]; documents: Doc[]
 }
 type Team = { id: string; name: string }
 type User = { id: string; name: string; team_id: string | null; role: string }
 
-const inp = { width: '100%', padding: '7px 10px', fontSize: 13, border: '1px solid var(--border)', borderRadius: 6, background: '#fff', color: 'var(--text)', outline: 'none' }
+const TABS = ['Productos', 'Equipo', 'IA', 'Visual'] as const
+type Tab = (typeof TABS)[number]
+
+const inp: React.CSSProperties = {
+  width: '100%', padding: '7px 10px', fontSize: 13,
+  border: '1px solid var(--border)', borderRadius: 6,
+  background: '#fff', color: 'var(--text)', outline: 'none', boxSizing: 'border-box',
+}
 const BID = '818adb17-c5bc-4bbe-905d-b51b47ad2221'
 
 export default function PricesPage() {
-  const [items, setItems] = useState<Product[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [teams, setTeams] = useState<Team[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [expanded, setExpanded] = useState<string | null>(null)
-  const [edits, setEdits] = useState<Record<string, Partial<Product>>>({})
+  const [activeTab, setActiveTab] = useState<Record<string, Tab>>({})
+  const [catEdits, setCatEdits] = useState<Record<string, Partial<Category & { product_keywords: string }>>>({})
+  const [prodEdits, setProdEdits] = useState<Record<string, Partial<Product>>>({})
   const [saving, setSaving] = useState<string | null>(null)
   const [uploading, setUploading] = useState<string | null>(null)
   const [uploadingImg, setUploadingImg] = useState<string | null>(null)
+
+  const [newCatName, setNewCatName] = useState('')
+  const [creatingCat, setCreatingCat] = useState(false)
+  const [newProdCatId, setNewProdCatId] = useState<string | null>(null)
+  const [newProd, setNewProd] = useState({ name: '', model_code: '', price: '', currency: 'USD', description: '' })
+  const [creatingProd, setCreatingProd] = useState(false)
+
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
   const imgRefs = useRef<Record<string, HTMLInputElement | null>>({})
+  const newCatRef = useRef<HTMLDialogElement | null>(null)
+  const newProdRef = useRef<HTMLDialogElement | null>(null)
 
   async function load() {
-    const [data, teamsData, usersData] = await Promise.all([
-      fetch('/api/products').then(r => r.json()),
+    const [catData, teamsData, usersData] = await Promise.all([
+      fetch('/api/categories').then(r => r.json()),
       fetch('/api/teams').then(r => r.json()),
       fetch('/api/users').then(r => r.json()),
     ])
-    setItems(data ?? [])
+    setCategories(catData.categories ?? [])
     setTeams(teamsData ?? [])
     setUsers(usersData ?? [])
   }
-
   useEffect(() => { load() }, [])
 
-  function patch(id: string, key: string, val: any) {
-    setEdits(prev => ({ ...prev, [id]: { ...prev[id], [key]: val } }))
+  function catV(cat: Category, key: keyof Category) {
+    return ((catEdits[cat.id] as any)?.[key] ?? cat[key]) as any
+  }
+  function patchCat(catId: string, key: string, val: any) {
+    setCatEdits(prev => ({ ...prev, [catId]: { ...prev[catId], [key]: val } }))
+  }
+  function prodV(prod: Product, key: keyof Product) {
+    return ((prodEdits[prod.id] as any)?.[key] ?? prod[key]) as any
+  }
+  function patchProd(prodId: string, key: string, val: any) {
+    setProdEdits(prev => ({ ...prev, [prodId]: { ...prev[prodId], [key]: val } }))
   }
 
-  function val(item: Product, key: keyof Product) {
-    return (edits[item.id]?.[key] ?? item[key]) as any
-  }
-
-  async function save(id: string) {
-    setSaving(id)
-    await fetch('/api/products', {
+  async function saveCat(cat: Category) {
+    setSaving(cat.id)
+    const edits = catEdits[cat.id] ?? {}
+    await fetch('/api/categories', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, ...edits[id] }),
+      body: JSON.stringify({ id: cat.id, ...edits }),
     })
     setSaving(null)
+    setCatEdits(p => { const n = { ...p }; delete n[cat.id]; return n })
     load()
   }
 
-  async function uploadPdf(item: Product, file: File) {
-    setUploading(item.id)
+  async function saveProd(prod: Product) {
+    setSaving(prod.id)
+    await fetch('/api/products', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: prod.id, ...prodEdits[prod.id] }),
+    })
+    setSaving(null)
+    setProdEdits(p => { const n = { ...p }; delete n[prod.id]; return n })
+    load()
+  }
+
+  async function createCat() {
+    if (!newCatName.trim()) return
+    setCreatingCat(true)
+    await fetch('/api/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newCatName }),
+    })
+    setCreatingCat(false)
+    setNewCatName('')
+    newCatRef.current?.close()
+    load()
+  }
+
+  async function createProd() {
+    if (!newProd.name.trim() || !newProdCatId) return
+    setCreatingProd(true)
+    await fetch('/api/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...newProd, price: parseFloat(newProd.price) || 0, category_id: newProdCatId }),
+    })
+    setCreatingProd(false)
+    setNewProd({ name: '', model_code: '', price: '', currency: 'USD', description: '' })
+    setNewProdCatId(null)
+    newProdRef.current?.close()
+    load()
+  }
+
+  async function uploadPdf(catId: string, file: File) {
+    setUploading(catId)
     const form = new FormData()
     form.append('file', file)
-    form.append('price_item_id', item.id)
+    form.append('category_id', catId)
     form.append('business_id', BID)
     await fetch('/api/products/upload', { method: 'POST', body: form })
     setUploading(null)
+    load()
+  }
+
+  async function uploadImg(catId: string, file: File) {
+    setUploadingImg(catId)
+    const form = new FormData()
+    form.append('file', file)
+    form.append('category_id', catId)
+    form.append('business_id', BID)
+    await fetch('/api/products/image', { method: 'POST', body: form })
+    setUploadingImg(null)
+    load()
+  }
+
+  async function deleteImg(catId: string) {
+    await fetch('/api/products/image', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category_id: catId }),
+    })
     load()
   }
 
@@ -81,299 +169,367 @@ export default function PricesPage() {
     load()
   }
 
-  async function uploadImage(item: Product, file: File) {
-    setUploadingImg(item.id)
-    const form = new FormData()
-    form.append('file', file)
-    form.append('price_item_id', item.id)
-    form.append('business_id', BID)
-    await fetch('/api/products/image', { method: 'POST', body: form })
-    setUploadingImg(null)
-    load()
-  }
-
-  async function deleteImage(item: Product) {
-    await fetch('/api/products/image', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ price_item_id: item.id }),
-    })
-    load()
-  }
-
-  const isDirty = (id: string) => Object.keys(edits[id] ?? {}).length > 0
+  const isCatDirty = (id: string) => Object.keys(catEdits[id] ?? {}).length > 0
+  const isProdDirty = (id: string) => Object.keys(prodEdits[id] ?? {}).length > 0
+  const getTab = (catId: string): Tab => activeTab[catId] ?? 'Productos'
 
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-.3px' }}>Productos</h1>
-        <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>
-          Configura precios, equipo responsable, instrucciones de IA y material visual por producto
-        </p>
+      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-.3px' }}>Productos</h1>
+          <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>
+            Organiza por categoría · configura precios, equipo, instrucciones IA y material visual
+          </p>
+        </div>
+        <button className="btn btn-primary" onClick={() => { setNewCatName(''); newCatRef.current?.showModal() }}>
+          + Nueva categoría
+        </button>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {items.map(item => {
-          const open = expanded === item.id
-          const dirty = isDirty(item.id)
-          const kw = val(item, 'product_keywords')
+        {categories.length === 0 && (
+          <div style={{ textAlign: 'center', color: 'var(--muted)', padding: '48px 0', fontSize: 13 }}>
+            Sin categorías aún. Crea una para empezar a organizar los productos.
+          </div>
+        )}
+
+        {categories.map(cat => {
+          const open = expanded === cat.id
+          const tab = getTab(cat.id)
+          const dirty = isCatDirty(cat.id)
+          const kw = catEdits[cat.id]?.product_keywords ?? cat.product_keywords
           const kwStr = Array.isArray(kw) ? kw.join(', ') : (kw ?? '')
-          const selectedTeam = val(item, 'assigned_team_id') as string | null
-          const teamUsers = users.filter(u => !selectedTeam || u.team_id === selectedTeam)
-          const imageUrl = val(item, 'image_url') as string | null
+          const selTeam = catV(cat, 'assigned_team_id') as string | null
+          const teamUsers = users.filter(u => !selTeam || u.team_id === selTeam)
+          const imgUrl = catV(cat, 'image_url') as string | null
 
           return (
-            <div key={item.id} className="card" style={{ padding: 0 }}>
-              {/* Header */}
+            <div key={cat.id} className="card" style={{ padding: 0 }}>
+              {/* Category header */}
               <div
-                style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
-                onClick={() => setExpanded(open ? null : item.id)}
+                style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', userSelect: 'none' }}
+                onClick={() => setExpanded(open ? null : cat.id)}
               >
-                {item.image_url && (
-                  <img src={item.image_url} alt={item.name} style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />
+                {cat.image_url && (
+                  <img src={cat.image_url} alt={cat.name} style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 15 }}>{item.name}</div>
+                  <div style={{ fontWeight: 600, fontSize: 15 }}>{cat.name}</div>
                   <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
-                    {item.model_code} · {item.category}
-                    {item.documents.length > 0 && <span style={{ color: 'var(--accent)', marginLeft: 8 }}>📄 {item.documents.length}</span>}
-                    {item.prompt_snippet && <span style={{ color: '#15803D', marginLeft: 8 }}>✓ IA</span>}
-                    {item.assigned_team_id && <span style={{ color: 'var(--muted)', marginLeft: 8 }}>· {teams.find(t => t.id === item.assigned_team_id)?.name}</span>}
+                    {cat.products.length} producto{cat.products.length !== 1 ? 's' : ''}
+                    {cat.documents.length > 0 && <span style={{ color: 'var(--accent)', marginLeft: 8 }}>📄 {cat.documents.length}</span>}
+                    {cat.prompt_instructions && <span style={{ color: '#15803D', marginLeft: 8 }}>✓ IA</span>}
+                    {cat.assigned_team_id && <span style={{ color: 'var(--muted)', marginLeft: 8 }}>· {teams.find(t => t.id === cat.assigned_team_id)?.name ?? ''}</span>}
                   </div>
                 </div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--accent)', whiteSpace: 'nowrap' }}>
-                  ${item.price.toLocaleString()} {item.currency}
-                </div>
-                <div style={{ color: 'var(--muted)', fontSize: 18, marginLeft: 4 }}>{open ? '▲' : '▼'}</div>
+                <div style={{ color: 'var(--muted)', fontSize: 16 }}>{open ? '▲' : '▼'}</div>
               </div>
 
               {open && (
-                <div style={{ borderTop: '1px solid var(--border)', padding: '20px' }}>
-
-                  {/* Precio y nombre */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
-                    <div>
-                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Precio</label>
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <span style={{ color: 'var(--muted)' }}>$</span>
-                        <input
-                          type="number"
-                          style={{ ...inp, flex: 1 }}
-                          value={val(item, 'price')}
-                          onChange={e => patch(item.id, 'price', parseFloat(e.target.value))}
-                        />
-                        <select style={{ ...inp, width: 'auto' }} value={val(item, 'currency')} onChange={e => patch(item.id, 'currency', e.target.value)}>
-                          <option>USD</option><option>CRC</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div>
-                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Nombre del producto</label>
-                      <input style={inp} value={val(item, 'name')} onChange={e => patch(item.id, 'name', e.target.value)} />
-                    </div>
-                    <div style={{ gridColumn: '1 / -1' }}>
-                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Descripción corta</label>
-                      <input style={inp} value={val(item, 'description')} onChange={e => patch(item.id, 'description', e.target.value)} />
-                    </div>
+                <div style={{ borderTop: '1px solid var(--border)' }}>
+                  {/* Tab bar */}
+                  <div style={{ display: 'flex', padding: '0 20px', borderBottom: '1px solid var(--border)', gap: 0 }}>
+                    {TABS.map(t => (
+                      <button
+                        key={t}
+                        onClick={e => { e.stopPropagation(); setActiveTab(prev => ({ ...prev, [cat.id]: t })) }}
+                        style={{
+                          padding: '10px 14px', fontSize: 13, background: 'none', border: 'none',
+                          fontWeight: tab === t ? 600 : 400,
+                          color: tab === t ? 'var(--accent)' : 'var(--muted)',
+                          borderBottom: tab === t ? '2px solid var(--accent)' : '2px solid transparent',
+                          cursor: 'pointer', marginBottom: -1,
+                        }}
+                      >
+                        {t}
+                      </button>
+                    ))}
                   </div>
 
-                  {/* Equipo y responsable */}
-                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20, marginBottom: 20 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#6366F1', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 14 }}>
-                      👥 Equipo / Responsable
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                      <div>
-                        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Sucursal asignada</label>
-                        <select
-                          style={inp}
-                          value={selectedTeam ?? ''}
-                          onChange={e => {
-                            patch(item.id, 'assigned_team_id', e.target.value || null)
-                            patch(item.id, 'assigned_user_id', null)
-                          }}
-                        >
-                          <option value="">— Sin asignar —</option>
-                          {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Usuario responsable</label>
-                        <select
-                          style={inp}
-                          value={(val(item, 'assigned_user_id') as string | null) ?? ''}
-                          onChange={e => patch(item.id, 'assigned_user_id', e.target.value || null)}
-                        >
-                          <option value="">— Sin asignar —</option>
-                          {teamUsers.map(u => <option key={u.id} value={u.id}>{u.name} ({u.role})</option>)}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
+                  <div style={{ padding: 20 }}>
 
-                  {/* IA Section */}
-                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 14 }}>
-                      🤖 Agente IA
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                      {/* Keywords */}
+                    {/* Tab: Productos */}
+                    {tab === 'Productos' && (
                       <div>
-                        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>
-                          Palabras clave de detección <span style={{ fontWeight: 400 }}>(separadas por coma)</span>
-                        </label>
-                        <input
-                          style={inp}
-                          placeholder="piscina, alberca, pileta, pool, construcción..."
-                          value={kwStr}
-                          onChange={e => patch(item.id, 'product_keywords', e.target.value)}
-                        />
-                        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
-                          Cuando el cliente mencione estas palabras, el agente activará las instrucciones y documentos de este producto.
-                        </div>
-                      </div>
-
-                      {/* Prompt snippet */}
-                      <div>
-                        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>
-                          Instrucciones de venta específicas
-                        </label>
-                        <textarea
-                          style={{ ...inp, minHeight: 140, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5 }}
-                          placeholder={`Instrucciones adicionales para cuando el cliente pregunta por ${item.name}.\n\nEjemplo: enfatiza los beneficios de hidromasaje, menciona las opciones de instalación, ofrece agendar visita técnica...`}
-                          value={val(item, 'prompt_snippet') ?? ''}
-                          onChange={e => patch(item.id, 'prompt_snippet', e.target.value)}
-                        />
-                      </div>
-
-                      {/* PDF Documents */}
-                      <div>
-                        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 8 }}>
-                          Documentos del producto (PDF)
-                        </label>
-
-                        {item.documents.length > 0 && (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
-                            {item.documents.map(doc => (
-                              <div key={doc.id} style={{
-                                display: 'flex', alignItems: 'center', gap: 10,
-                                padding: '8px 12px', background: '#F8FAFC',
-                                border: '1px solid var(--border)', borderRadius: 8,
-                              }}>
-                                <span style={{ fontSize: 16 }}>📄</span>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.filename}</div>
-                                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>{new Date(doc.created_at).toLocaleDateString('es-CR')}</div>
-                                </div>
-                                <button className="btn btn-ghost btn-sm" style={{ color: '#DC2626', fontSize: 11 }} onClick={() => deleteDoc(doc.id)}>
-                                  Eliminar
-                                </button>
-                              </div>
-                            ))}
+                        {cat.products.length === 0 && (
+                          <div style={{ textAlign: 'center', color: 'var(--muted)', padding: '20px 0', fontSize: 13 }}>
+                            Sin modelos en esta categoría
                           </div>
                         )}
-
-                        <input
-                          ref={el => { fileRefs.current[item.id] = el }}
-                          type="file"
-                          accept=".pdf"
-                          style={{ display: 'none' }}
-                          onChange={e => {
-                            const f = e.target.files?.[0]
-                            if (f) uploadPdf(item, f)
-                            e.target.value = ''
-                          }}
-                        />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
+                          {cat.products.map(prod => {
+                            const pdirty = isProdDirty(prod.id)
+                            return (
+                              <div key={prod.id} style={{ padding: '12px 14px', background: '#F8FAFC', border: '1px solid var(--border)', borderRadius: 8 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px 80px', gap: 8, alignItems: 'center' }}>
+                                  <input
+                                    style={{ ...inp, background: 'white' }}
+                                    value={prodV(prod, 'name')}
+                                    onChange={e => patchProd(prod.id, 'name', e.target.value)}
+                                    placeholder="Nombre del modelo"
+                                  />
+                                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                    <span style={{ color: 'var(--muted)', fontSize: 12, flexShrink: 0 }}>$</span>
+                                    <input
+                                      type="number"
+                                      style={{ ...inp, background: 'white' }}
+                                      value={prodV(prod, 'price')}
+                                      onChange={e => patchProd(prod.id, 'price', parseFloat(e.target.value) || 0)}
+                                    />
+                                  </div>
+                                  <select
+                                    style={{ ...inp, background: 'white', padding: '7px 6px' }}
+                                    value={prodV(prod, 'currency')}
+                                    onChange={e => patchProd(prod.id, 'currency', e.target.value)}
+                                  >
+                                    <option>USD</option><option>CRC</option>
+                                  </select>
+                                </div>
+                                <div style={{ marginTop: 8 }}>
+                                  <input
+                                    style={{ ...inp, background: 'white', fontSize: 12 }}
+                                    value={prodV(prod, 'description') ?? ''}
+                                    onChange={e => patchProd(prod.id, 'description', e.target.value)}
+                                    placeholder="Descripción corta"
+                                  />
+                                </div>
+                                {pdirty && (
+                                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+                                    <button className="btn btn-ghost btn-sm" onClick={() => setProdEdits(p => { const n = { ...p }; delete n[prod.id]; return n })}>Descartar</button>
+                                    <button className="btn btn-primary btn-sm" onClick={() => saveProd(prod)} disabled={saving === prod.id}>
+                                      {saving === prod.id ? 'Guardando...' : 'Guardar'}
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
                         <button
                           className="btn btn-ghost btn-sm"
                           style={{ width: '100%', border: '1px dashed var(--border)', height: 38 }}
-                          onClick={() => fileRefs.current[item.id]?.click()}
-                          disabled={uploading === item.id}
+                          onClick={() => { setNewProdCatId(cat.id); setNewProd({ name: '', model_code: '', price: '', currency: 'USD', description: '' }); newProdRef.current?.showModal() }}
                         >
-                          {uploading === item.id ? '⏳ Procesando PDF...' : '+ Subir PDF'}
+                          + Agregar modelo
                         </button>
                       </div>
+                    )}
 
-                      {/* Visual material */}
+                    {/* Tab: Equipo */}
+                    {tab === 'Equipo' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Nombre de la categoría</label>
+                          <input style={inp} value={catV(cat, 'name')} onChange={e => patchCat(cat.id, 'name', e.target.value)} />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                          <div>
+                            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Sucursal asignada</label>
+                            <select
+                              style={inp}
+                              value={selTeam ?? ''}
+                              onChange={e => { patchCat(cat.id, 'assigned_team_id', e.target.value || null); patchCat(cat.id, 'assigned_user_id', null) }}
+                            >
+                              <option value="">— Sin asignar —</option>
+                              {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                            </select>
+                          </div>
+                          <div>
+                            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Usuario responsable</label>
+                            <select
+                              style={inp}
+                              value={(catV(cat, 'assigned_user_id') as string | null) ?? ''}
+                              onChange={e => patchCat(cat.id, 'assigned_user_id', e.target.value || null)}
+                            >
+                              <option value="">— Sin asignar —</option>
+                              {teamUsers.map(u => <option key={u.id} value={u.id}>{u.name} ({u.role})</option>)}
+                            </select>
+                          </div>
+                        </div>
+                        {dirty && (
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                            <button className="btn btn-ghost" onClick={() => setCatEdits(p => { const n = { ...p }; delete n[cat.id]; return n })}>Descartar</button>
+                            <button className="btn btn-primary" onClick={() => saveCat(cat)} disabled={saving === cat.id}>{saving === cat.id ? 'Guardando...' : 'Guardar'}</button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Tab: IA */}
+                    {tab === 'IA' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>
+                            Palabras clave de detección <span style={{ fontWeight: 400 }}>(separadas por coma)</span>
+                          </label>
+                          <input
+                            style={inp}
+                            placeholder="jacuzzi, spa, hidromasaje, hot tub..."
+                            value={kwStr}
+                            onChange={e => patchCat(cat.id, 'product_keywords', e.target.value)}
+                          />
+                          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
+                            Cuando el cliente mencione estas palabras, el agente usará las instrucciones de esta categoría.
+                          </div>
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>
+                            Instrucciones de venta para esta categoría
+                          </label>
+                          <textarea
+                            style={{ ...inp, minHeight: 160, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5 }}
+                            placeholder={`Instrucciones específicas cuando el cliente pregunta por ${cat.name}.\n\nEj: Enfatiza los jets de hidromasaje, pregunta por el espacio disponible, menciona el ahorro energético del modelo Premium...`}
+                            value={(catV(cat, 'prompt_instructions') as string | null) ?? ''}
+                            onChange={e => patchCat(cat.id, 'prompt_instructions', e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 8 }}>
+                            Documentos del producto (PDF)
+                          </label>
+                          {cat.documents.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
+                              {cat.documents.map(doc => (
+                                <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: '#F8FAFC', border: '1px solid var(--border)', borderRadius: 8 }}>
+                                  <span style={{ fontSize: 16 }}>📄</span>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.filename}</div>
+                                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>{new Date(doc.created_at).toLocaleDateString('es-CR')}</div>
+                                  </div>
+                                  <button className="btn btn-ghost btn-sm" style={{ color: '#DC2626', fontSize: 11 }} onClick={() => deleteDoc(doc.id)}>Eliminar</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <input
+                            ref={el => { fileRefs.current[cat.id] = el }}
+                            type="file" accept=".pdf" style={{ display: 'none' }}
+                            onChange={e => { const f = e.target.files?.[0]; if (f) uploadPdf(cat.id, f); e.target.value = '' }}
+                          />
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            style={{ width: '100%', border: '1px dashed var(--border)', height: 38 }}
+                            onClick={() => fileRefs.current[cat.id]?.click()}
+                            disabled={uploading === cat.id}
+                          >
+                            {uploading === cat.id ? '⏳ Procesando PDF...' : '+ Subir PDF'}
+                          </button>
+                        </div>
+                        {dirty && (
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                            <button className="btn btn-ghost" onClick={() => setCatEdits(p => { const n = { ...p }; delete n[cat.id]; return n })}>Descartar</button>
+                            <button className="btn btn-primary" onClick={() => saveCat(cat)} disabled={saving === cat.id}>{saving === cat.id ? 'Guardando...' : 'Guardar'}</button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Tab: Visual */}
+                    {tab === 'Visual' && (
                       <div>
-                        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 8 }}>
-                          Material visual (imagen del producto)
-                        </label>
-
-                        {imageUrl ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: '#F8FAFC', border: '1px solid var(--border)', borderRadius: 8 }}>
-                            <img src={imageUrl} alt={item.name} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />
+                        {imgUrl ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: '#F8FAFC', border: '1px solid var(--border)', borderRadius: 8, marginBottom: 12 }}>
+                            <img src={imgUrl} alt={cat.name} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />
                             <div style={{ flex: 1 }}>
                               <div style={{ fontSize: 13, fontWeight: 500 }}>Imagen actual</div>
-                              <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2, wordBreak: 'break-all' }}>{imageUrl.split('/').pop()}</div>
+                              <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2, wordBreak: 'break-all' }}>{imgUrl.split('/').pop()}</div>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                              <button
-                                className="btn btn-ghost btn-sm"
-                                style={{ fontSize: 11 }}
-                                onClick={() => imgRefs.current[item.id]?.click()}
-                                disabled={uploadingImg === item.id}
-                              >
-                                Reemplazar
-                              </button>
-                              <button
-                                className="btn btn-ghost btn-sm"
-                                style={{ color: '#DC2626', fontSize: 11 }}
-                                onClick={() => deleteImage(item)}
-                              >
-                                Eliminar
-                              </button>
+                              <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} onClick={() => imgRefs.current[cat.id]?.click()} disabled={uploadingImg === cat.id}>Reemplazar</button>
+                              <button className="btn btn-ghost btn-sm" style={{ color: '#DC2626', fontSize: 11 }} onClick={() => deleteImg(cat.id)}>Eliminar</button>
                             </div>
                           </div>
                         ) : (
                           <button
                             className="btn btn-ghost btn-sm"
-                            style={{ width: '100%', border: '1px dashed var(--border)', height: 38 }}
-                            onClick={() => imgRefs.current[item.id]?.click()}
-                            disabled={uploadingImg === item.id}
+                            style={{ width: '100%', border: '1px dashed var(--border)', height: 40, marginBottom: 12 }}
+                            onClick={() => imgRefs.current[cat.id]?.click()}
+                            disabled={uploadingImg === cat.id}
                           >
-                            {uploadingImg === item.id ? '⏳ Subiendo imagen...' : '+ Subir imagen'}
+                            {uploadingImg === cat.id ? '⏳ Subiendo...' : '+ Subir imagen de la categoría'}
                           </button>
                         )}
-
                         <input
-                          ref={el => { imgRefs.current[item.id] = el }}
-                          type="file"
-                          accept="image/*"
-                          style={{ display: 'none' }}
-                          onChange={e => {
-                            const f = e.target.files?.[0]
-                            if (f) uploadImage(item, f)
-                            e.target.value = ''
-                          }}
+                          ref={el => { imgRefs.current[cat.id] = el }}
+                          type="file" accept="image/*" style={{ display: 'none' }}
+                          onChange={e => { const f = e.target.files?.[0]; if (f) uploadImg(cat.id, f); e.target.value = '' }}
                         />
+                        <div style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center' }}>
+                          Se muestra en el header de la categoría como referencia visual
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
-
-                  {/* Save button */}
-                  {dirty && (
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-                      <button className="btn btn-ghost" onClick={() => setEdits(p => { const n = { ...p }; delete n[item.id]; return n })}>
-                        Descartar
-                      </button>
-                      <button
-                        className="btn btn-primary"
-                        style={{ padding: '7px 20px' }}
-                        onClick={() => save(item.id)}
-                        disabled={saving === item.id}
-                      >
-                        {saving === item.id ? 'Guardando...' : 'Guardar cambios'}
-                      </button>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
           )
         })}
       </div>
+
+      {/* Modal: Nueva categoría */}
+      <dialog ref={newCatRef} style={{ borderRadius: 12, border: '1px solid var(--border)', padding: 0, minWidth: 360, boxShadow: '0 8px 32px rgba(0,0,0,.12)' }}>
+        <div style={{ padding: '24px' }}>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Nueva categoría</div>
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Nombre</label>
+            <input
+              style={inp}
+              value={newCatName}
+              onChange={e => setNewCatName(e.target.value)}
+              placeholder="Ej: Jacuzzis exteriores"
+              onKeyDown={e => e.key === 'Enter' && createCat()}
+              autoFocus
+            />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <button className="btn btn-ghost" onClick={() => { setNewCatName(''); newCatRef.current?.close() }}>Cancelar</button>
+            <button className="btn btn-primary" onClick={createCat} disabled={creatingCat || !newCatName.trim()}>
+              {creatingCat ? 'Creando...' : 'Crear categoría'}
+            </button>
+          </div>
+        </div>
+      </dialog>
+
+      {/* Modal: Nuevo producto */}
+      <dialog ref={newProdRef} style={{ borderRadius: 12, border: '1px solid var(--border)', padding: 0, minWidth: 420, boxShadow: '0 8px 32px rgba(0,0,0,.12)' }}>
+        <div style={{ padding: '24px' }}>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Nuevo modelo</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Nombre del modelo</label>
+              <input style={inp} value={newProd.name} onChange={e => setNewProd(p => ({ ...p, name: e.target.value }))} placeholder="Ej: Jacuzzi Infinity 4 Personas" autoFocus />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Código de modelo</label>
+              <input style={inp} value={newProd.model_code} onChange={e => setNewProd(p => ({ ...p, model_code: e.target.value }))} placeholder="Ej: INF-4P" />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px', gap: 8 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Precio</label>
+                <input type="number" style={inp} value={newProd.price} onChange={e => setNewProd(p => ({ ...p, price: e.target.value }))} placeholder="0" />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Moneda</label>
+                <select style={{ ...inp, padding: '7px 6px' }} value={newProd.currency} onChange={e => setNewProd(p => ({ ...p, currency: e.target.value }))}>
+                  <option>USD</option><option>CRC</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Descripción</label>
+              <input style={inp} value={newProd.description} onChange={e => setNewProd(p => ({ ...p, description: e.target.value }))} placeholder="Descripción corta del modelo" />
+            </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <button className="btn btn-ghost" onClick={() => { setNewProd({ name: '', model_code: '', price: '', currency: 'USD', description: '' }); newProdRef.current?.close() }}>Cancelar</button>
+            <button className="btn btn-primary" onClick={createProd} disabled={creatingProd || !newProd.name.trim()}>
+              {creatingProd ? 'Creando...' : 'Crear modelo'}
+            </button>
+          </div>
+        </div>
+      </dialog>
     </div>
   )
 }
