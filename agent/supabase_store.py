@@ -841,6 +841,20 @@ def get_active_prompt(business_id: Optional[str] = None) -> Optional[str]:
         return None
 
 
+def get_categories_keywords(business_id: Optional[str] = None) -> list:
+    """Return [{id, name, product_keywords}] for all categories of a business."""
+    b = _bid(business_id)
+    if not b:
+        return []
+    try:
+        r = _sb().table('product_categories').select('id,name,product_keywords') \
+            .eq('business_id', b).execute()
+        return r.data or []
+    except Exception as e:
+        print(f'  ⚠ get_categories_keywords: {e}')
+        return []
+
+
 def get_product_context(business_id: Optional[str], product_interest: Optional[str]) -> dict:
     """Return context for detected product/category of interest.
     Tries category-level match first, then falls back to per-product match.

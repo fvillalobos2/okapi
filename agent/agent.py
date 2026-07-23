@@ -91,6 +91,22 @@ def _load_prompt():
 
 _FILE_PROMPT = _load_prompt()
 
+def detect_product_interest(business_id: Optional[str], *texts: str) -> Optional[str]:
+    """Scan texts for category keywords. Returns matched category name or None."""
+    categories = store.get_categories_keywords(business_id)
+    if not categories:
+        return None
+    combined = ' '.join(t.lower() for t in texts if t)
+    for cat in categories:
+        keywords = cat.get('product_keywords') or []
+        if any(k.lower() in combined for k in keywords):
+            return cat['name']
+    for cat in categories:
+        if cat['name'].lower() in combined:
+            return cat['name']
+    return None
+
+
 def get_system_prompt(business: Optional[dict] = None, product_interest: Optional[str] = None) -> str:
     """Return active prompt with optional per-product/category context appended."""
     base = _FILE_PROMPT
@@ -334,7 +350,8 @@ def detect_client_language(phone: str, business: Optional[dict] = None) -> str:
     hits = sum(1 for w in spanish_words if w in text.split())
     return 'es' if hits >= 1 else 'en'
 
-def ask_claude(phone: str, user_message: str, business: Optional[dict] = None) -> str:
+def ask_claude(phone: str, user_message: str, business: Optional[dict] = None,
+               ad_product_interest: Optional[str] = None) -> str:
     bid     = business.get('id') if business else None
     history = store.get_history(phone, bid)
     messages = [{'role': m['role'], 'content': m['content']} for m in history]
@@ -342,9 +359,12 @@ def ask_claude(phone: str, user_message: str, business: Optional[dict] = None) -
     clean_phone = phone.replace('whatsapp:', '').strip()
     today_str   = cr_now().strftime('%A, %B %d, %Y')
 
-    # Detect product interest from conversation to include product-specific context
-    lead = store.get_lead_by_phone(clean_phone, bid)
-    product_interest = (lead or {}).get('product_interest') if lead else None
+    # Real-time category detection: scan current message + last 5 history messages
+    recent_texts = [m['content'] for m in history[-5:] if m.get('content')]
+    product_interest = (
+        detect_product_interest(bid, user_message, *recent_texts)
+        or ad_product_interest
+    )
 
     system = (
         get_system_prompt(business, product_interest)
@@ -1001,13 +1021,24 @@ _CANCEL_DENY = {
 
 
 def handle_inbound(from_number: str, body: str,
-                   business: Optional[dict] = None) -> str:
+                   business: Optional[dict] = None,
+                   referral: Optional[dict] = None) -> str:
     """
     Core message router. Returns the TwiML response body string.
     Works for any business — defaults to GolfCartRentalsCR.
+    referral: dict with Twilio referral fields (from Click-to-WhatsApp ads).
     """
     bid     = business.get('id') if business else None
     sender  = (business or {}).get('twilio_sender', TWILIO_WA_NUMBER)
+
+    # Detect product interest from ad referral data (Facebook/Instagram Click-to-WhatsApp)
+    ad_product_interest: Optional[str] = None
+    if referral and referral.get('source_type') == 'AD':
+        headline   = referral.get('headline', '')
+        source_url = referral.get('source_url', '')
+        ad_product_interest = detect_product_interest(bid, headline, source_url, body)
+        if ad_product_interest:
+            print(f'  📢 Ad referral → product: {ad_product_interest} (headline: {headline[:60]})')
 
     # ── Is this a provider? ───────────────────────────────────────────────────
     provider_location = get_provider_location(from_number, business)
@@ -1264,7 +1295,7 @@ def handle_inbound(from_number: str, body: str,
         )
         alert_admin(f'🆘 *Human agent needed*\n\nCustomer: {from_number}\nMessage: {body}', sender)
 
-    reply = ask_claude(from_number, body, business)
+    reply = ask_claude(from_number, body, business, ad_product_interest=ad_product_interest)
 
     booking = extract_booking(reply)
     if booking:
@@ -1313,10 +1344,19 @@ def webhook():
     if not body:
         return '', 204
 
+    referral = {
+        'source_type': request.form.get('ReferralSourceType', ''),
+        'headline':    request.form.get('ReferralHeadline', ''),
+        'source_url':  request.form.get('ReferralSourceUrl', ''),
+        'source_id':   request.form.get('ReferralSourceId', ''),
+    }
+
     print(f'  ← {from_number}: {body[:80]}')
+    if referral.get('source_type'):
+        print(f'  📢 Referral: {referral["source_type"]} — {referral["headline"][:60]}')
 
     business = store.get_business_by_slug('golfcartrentalscr')
-    reply    = handle_inbound(from_number, body, business)
+    reply    = handle_inbound(from_number, body, business, referral=referral)
 
     resp = MessagingResponse()
     if reply:
@@ -1340,9 +1380,18 @@ def webhook_tenant(slug: str):
     if not body:
         return '', 204
 
-    print(f'  ← [{slug}] {from_number}: {body[:80]}')
+    referral = {
+        'source_type': request.form.get('ReferralSourceType', ''),
+        'headline':    request.form.get('ReferralHeadline', ''),
+        'source_url':  request.form.get('ReferralSourceUrl', ''),
+        'source_id':   request.form.get('ReferralSourceId', ''),
+    }
 
-    reply = handle_inbound(from_number, body, business)
+    print(f'  ← [{slug}] {from_number}: {body[:80]}')
+    if referral.get('source_type'):
+        print(f'  📢 [{slug}] Referral: {referral["source_type"]} — {referral["headline"][:60]}')
+
+    reply = handle_inbound(from_number, body, business, referral=referral)
 
     resp = MessagingResponse()
     if reply:
