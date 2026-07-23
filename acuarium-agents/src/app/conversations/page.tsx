@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { supabaseAdmin } from '@/lib/supabase'
+import { AIToggle } from '@/components/AIToggle'
 
 const STATUS_LABEL: Record<string, string> = {
   open: 'Abierta', assigned: 'Asignada', resolved: 'Resuelta', archived: 'Archivada',
@@ -29,12 +30,16 @@ export default async function ConversationsPage({ searchParams }: { searchParams
 
   const { data } = await q
   const rows = data ?? []
+  const aiOn = rows.filter((c: any) => c.ai_enabled !== false).length
+  const aiOff = rows.filter((c: any) => c.ai_enabled === false).length
 
   return (
     <div>
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-.3px' }}>Conversaciones</h1>
-        <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>{rows.length} conversaciones</p>
+        <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>
+          {rows.length} conversaciones · IA activa en {aiOn} · desactivada en {aiOff}
+        </p>
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
@@ -53,8 +58,8 @@ export default async function ConversationsPage({ searchParams }: { searchParams
               <th>Contacto</th>
               <th>Zona</th>
               <th>Sucursal</th>
-              <th>Idioma</th>
               <th>Estado</th>
+              <th>IA</th>
               <th>Última actividad</th>
             </tr>
           </thead>
@@ -70,8 +75,8 @@ export default async function ConversationsPage({ searchParams }: { searchParams
                 </td>
                 <td style={{ color: 'var(--muted)' }}>{c.leads?.zone || '—'}</td>
                 <td style={{ color: 'var(--muted)' }}>{c.teams?.name || '—'}</td>
-                <td style={{ color: 'var(--muted)', textTransform: 'uppercase', fontSize: 12 }}>{c.language || 'es'}</td>
                 <td><span className={`badge badge-${c.status}`}>{STATUS_LABEL[c.status] ?? c.status}</span></td>
+                <td><AIToggle convId={c.id} initial={c.ai_enabled !== false} /></td>
                 <td style={{ color: 'var(--muted)' }}>{c.updated_at ? timeAgo(c.updated_at) : '—'}</td>
               </tr>
             ))}

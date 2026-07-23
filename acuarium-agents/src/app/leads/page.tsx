@@ -1,7 +1,8 @@
 export const dynamic = 'force-dynamic'
 import { supabaseAdmin } from '@/lib/supabase'
+import { Suspense } from 'react'
+import { LeadFilters } from '@/components/LeadFilters'
 
-const STATUS_OPTS = ['', 'new', 'active', 'qualified', 'converted', 'lost']
 const STATUS_LABEL: Record<string, string> = {
   new: 'Nuevo', active: 'Activo', qualified: 'Calificado',
   converted: 'Convertido', lost: 'Perdido',
@@ -23,7 +24,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
 
   let q = supabaseAdmin()
     .from('leads')
-    .select('*, teams(name,zone)')
+    .select('*, teams(name,zone), users!assigned_to(name)')
     .order('last_active_at', { ascending: false })
     .limit(500)
 
@@ -47,30 +48,9 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
         </div>
       </div>
 
-      {/* Filters */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-        {STATUS_OPTS.map(s => (
-          <a
-            key={s || 'all'}
-            href={s ? `/leads?status=${s}${teamFilter ? `&team=${teamFilter}` : ''}` : `/leads${teamFilter ? `?team=${teamFilter}` : ''}`}
-            className={`btn btn-sm ${statusFilter === s ? 'btn-primary' : 'btn-ghost'}`}
-          >
-            {s ? STATUS_LABEL[s] : 'Todos'}
-          </a>
-        ))}
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-          <form>
-            <input type="hidden" name="status" value={statusFilter} />
-            <select name="team" className="form-control" style={{ width: 'auto', padding: '4px 10px', fontSize: 12 }}
-              onChange={e => { window.location.href = `/leads${statusFilter ? `?status=${statusFilter}&` : '?'}team=${e.target.value}` }}>
-              <option value="">Todas las sucursales</option>
-              {teamList.map((t: any) => (
-                <option key={t.id} value={t.id} selected={teamFilter === t.id}>{t.name}</option>
-              ))}
-            </select>
-          </form>
-        </div>
-      </div>
+      <Suspense>
+        <LeadFilters teams={teamList} />
+      </Suspense>
 
       <div className="table-wrap">
         <table>
@@ -80,6 +60,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
               <th>Zona</th>
               <th>Sucursal</th>
               <th>Producto</th>
+              <th>Asignado a</th>
               <th>Estado</th>
               <th>Fuente</th>
               <th>Último contacto</th>
@@ -87,7 +68,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--muted)', padding: 40 }}>Sin leads</td></tr>
+              <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--muted)', padding: 40 }}>Sin leads</td></tr>
             ) : rows.map((l: any) => (
               <tr key={l.id}>
                 <td>
@@ -99,6 +80,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                 <td style={{ color: 'var(--muted)' }}>{l.zone || '—'}</td>
                 <td style={{ color: 'var(--muted)' }}>{l.teams?.name || '—'}</td>
                 <td style={{ color: 'var(--muted)', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.product_interest || '—'}</td>
+                <td style={{ color: 'var(--muted)', fontSize: 12 }}>{l.users?.name || '—'}</td>
                 <td><span className={`badge badge-${l.status}`}>{STATUS_LABEL[l.status] ?? l.status}</span></td>
                 <td style={{ color: 'var(--muted)' }}>{l.source || '—'}</td>
                 <td style={{ color: 'var(--muted)' }}>{l.last_active_at ? timeAgo(l.last_active_at) : '—'}</td>
