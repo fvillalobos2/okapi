@@ -38,6 +38,9 @@ export default function PricesPage() {
   const [saving, setSaving] = useState<string | null>(null)
   const [uploading, setUploading] = useState<string | null>(null)
   const [uploadingImg, setUploadingImg] = useState<string | null>(null)
+  const [uploadingProdPdf, setUploadingProdPdf] = useState<string | null>(null)
+  const [uploadingProdImg, setUploadingProdImg] = useState<string | null>(null)
+  const [expandedProdMedia, setExpandedProdMedia] = useState<string | null>(null)
 
   const [newCatName, setNewCatName] = useState('')
   const [creatingCat, setCreatingCat] = useState(false)
@@ -47,6 +50,8 @@ export default function PricesPage() {
 
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
   const imgRefs = useRef<Record<string, HTMLInputElement | null>>({})
+  const prodFileRefs = useRef<Record<string, HTMLInputElement | null>>({})
+  const prodImgRefs = useRef<Record<string, HTMLInputElement | null>>({})
   const newCatRef = useRef<HTMLDialogElement | null>(null)
   const newProdRef = useRef<HTMLDialogElement | null>(null)
 
@@ -160,6 +165,37 @@ export default function PricesPage() {
     load()
   }
 
+  async function uploadProdPdf(prodId: string, file: File) {
+    setUploadingProdPdf(prodId)
+    const form = new FormData()
+    form.append('file', file)
+    form.append('price_item_id', prodId)
+    form.append('business_id', BID)
+    await fetch('/api/products/upload', { method: 'POST', body: form })
+    setUploadingProdPdf(null)
+    load()
+  }
+
+  async function uploadProdImg(prodId: string, file: File) {
+    setUploadingProdImg(prodId)
+    const form = new FormData()
+    form.append('file', file)
+    form.append('price_item_id', prodId)
+    form.append('business_id', BID)
+    await fetch('/api/products/image', { method: 'POST', body: form })
+    setUploadingProdImg(null)
+    load()
+  }
+
+  async function deleteProdImg(prodId: string) {
+    await fetch('/api/products/image', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ price_item_id: prodId }),
+    })
+    load()
+  }
+
   async function deleteDoc(docId: string) {
     await fetch('/api/products/upload', {
       method: 'DELETE',
@@ -175,14 +211,14 @@ export default function PricesPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-.3px' }}>Productos</h1>
-          <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>
-            Organiza por categoría · configura precios, equipo, instrucciones IA y material visual
-          </p>
-        </div>
-        <button className="btn btn-primary" onClick={() => { setNewCatName(''); newCatRef.current?.showModal() }}>
+      <div style={{ marginBottom: 8 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-.3px' }}>Productos</h1>
+        <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>
+          Organiza por categoría · configura precios, equipo, instrucciones IA y material visual
+        </p>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
+        <button className="btn btn-primary" style={{ padding: '8px 28px' }} onClick={() => { setNewCatName(''); newCatRef.current?.showModal() }}>
           + Nueva categoría
         </button>
       </div>
@@ -302,6 +338,60 @@ export default function PricesPage() {
                                     </button>
                                   </div>
                                 )}
+
+                                {/* Per-product media toggle */}
+                                <div style={{ marginTop: 8, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+                                  <button
+                                    className="btn btn-ghost btn-sm"
+                                    style={{ fontSize: 11, color: 'var(--muted)' }}
+                                    onClick={() => setExpandedProdMedia(expandedProdMedia === prod.id ? null : prod.id)}
+                                  >
+                                    📎 Archivos {prod.documents.length > 0 ? `(${prod.documents.length})` : ''} {expandedProdMedia === prod.id ? '▲' : '▼'}
+                                  </button>
+                                  {expandedProdMedia === prod.id && (
+                                    <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                      {/* Product image */}
+                                      <div>
+                                        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', marginBottom: 6 }}>IMAGEN</div>
+                                        {(prod as any).image_url ? (
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                            <img src={(prod as any).image_url} alt={prod.name} style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 6 }} />
+                                            <div style={{ display: 'flex', gap: 6 }}>
+                                              <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} onClick={() => prodImgRefs.current[prod.id]?.click()} disabled={uploadingProdImg === prod.id}>Reemplazar</button>
+                                              <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: '#DC2626' }} onClick={() => deleteProdImg(prod.id)}>Eliminar</button>
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <button className="btn btn-ghost btn-sm" style={{ border: '1px dashed var(--border)', width: '100%', fontSize: 11 }} onClick={() => prodImgRefs.current[prod.id]?.click()} disabled={uploadingProdImg === prod.id}>
+                                            {uploadingProdImg === prod.id ? '⏳ Subiendo...' : '+ Imagen del modelo'}
+                                          </button>
+                                        )}
+                                        <input ref={el => { prodImgRefs.current[prod.id] = el }} type="file" accept="image/*" style={{ display: 'none' }}
+                                          onChange={e => { const f = e.target.files?.[0]; if (f) uploadProdImg(prod.id, f); e.target.value = '' }} />
+                                      </div>
+                                      {/* Product PDFs */}
+                                      <div>
+                                        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', marginBottom: 6 }}>DOCUMENTOS PDF</div>
+                                        {prod.documents.length > 0 && (
+                                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 6 }}>
+                                            {prod.documents.map(doc => (
+                                              <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', background: 'white', border: '1px solid var(--border)', borderRadius: 6 }}>
+                                                <span style={{ fontSize: 14 }}>📄</span>
+                                                <span style={{ flex: 1, fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.filename}</span>
+                                                <button className="btn btn-ghost btn-sm" style={{ fontSize: 10, color: '#DC2626' }} onClick={() => deleteDoc(doc.id)}>×</button>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                        <button className="btn btn-ghost btn-sm" style={{ border: '1px dashed var(--border)', width: '100%', fontSize: 11 }} onClick={() => prodFileRefs.current[prod.id]?.click()} disabled={uploadingProdPdf === prod.id}>
+                                          {uploadingProdPdf === prod.id ? '⏳ Procesando...' : '+ Subir PDF'}
+                                        </button>
+                                        <input ref={el => { prodFileRefs.current[prod.id] = el }} type="file" accept=".pdf" style={{ display: 'none' }}
+                                          onChange={e => { const f = e.target.files?.[0]; if (f) uploadProdPdf(prod.id, f); e.target.value = '' }} />
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             )
                           })}

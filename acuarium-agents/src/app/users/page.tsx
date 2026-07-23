@@ -97,12 +97,12 @@ export default function UsersPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-.3px' }}>Usuarios</h1>
-          <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>{users.length} usuarios registrados</p>
-        </div>
-        <button className="btn btn-primary" style={{ padding: '7px 16px' }} onClick={openCreate}>
+      <div style={{ marginBottom: 8 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-.3px' }}>Usuarios</h1>
+        <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>{users.length} usuarios registrados</p>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
+        <button className="btn btn-primary" style={{ padding: '8px 28px' }} onClick={openCreate}>
           + Nuevo usuario
         </button>
       </div>
