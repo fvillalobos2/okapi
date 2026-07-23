@@ -211,16 +211,11 @@ export default function PricesPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: 8 }}>
+      <div style={{ marginBottom: 20 }}>
         <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-.3px' }}>Productos</h1>
         <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>
           Organiza por categoría · configura precios, equipo, instrucciones IA y material visual
         </p>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
-        <button className="btn btn-primary" style={{ padding: '8px 28px' }} onClick={() => { setNewCatName(''); newCatRef.current?.showModal() }}>
-          + Nueva categoría
-        </button>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -521,6 +516,14 @@ export default function PricesPage() {
             </div>
           )
         })}
+
+        <button
+          className="btn btn-ghost"
+          style={{ border: '1px dashed var(--border)', height: 44, fontSize: 13, color: 'var(--muted)' }}
+          onClick={() => { setNewCatName(''); newCatRef.current?.showModal() }}
+        >
+          + Nueva categoría
+        </button>
       </div>
 
       {/* Modal: Nueva categoría */}
