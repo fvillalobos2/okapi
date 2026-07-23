@@ -24,33 +24,22 @@ export async function GET() {
   })
 }
 
+async function run(q: PromiseLike<any>) { await q }
+
 export async function POST(req: Request) {
   const { prompt_snapshot, created_by, settings } = await req.json()
 
-  const ops: Promise<any>[] = []
-
   if (prompt_snapshot !== undefined) {
-    // Deactivate previous and insert new
-    ops.push(
-      supabaseAdmin().from('prompt_versions').update({ is_active: false }).eq('is_active', true),
-    )
-    ops.push(
-      supabaseAdmin().from('prompt_versions')
-        .insert({ prompt_snapshot, created_by: created_by ?? 'admin', is_active: true, business_id: BUSINESS_ID })
-        .select().single(),
-    )
-    // Sync to businesses.base_prompt so Flask agent reads it immediately
-    ops.push(
-      supabaseAdmin().from('businesses').update({ base_prompt: prompt_snapshot }).eq('id', BUSINESS_ID),
-    )
+    await run(supabaseAdmin().from('prompt_versions').update({ is_active: false }).eq('is_active', true))
+    await run(supabaseAdmin().from('prompt_versions')
+      .insert({ prompt_snapshot, created_by: created_by ?? 'admin', is_active: true, business_id: BUSINESS_ID })
+      .select().single())
+    await run(supabaseAdmin().from('businesses').update({ base_prompt: prompt_snapshot }).eq('id', BUSINESS_ID))
   }
 
   if (settings !== undefined) {
-    ops.push(
-      supabaseAdmin().from('businesses').update({ settings }).eq('id', BUSINESS_ID),
-    )
+    await run(supabaseAdmin().from('businesses').update({ settings }).eq('id', BUSINESS_ID))
   }
 
-  await Promise.all(ops)
   return NextResponse.json({ ok: true })
 }
