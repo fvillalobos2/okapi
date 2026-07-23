@@ -41,17 +41,17 @@ const nav = [
     ],
   },
   {
-    section: 'Configuración',
+    section: 'Catálogo',
     links: [
       {
         href: '/prices',
-        label: 'Precios',
-        icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M8 1v14M5 4h4.5a2 2 0 010 4H5m0 0h5a2 2 0 010 4H5"/></svg>,
+        label: 'Productos',
+        icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 3h12l-1 9H3L2 3z"/><path d="M6 3V2a2 2 0 014 0v1"/><path d="M6 7h4"/></svg>,
       },
       {
         href: '/prompt',
         label: 'Agente IA',
-        icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M3 8a5 5 0 1010 0A5 5 0 003 8z"/><path d="M8 6v2l1.5 1.5"/></svg>,
+        icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="2" y="3" width="12" height="9" rx="2"/><path d="M5 7h6M5 10h3"/><path d="M8 12v2"/></svg>,
       },
     ],
   },

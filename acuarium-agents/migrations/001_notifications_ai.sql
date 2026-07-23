@@ -25,3 +25,8 @@ CREATE TABLE IF NOT EXISTS product_documents (
 
 -- Team product routing
 ALTER TABLE teams ADD COLUMN IF NOT EXISTS product_interests text[];
+
+-- Product team/user assignment and visual material
+ALTER TABLE price_items ADD COLUMN IF NOT EXISTS assigned_team_id uuid REFERENCES teams(id);
+ALTER TABLE price_items ADD COLUMN IF NOT EXISTS assigned_user_id uuid REFERENCES users(id);
+ALTER TABLE price_items ADD COLUMN IF NOT EXISTS image_url text;
