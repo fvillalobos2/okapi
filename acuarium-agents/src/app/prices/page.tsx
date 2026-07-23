@@ -17,7 +17,7 @@ type Category = {
 type Team = { id: string; name: string }
 type User = { id: string; name: string; team_id: string | null; role: string }
 
-const TABS = ['Productos', 'Equipo', 'IA', 'Visual'] as const
+const TABS = ['Productos', 'Equipo', 'IA'] as const
 type Tab = (typeof TABS)[number]
 
 const inp: React.CSSProperties = {
@@ -515,41 +515,6 @@ export default function PricesPage() {
                       </div>
                     )}
 
-                    {/* Tab: Visual */}
-                    {tab === 'Visual' && (
-                      <div>
-                        {imgUrl ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: '#F8FAFC', border: '1px solid var(--border)', borderRadius: 8, marginBottom: 12 }}>
-                            <img src={imgUrl} alt={cat.name} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 13, fontWeight: 500 }}>Imagen actual</div>
-                              <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2, wordBreak: 'break-all' }}>{imgUrl.split('/').pop()}</div>
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                              <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} onClick={() => imgRefs.current[cat.id]?.click()} disabled={uploadingImg === cat.id}>Reemplazar</button>
-                              <button className="btn btn-ghost btn-sm" style={{ color: '#DC2626', fontSize: 11 }} onClick={() => deleteImg(cat.id)}>Eliminar</button>
-                            </div>
-                          </div>
-                        ) : (
-                          <button
-                            className="btn btn-ghost btn-sm"
-                            style={{ width: '100%', border: '1px dashed var(--border)', height: 40, marginBottom: 12 }}
-                            onClick={() => imgRefs.current[cat.id]?.click()}
-                            disabled={uploadingImg === cat.id}
-                          >
-                            {uploadingImg === cat.id ? '⏳ Subiendo...' : '+ Subir imagen de la categoría'}
-                          </button>
-                        )}
-                        <input
-                          ref={el => { imgRefs.current[cat.id] = el }}
-                          type="file" accept="image/*" style={{ display: 'none' }}
-                          onChange={e => { const f = e.target.files?.[0]; if (f) uploadImg(cat.id, f); e.target.value = '' }}
-                        />
-                        <div style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center' }}>
-                          Se muestra en el header de la categoría como referencia visual
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               )}
