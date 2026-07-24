@@ -24,7 +24,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
 
   let q = supabaseAdmin()
     .from('leads')
-    .select('*, teams(name,zone), users!assigned_to(name)')
+    .select('*, teams(name,zone)')
     .order('last_active_at', { ascending: false })
     .limit(500)
 
@@ -80,7 +80,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                 <td style={{ color: 'var(--muted)' }}>{l.zone || '—'}</td>
                 <td style={{ color: 'var(--muted)' }}>{l.teams?.name || '—'}</td>
                 <td style={{ color: 'var(--muted)', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.product_interest || '—'}</td>
-                <td style={{ color: 'var(--muted)', fontSize: 12 }}>{l.users?.name || '—'}</td>
+                <td style={{ color: 'var(--muted)', fontSize: 12 }}>{l.assigned_to || '—'}</td>
                 <td><span className={`badge badge-${l.status}`}>{STATUS_LABEL[l.status] ?? l.status}</span></td>
                 <td style={{ color: 'var(--muted)' }}>{l.source || '—'}</td>
                 <td style={{ color: 'var(--muted)' }}>{l.last_active_at ? timeAgo(l.last_active_at) : '—'}</td>
