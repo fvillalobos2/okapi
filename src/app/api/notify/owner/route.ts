@@ -19,8 +19,9 @@ export async function POST(req: NextRequest) {
       .eq('id', restaurantId)
       .single()
 
-    const ownerNumber = process.env.OWNER_WA_NUMBER
-    if (!ownerNumber) return NextResponse.json({ ok: false, reason: 'no owner number' })
+    const rawNumber = process.env.OWNER_WA_NUMBER
+    if (!rawNumber) return NextResponse.json({ ok: false, reason: 'no owner number' })
+    const ownerNumber = rawNumber.startsWith('whatsapp:') ? rawNumber : `whatsapp:+${rawNumber.replace(/\D/g, '')}`
 
     const amount = PLAN_PRICES[plan] ?? '?'
     const msg = `🎉 *Nueva suscripción Okapi*\n\n📍 ${restaurant?.name || restaurantId}\n📦 Plan: *${plan}* — $${amount}/mes\n📧 ${restaurant?.billing_email || ''}\n🔖 ${orderNumber}`

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { sendWhatsApp } from '@/app/api/whatsapp/route'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,6 +29,10 @@ export async function GET(req: NextRequest) {
   if (!restaurants?.length) return NextResponse.json({ sent: 0 })
 
   let sent = 0
+  let totalScansAll = 0
+  let totalPositiveAll = 0
+  let totalNegativeAll = 0
+  let restaurantsWithActivity = 0
 
   for (const r of restaurants) {
     if (!r.manager_email) continue
@@ -44,6 +49,11 @@ export async function GET(req: NextRequest) {
     const avg = (scans.reduce((a, s) => a + s.stars, 0) / total).toFixed(1)
     const positive = scans.filter(s => s.stars >= 4).length
     const negative = scans.filter(s => s.stars < 4).length
+
+    totalScansAll += total
+    totalPositiveAll += positive
+    totalNegativeAll += negative
+    restaurantsWithActivity++
     const platformClicks = scans.filter(s => s.platform_chosen).length
 
     // Top feedback category
@@ -117,6 +127,15 @@ export async function GET(req: NextRequest) {
     }).catch(() => {})
 
     sent++
+  }
+
+  // Send WhatsApp digest to owner
+  const rawOwnerNumber = process.env.OWNER_WA_NUMBER
+  if (rawOwnerNumber && totalScansAll > 0) {
+    const ownerNumber = rawOwnerNumber.startsWith('whatsapp:') ? rawOwnerNumber : `whatsapp:+${rawOwnerNumber.replace(/\D/g, '')}`
+    const weekLabel = now.toLocaleDateString('es-CR', { day: 'numeric', month: 'long' })
+    const ownerMsg = `📊 *Resumen semanal Okapi Reviews*\n_Semana al ${weekLabel}_\n\n🏪 Restaurantes activos: *${restaurantsWithActivity}*\n📝 Opiniones totales: *${totalScansAll}*\n✅ Positivas: *${totalPositiveAll}*\n⚠️ Privadas: *${totalNegativeAll}*\n\n_Emails enviados a ${sent} gerentes_`
+    await sendWhatsApp(ownerNumber, ownerMsg).catch(() => {})
   }
 
   return NextResponse.json({ sent })
