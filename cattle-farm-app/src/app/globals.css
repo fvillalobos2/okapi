@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+/* ── Design tokens ─────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --bg:          #F7F6F3;   /* warm off-white body */
+  --surface:     #FFFFFF;   /* card / panel surface */
+  --surface-2:   #F2F0EC;   /* secondary surface, hover tint */
+
+  /* Text */
+  --text-primary:   #1C1917; /* stone-900 charcoal */
+  --text-secondary: #78716C; /* stone-500 */
+  --text-muted:     #A8A29E; /* stone-400 */
+
+  /* Borders */
+  --border:        #E5E2DC; /* warm subtle border */
+  --border-strong: #C7C3BB; /* stronger separator */
+
+  /* Accent — restrained green */
+  --green:         #16A34A; /* green-600 */
+  --green-light:   #DCFCE7; /* green-100 */
+  --green-dark:    #14532D; /* green-900 */
+
+  /* Status */
+  --amber:         #D97706; /* amber-600 */
+  --amber-light:   #FEF3C7; /* amber-100 */
+  --red:           #DC2626; /* red-600 */
+  --red-light:     #FEE2E2; /* red-100 */
+  --blue:          #2563EB; /* blue-600 */
+  --blue-light:    #DBEAFE; /* blue-100 */
+
+  /* Sidebar */
+  --sidebar-bg:     #1C1917; /* warm dark charcoal */
+  --sidebar-text:   #A8A29E; /* stone-400 */
+  --sidebar-hover:  #292524; /* stone-800 */
+  --sidebar-active: #292524; /* subtle bg */
+  --sidebar-accent: #16A34A; /* green-600 border */
+
+  /* Radius */
+  --radius:    4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+}
+
+@theme inline {
+  --color-background:       var(--bg);
+  --color-foreground:       var(--text-primary);
+  --color-primary:          var(--green);
+  --color-border:           var(--border);
+  --color-card:             var(--surface);
+  --color-muted:            var(--surface-2);
+  --color-muted-foreground: var(--text-secondary);
+  --color-destructive:      var(--red);
+  --color-warning:          var(--amber);
+  --color-success:          var(--green);
+}
+
+/* ── Base ──────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Tabular numbers for data-dense views */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ── Confidence indicators (import review) ─────────────── */
+/* Use left border + subtle tint, not full cell color */
+.cell-low    { border-left: 2px solid var(--amber); background: #FFFBEB; }
+.cell-bad    { border-left: 2px solid var(--red);   background: #FFF5F5; }
+.cell-ok     { border-left: 2px solid transparent;  }
+
+.confidence-high   { color: var(--green); }
+.confidence-medium { color: var(--amber); }
+.confidence-low    { color: var(--red); }
+
+.confidence-bg-high   { background-color: var(--green-light); }
+.confidence-bg-medium { background-color: var(--amber-light); }
+.confidence-bg-low    { background-color: var(--red-light); }
+
+/* ── Dialog / lightbox backdrop ──────────────────────── */
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.82);
+}
+dialog[open] {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+}
+
+/* ── Scrollbar (subtle) ───────────────────────────────── */
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
