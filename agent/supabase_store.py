@@ -20,6 +20,10 @@ SUPABASE_KEY = os.getenv('SUPABASE_SERVICE_KEY',
 
 DEFAULT_BUSINESS_SLUG = os.getenv('DEFAULT_BUSINESS_SLUG', 'golfcartrentalscr')
 
+# Some Supabase schemas use 'history' instead of 'messages' for the conversation JSONB column
+_HIST_COL = os.getenv('HISTORY_COLUMN', 'messages')
+_TS_COL   = os.getenv('LAST_MSG_COL', 'last_message_at')
+
 _client: Optional[Client] = None
 _default_business_id: Optional[str] = None
 
@@ -194,8 +198,8 @@ def get_history(phone: str, business_id: Optional[str] = None) -> list:
     if not b:
         return []
     try:
-        r = _sb().table('conversations').select('messages').eq('phone', phone).eq('business_id', b).limit(1).execute()
-        return r.data[0].get('messages', []) if r.data else []
+        r = _sb().table('conversations').select(_HIST_COL).eq('phone', phone).eq('business_id', b).limit(1).execute()
+        return r.data[0].get(_HIST_COL, []) if r.data else []
     except Exception as e:
         print(f'  ⚠ get_history: {e}')
         return []
@@ -212,17 +216,17 @@ def append_message(phone: str, role: str, content: str, business_id: Optional[st
         if lead_id:
             _sb().table('leads').update({'last_active_at': now}).eq('id', lead_id).execute()
 
-        r = _sb().table('conversations').select('id,messages').eq('phone', phone).eq('business_id', b).limit(1).execute()
+        r = _sb().table('conversations').select(f'id,{_HIST_COL}').eq('phone', phone).eq('business_id', b).limit(1).execute()
         if r.data:
-            msgs = r.data[0].get('messages', [])
+            msgs = r.data[0].get(_HIST_COL, [])
             msgs.append(new_msg)
             if len(msgs) > 30:
                 msgs = msgs[-30:]
-            _sb().table('conversations').update({'messages': msgs, 'last_message_at': now}).eq('id', r.data[0]['id']).execute()
+            _sb().table('conversations').update({_HIST_COL: msgs, _TS_COL: now}).eq('id', r.data[0]['id']).execute()
         else:
             _sb().table('conversations').insert({
                 'phone': phone, 'business_id': b, 'lead_id': lead_id,
-                'messages': [new_msg], 'last_message_at': now,
+                _HIST_COL: [new_msg], _TS_COL: now,
             }).execute()
     except Exception as e:
         print(f'  ⚠ append_message: {e}')
@@ -233,7 +237,7 @@ def clear_history(phone: str, business_id: Optional[str] = None):
     if not b:
         return
     try:
-        _sb().table('conversations').update({'messages': [], 'status': 'active'}).eq('phone', phone).eq('business_id', b).execute()
+        _sb().table('conversations').update({_HIST_COL: [], 'status': 'active'}).eq('phone', phone).eq('business_id', b).execute()
         update_lead_status(phone, 'new', b)
     except Exception as e:
         print(f'  ⚠ clear_history: {e}')
@@ -244,7 +248,7 @@ def get_conversations(business_id: Optional[str] = None, limit: int = 100) -> li
     if not b:
         return []
     try:
-        r = _sb().table('conversations').select('*').eq('business_id', b).order('last_message_at', desc=True).limit(limit).execute()
+        r = _sb().table('conversations').select('*').eq('business_id', b).order(_TS_COL, desc=True).limit(limit).execute()
         return r.data or []
     except Exception as e:
         print(f'  ⚠ get_conversations: {e}')

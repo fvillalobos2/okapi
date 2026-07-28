@@ -3,8 +3,8 @@ import './globals.css'
 import Sidebar from '@/components/Sidebar'
 
 export const metadata: Metadata = {
-  title: 'Acuarium — Agente IA',
-  description: 'Panel de control PureSpas — Acuarium Piscinas & Spas',
+  title: 'Okapi Agent — Panel',
+  description: 'Panel de control del agente WhatsApp',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

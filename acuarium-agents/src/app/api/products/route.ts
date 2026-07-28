@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
-const BUSINESS_ID = '818adb17-c5bc-4bbe-905d-b51b47ad2221'
+const BUSINESS_ID = process.env.BUSINESS_ID!
 
 // POST create a new price_item
 export async function POST(req: Request) {

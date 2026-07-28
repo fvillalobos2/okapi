@@ -1,6 +1,5 @@
 """
-Okapi Platform — Multi-tenant WhatsApp AI Booking Agent
-First tenant: GolfCartRentalsCR
+Okapi Platform — Multi-tenant WhatsApp AI Agent
 """
 
 import sys
@@ -15,27 +14,44 @@ import urllib.request
 import urllib.error
 from datetime import datetime, timezone, timedelta
 from typing import Optional
+from zoneinfo import ZoneInfo
 
-# ─── COSTA RICA TIME ─────────────────────────────────────────────────────────
-CR_TZ = timezone(timedelta(hours=-6))
+def biz_now(business: Optional[dict] = None) -> datetime:
+    tz_name = (business or {}).get('timezone', 'America/Costa_Rica')
+    try:
+        tz = ZoneInfo(tz_name)
+    except Exception:
+        tz = ZoneInfo('America/Costa_Rica')
+    return datetime.now(tz)
 
-def cr_now() -> datetime:
-    return datetime.now(CR_TZ)
+def is_business_hours(business: Optional[dict] = None) -> bool:
+    now      = biz_now(business)
+    settings = (business or {}).get('settings', {})
+    h_start  = int(settings.get('hours_start', 8))
+    h_end    = int(settings.get('hours_end',   18))
+    # hours_days: list of weekday ints (0=Mon … 6=Sun); default Mon-Sun
+    days     = settings.get('hours_days')
+    if days is not None:
+        # now.weekday() is 0=Mon … 6=Sun
+        if now.weekday() not in [int(d) for d in days]:
+            return False
+    return h_start <= now.hour < h_end
 
-def is_business_hours() -> bool:
-    h = cr_now().hour
-    return 8 <= h < 18
-
-def after_hours_note(language: str = 'en') -> str:
-    if is_business_hours():
+def after_hours_note(business: Optional[dict] = None, language: str = 'en') -> str:
+    if is_business_hours(business):
         return ''
+    settings = (business or {}).get('settings', {})
+    h_start  = int(settings.get('hours_start', 8))
+    h_end    = int(settings.get('hours_end',   18))
+    h_range  = f'{h_start}am–{h_end - 12 if h_end > 12 else h_end}pm'
     if language == 'es':
-        return ('\n\n_Nota: los proveedores locales operan principalmente de 8am a 6pm '
-                '(hora Costa Rica), por lo que la confirmación podría tardar un poco más. '
-                'Te avisamos en cuanto tengamos respuesta._')
-    return ('\n\n_Note: local providers mainly operate between 8am–6pm Costa Rica time, '
-            'so confirmation may take a little longer. '
-            'We\'ll notify you as soon as we hear back._')
+        return (f'\n\n_Nota: nuestro equipo opera principalmente de {h_start}am a '
+                f'{h_end - 12 if h_end > 12 else h_end}pm, '
+                f'por lo que la confirmación podría tardar un poco más. '
+                f'Te avisamos en cuanto tengamos respuesta._')
+    return (f'\n\n_Note: our team mainly operates between {h_range}, '
+            f'so confirmation may take a little longer. '
+            f'We\'ll notify you as soon as we hear back._')
 
 import anthropic
 from dotenv import load_dotenv
@@ -67,14 +83,34 @@ TILOPAY_PASSWORD = os.getenv('TILOPAY_PASSWORD', 'mOadzM')
 AGENT_BASE_URL   = os.getenv('AGENT_BASE_URL',
                                'https://agent.projectokapi.com')
 
-ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', '')
-ADMIN_WA       = os.getenv('ADMIN_WA', '')       # Admin WhatsApp for system alerts
-CRON_SECRET    = os.getenv('CRON_SECRET', '')
-PENDING_TTL_H  = int(os.getenv('PENDING_TTL_H', '48'))
+ADMIN_PASSWORD       = os.getenv('ADMIN_PASSWORD', '')
+ADMIN_WA             = os.getenv('ADMIN_WA', '')       # Admin WhatsApp for system alerts
+CRON_SECRET          = os.getenv('CRON_SECRET', '')
+PENDING_TTL_H        = int(os.getenv('PENDING_TTL_H', '48'))
+DEFAULT_BUSINESS_SLUG = os.getenv('DEFAULT_BUSINESS_SLUG', '')  # Legacy /webhook compat
 
 # ─── CLIENTS ─────────────────────────────────────────────────────────────────
 
-twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+# Global Twilio client — used as fallback when a business has no own credentials.
+_global_twilio = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
+_twilio_cache: dict[tuple, Client] = {}
+
+def get_twilio_client(business: Optional[dict] = None) -> Client:
+    """Return a Twilio client scoped to the business if it has its own creds."""
+    sid   = (business or {}).get('twilio_account_sid') or TWILIO_ACCOUNT_SID
+    token = (business or {}).get('twilio_auth_token')  or TWILIO_AUTH_TOKEN
+    if not sid or not token:
+        return _global_twilio
+    key = (sid, token)
+    if key not in _twilio_cache:
+        _twilio_cache[key] = Client(sid, token)
+    return _twilio_cache[key]
+
+def get_twilio_auth_token(business: Optional[dict] = None) -> str:
+    """Return the auth token for signature validation — per-business or global."""
+    return (business or {}).get('twilio_auth_token') or TWILIO_AUTH_TOKEN or ''
+
 claude_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 app           = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', os.urandom(24))
@@ -357,7 +393,10 @@ def ask_claude(phone: str, user_message: str, business: Optional[dict] = None,
     messages = [{'role': m['role'], 'content': m['content']} for m in history]
     messages.append({'role': 'user', 'content': user_message})
     clean_phone = phone.replace('whatsapp:', '').strip()
-    today_str   = cr_now().strftime('%A, %B %d, %Y')
+    now_local   = biz_now(business)
+    today_str   = now_local.strftime('%A, %B %d, %Y')
+    time_str    = now_local.strftime('%H:%M')
+    is_first    = len(history) == 0
 
     # Real-time category detection: scan current message + last 5 history messages
     recent_texts = [m['content'] for m in history[-5:] if m.get('content')]
@@ -366,10 +405,19 @@ def ask_claude(phone: str, user_message: str, business: Optional[dict] = None,
         or ad_product_interest
     )
 
+    greeting_note = (
+        'Es el PRIMER mensaje de esta conversación — saludá con el saludo correcto según la hora '
+        '("Buenos días" antes de mediodía, "Buenas tardes" 12:00–18:00, "Buenas noches" después de las 18:00), '
+        'luego preguntá en qué podés ayudar.'
+        if is_first else
+        'La conversación ya está en curso — NO repitas el saludo inicial, respondé directamente.'
+    )
+
     system = (
         get_system_prompt(business, product_interest)
-        + f'\n\n## Fecha actual\n'
-        + f'Hoy es {today_str} (hora Costa Rica, UTC-6).\n'
+        + f'\n\n## Contexto actual\n'
+        + f'Fecha: {today_str} | Hora local: {time_str}.\n'
+        + f'{greeting_note}\n'
         + f'\n\n## WhatsApp del cliente\n'
         + f'Esta conversación viene del número: {clean_phone}\n'
         + f'Al confirmar el teléfono, usa este número en lugar de pedirle que lo escriba. '
@@ -474,7 +522,8 @@ def update_lead_contact_info(from_number: str, business_id: Optional[str] = None
 def relay_quote_to_client(provider_message: str, booking_text: str,
                            client_phone: str, provider_number: str,
                            language: str = 'en',
-                           commission_pct: float = 10.0) -> str:
+                           commission_pct: float = 10.0,
+                           business: Optional[dict] = None) -> str:
     pickup  = _extract_booking_field(booking_text, 'Pick-up')
     dropoff = _extract_booking_field(booking_text, 'Drop-off')
 
@@ -509,20 +558,25 @@ def relay_quote_to_client(provider_message: str, booking_text: str,
     balance_disp = fmt(balance)
     total_disp   = fmt(grand_total)
 
+    biz          = business or {}
+    biz_slug     = re.sub(r'[^A-Z]', '', biz.get('slug', 'BIZ').upper())[:4]
+    biz_settings = biz.get('settings', {})
+    product_en   = biz_settings.get('product_term_en', 'Rental')
+    product_es   = biz_settings.get('product_term_es', 'Alquiler')
     client_name  = _extract_booking_field(booking_text, 'Name')  or 'Client'
-    client_email = _extract_booking_field(booking_text, 'Email') or 'client@golfcartrentalscr.com'
+    client_email = _extract_booking_field(booking_text, 'Email') or f'client@{biz.get("slug", "business")}.com'
     cart         = _extract_booking_field(booking_text, 'Cart')
     location     = _extract_booking_field(booking_text, 'Location')
     qty          = _extract_booking_field(booking_text, 'Quantity') or '1'
     cart_qty     = f'{cart} × {qty}' if qty not in ('', '1') else cart
 
-    loc_code     = re.sub(r'[^A-Z]', '', location.upper())[:4] if location else 'GCR'
-    order_number = f'GCR-{datetime.utcnow().strftime("%y%m%d%H%M")}-{loc_code}'
+    loc_code     = re.sub(r'[^A-Z]', '', location.upper())[:4] if location else biz_slug
+    order_number = f'{biz_slug}-{datetime.utcnow().strftime("%y%m%d%H%M")}-{loc_code}'
 
     pickup_short  = pickup[:10]  if pickup  else ''
     dropoff_short = dropoff[:10] if dropoff else ''
     description   = (
-        f'Golf Cart Rental — {location} | {cart_qty}'
+        f'{biz.get("name", product_en)} — {location} | {cart_qty}'
         + (f' | {pickup_short} → {dropoff_short}' if pickup_short else '')
     )
 
@@ -544,12 +598,12 @@ def relay_quote_to_client(provider_message: str, booking_text: str,
                                   booking_text, fee_amount)
 
     if es:
-        msg  = f'🎉 ¡Tu carrito está disponible — confirma tu reserva!\n\n'
+        msg  = f'🎉 ¡{product_es} disponible — confirma tu reserva!\n\n'
         msg += f'📍 {location}  |  🛒 {cart_qty}\n'
         msg += f'📅 {pickup} → {dropoff}\n\n'
         msg += f'💰 *Resumen de pago:*\n'
         msg += f'• Cargo de reserva _(cancelar ahora)_: *{fee_display}*\n'
-        msg += f'• Saldo del alquiler _(al recibir el carrito)_: {balance_disp}\n'
+        msg += f'• Saldo del {product_es.lower()} _(al recoger)_: {balance_disp}\n'
         msg += f'• *Total: {total_disp}*\n\n'
         if payment_link:
             msg += f'Para confirmar tu reserva, cancela el cargo de *{fee_display}* aquí:\n'
@@ -561,12 +615,12 @@ def relay_quote_to_client(provider_message: str, booking_text: str,
             msg += (f'Responde *CONFIRMAR* y te enviamos el enlace para cancelar '
                     f'el cargo de reserva de {fee_display}.')
     else:
-        msg  = f'🎉 Your golf cart is available — confirm your booking!\n\n'
+        msg  = f'🎉 {product_en} available — confirm your booking!\n\n'
         msg += f'📍 {location}  |  🛒 {cart_qty}\n'
         msg += f'📅 {pickup} → {dropoff}\n\n'
         msg += f'💰 *Payment summary:*\n'
         msg += f'• Booking fee _(pay now to confirm)_: *{fee_display}*\n'
-        msg += f'• Rental balance _(paid at pickup)_: {balance_disp}\n'
+        msg += f'• {product_en} balance _(paid at pickup)_: {balance_disp}\n'
         msg += f'• *Total: {total_disp}*\n\n'
         if payment_link:
             msg += f'To confirm your booking, pay the *{fee_display}* fee here:\n'
@@ -612,11 +666,12 @@ def notify_provider(booking_text: str, client_phone: str,
             f'¿Puede entregar en esa dirección? ¿Tiene algún costo adicional?'
         )
     else:
-        delivery_line = '\n\n📍 Cliente recogerá el carrito directamente en su local.'
+        _pterm = (business or {}).get('settings', {}).get('product_term_es', 'el producto')
+        delivery_line = f'\n\n📍 Cliente recogerá {_pterm.lower()} directamente en su local.'
 
     # Message 1 — availability check (redacted, no contact info)
     msg1 = (
-        f'📋 *Nueva solicitud — {(business or {}).get("name", "GolfCartRentalsCR")}*\n\n'
+        f'📋 *Nueva solicitud — {(business or {}).get("name", "Okapi")}*\n\n'
         f'📍 Ubicación: {location}\n'
         f'🛒 Carrito: {cart_qty}\n'
         f'📅 {pickup} → {dropoff}'
@@ -633,8 +688,8 @@ def notify_provider(booking_text: str, client_phone: str,
     )
 
     try:
-        twilio_client.messages.create(from_=sender, to=provider_number, body=msg1)
-        twilio_client.messages.create(from_=sender, to=provider_number, body=msg2)
+        get_twilio_client(business).messages.create(from_=sender, to=provider_number, body=msg1)
+        get_twilio_client(business).messages.create(from_=sender, to=provider_number, body=msg2)
         print(f'  ✓ Commission negotiation sent to provider ({provider_number})')
         store.add_pending_quote(provider_number, client_phone, booking_text,
                                 business_id=bid, commission_pct=commission_pct)
@@ -669,7 +724,7 @@ def _send_full_booking_to_provider(provider_number: str, pending: dict,
         f'Responda con el precio (ej. "$500" o "80000 colones").'
     )
     try:
-        twilio_client.messages.create(from_=effective_sender, to=provider_number, body=msg)
+        get_twilio_client(business).messages.create(from_=effective_sender, to=provider_number, body=msg)
         print(f'  ✓ Full booking sent to provider {provider_number}')
         booking_id = store.get_booking_id_by_provider(provider_number, pending.get('business_id'))
         if booking_id:
@@ -690,15 +745,16 @@ def release_contact_info_to_provider(provider_number: str, full_booking: str,
         f'Por favor coordine la entrega directamente con el cliente. ¡Gracias! 🏖️'
     )
     try:
-        twilio_client.messages.create(from_=effective_sender, to=provider_number, body=msg)
+        get_twilio_client(business).messages.create(from_=effective_sender, to=provider_number, body=msg)
         print(f'  ✓ Contact info released to provider ({provider_number})')
     except Exception as e:
         print(f'  ✗ Failed to release contact info: {e}')
 
-def send_whatsapp(to: str, body: str, sender: Optional[str] = None):
+def send_whatsapp(to: str, body: str, sender: Optional[str] = None,
+                  business: Optional[dict] = None):
     effective_sender = sender or TWILIO_WA_NUMBER
     try:
-        twilio_client.messages.create(from_=effective_sender, to=to, body=body)
+        get_twilio_client(business).messages.create(from_=effective_sender, to=to, body=body)
         print(f'  → {to}: {body[:80]}')
     except Exception as e:
         print(f'  ✗ Failed to send to {to}: {e}')
@@ -717,7 +773,7 @@ def cleanup_expired_entries(business: Optional[dict] = None):
 def send_provider_followups(business: Optional[dict] = None,
                              sender: Optional[str] = None):
     """Re-ping providers waiting for price (commission accepted) after 2h."""
-    if not is_business_hours():
+    if not is_business_hours(business):
         return
 
     bid             = business.get('id') if business else None
@@ -731,7 +787,7 @@ def send_provider_followups(business: Optional[dict] = None,
         store.mark_provider_followup_sent(provider_num, bid)
 
         try:
-            twilio_client.messages.create(
+            get_twilio_client(business).messages.create(
                 from_=effective_sender, to=provider_num,
                 body=(
                     '🔔 *Recordatorio — Solicitud de Reserva Pendiente*\n\n'
@@ -754,7 +810,7 @@ def send_provider_followups(business: Optional[dict] = None,
                 'We\'ll notify you as soon as we hear back. Thanks for your patience! 🙏'
             )
             try:
-                twilio_client.messages.create(from_=effective_sender, to=client_phone, body=msg)
+                get_twilio_client(business).messages.create(from_=effective_sender, to=client_phone, body=msg)
                 store.append_message(client_phone, 'assistant', msg, bid)
                 print(f'  ↺ Follow-up sent to client {client_phone}')
             except Exception as e:
@@ -762,25 +818,25 @@ def send_provider_followups(business: Optional[dict] = None,
 
 def send_cold_lead_followups(business: Optional[dict] = None, sender: Optional[str] = None):
     """Nudge leads that have gone cold after 24h."""
-    if not is_business_hours():
+    if not is_business_hours(business):
         return
 
-    bid             = business.get('id') if business else None
+    bid              = business.get('id') if business else None
     effective_sender = sender or TWILIO_WA_NUMBER
-    biz_settings    = store.get_business_by_slug((business or {}).get('slug', 'golfcartrentalscr')) or {}
-    follow_up_hours = int(biz_settings.get('follow_up_hours', 24))
+    biz_settings     = (business or {}).get('settings', {})
+    follow_up_hours  = int(biz_settings.get('follow_up_hours', 24))
 
     cold_leads = store.get_cold_leads(bid, follow_up_hours)
     for lead in cold_leads:
         phone = lead.get('phone', '')
         if not phone:
             continue
-        lang = detect_client_language(phone, business)
-        msg  = ('¡Hola! ¿Seguís interesado en rentar un carrito de golf en Costa Rica? 🏖️'
-                if lang == 'es'
-                else 'Hey! Just checking in — still interested in renting a golf cart? 🏖️')
+        lang    = detect_client_language(phone, business)
+        msg_es  = biz_settings.get('follow_up_message_es', '¡Hola! ¿Seguís interesado? 🙂')
+        msg_en  = biz_settings.get('follow_up_message_en', 'Hey! Just checking in — still interested? 🙂')
+        msg     = msg_es if lang == 'es' else msg_en
         try:
-            twilio_client.messages.create(
+            get_twilio_client(business).messages.create(
                 from_=effective_sender,
                 to=phone if phone.startswith('whatsapp:') else f'whatsapp:{phone}',
                 body=msg)
@@ -799,7 +855,7 @@ def handle_provider_timeout(business: Optional[dict] = None, sender: Optional[st
     """Try next provider or alert admin if provider hasn't responded in 4h."""
     bid             = business.get('id') if business else None
     effective_sender = sender or TWILIO_WA_NUMBER
-    biz_settings    = store.get_business_by_slug((business or {}).get('slug', 'golfcartrentalscr')) or {}
+    biz_settings    = (business or {}).get('settings', {})
     timeout_hours   = int(biz_settings.get('provider_timeout_hours', 4))
 
     timed_out = store.get_timed_out_providers(bid, timeout_hours)
@@ -926,10 +982,10 @@ def _execute_cancellation(client_phone: str, pc: dict,
         location = _extract_booking_field(booking_text, 'Location')
         pickup   = _extract_booking_field(booking_text, 'Pick-up')
         try:
-            twilio_client.messages.create(
+            get_twilio_client(business).messages.create(
                 from_=sender or TWILIO_WA_NUMBER,
                 to=provider_num,
-                body=(f'❌ *Reserva Cancelada — GolfCartRentalsCR*\n\n'
+                body=(f'❌ *Reserva Cancelada — {(business or {}).get("name", "Okapi")}*\n\n'
                       f'El cliente ha cancelado la reserva:\n'
                       f'📍 {location}  |  📅 {pickup}\n\n'
                       f'No es necesario ningún otro paso de su parte. ¡Gracias!')
@@ -1025,7 +1081,7 @@ def handle_inbound(from_number: str, body: str,
                    referral: Optional[dict] = None) -> str:
     """
     Core message router. Returns the TwiML response body string.
-    Works for any business — defaults to GolfCartRentalsCR.
+    Works for any business registered in the platform.
     referral: dict with Twilio referral fields (from Click-to-WhatsApp ads).
     """
     bid     = business.get('id') if business else None
@@ -1040,8 +1096,10 @@ def handle_inbound(from_number: str, body: str,
         if ad_product_interest:
             print(f'  📢 Ad referral → product: {ad_product_interest} (headline: {headline[:60]})')
 
-    # ── Is this a provider? ───────────────────────────────────────────────────
-    provider_location = get_provider_location(from_number, business)
+    # ── Is this a provider? (only for businesses with provider_flow module) ───
+    _modules          = (business or {}).get('modules', {})
+    _provider_enabled = _modules.get('provider_flow', {}).get('enabled', False)
+    provider_location = get_provider_location(from_number, business) if _provider_enabled else None
     if provider_location:
         # Auto-verify: provider wrote to us → WhatsApp window is open
         store.mark_provider_verified(from_number, bid)
@@ -1156,7 +1214,8 @@ def handle_inbound(from_number: str, body: str,
                 client_msg = relay_quote_to_client(body, booking_text,
                                                    client_phone, from_number,
                                                    language=lang,
-                                                   commission_pct=commission_pct)
+                                                   commission_pct=commission_pct,
+                                                   business=business)
                 send_whatsapp(client_phone, client_msg, sender)
                 store.append_message(client_phone, 'assistant', client_msg, bid)
                 store.mark_quote_link_sent(from_number, bid)
@@ -1183,14 +1242,11 @@ def handle_inbound(from_number: str, body: str,
     # Conversation reset
     if body.lower().strip() in _RESET_TRIGGERS:
         store.clear_history(from_number, bid)
-        is_es = any(w in body.lower() for w in ['reiniciar', 'nuevo', 'nueva', 'empezar'])
-        if is_es:
-            reply = ('¡Claro! Empezamos de nuevo. 🏖️ '
-                     '¿En qué playa de Costa Rica necesitas el carrito de golf?')
-        else:
-            reply = ("Sure, let's start fresh! 🏖️ "
-                     'Which Costa Rica beach town do you need a golf cart in?')
-        return reply
+        is_es       = any(w in body.lower() for w in ['reiniciar', 'nuevo', 'nueva', 'empezar'])
+        _settings   = (business or {}).get('settings', {})
+        reply_es    = _settings.get('reset_message_es', '¡Claro! Empezamos de nuevo. 😊 ¿En qué podemos ayudarte?')
+        reply_en    = _settings.get('reset_message_en', "Sure, let's start fresh! 😊 How can I help you?")
+        return reply_es if is_es else reply_en
 
     _body_lower = body.lower().strip()
 
@@ -1229,18 +1285,21 @@ def handle_inbound(from_number: str, body: str,
             _fee      = _pq['fee']
             _currency = _pq.get('currency', 'USD')
             _booking  = _pq['booking']
+            _biz      = business or {}
+            _biz_slug = re.sub(r'[^A-Z]', '', _biz.get('slug', 'BIZ').upper())[:4]
+            _prod_en  = _biz.get('settings', {}).get('product_term_en', 'Rental')
             _name     = _extract_booking_field(_booking, 'Name')  or 'Client'
-            _email    = _extract_booking_field(_booking, 'Email') or 'client@golfcartrentalscr.com'
+            _email    = _extract_booking_field(_booking, 'Email') or f'client@{_biz.get("slug", "business")}.com'
             _loc      = _extract_booking_field(_booking, 'Location')
             _cart     = _extract_booking_field(_booking, 'Cart')
             _qty      = _extract_booking_field(_booking, 'Quantity') or '1'
             _cart_qty = f'{_cart} × {_qty}' if _qty not in ('', '1') else _cart
             _pickup   = _extract_booking_field(_booking, 'Pick-up')
             _dropoff  = _extract_booking_field(_booking, 'Drop-off')
-            _loc_code = re.sub(r'[^A-Z]', '', _loc.upper())[:4] if _loc else 'GCR'
-            _order    = f'GCR-{datetime.utcnow().strftime("%y%m%d%H%M")}-{_loc_code}'
+            _loc_code = re.sub(r'[^A-Z]', '', _loc.upper())[:4] if _loc else _biz_slug
+            _order    = f'{_biz_slug}-{datetime.utcnow().strftime("%y%m%d%H%M")}-{_loc_code}'
             _desc     = (
-                f'Golf Cart Rental — {_loc} | {_cart_qty}'
+                f'{_biz.get("name", _prod_en)} — {_loc} | {_cart_qty}'
                 + (f' | {_pickup[:10]} → {_dropoff[:10]}' if _pickup else '')
             )
             _link = tilopay_create_payment_link(_fee, _order, _email, _name,
@@ -1320,22 +1379,30 @@ def handle_inbound(from_number: str, body: str,
 
 # ─── WEBHOOKS ────────────────────────────────────────────────────────────────
 
-def _validate_twilio(webhook_path: str) -> bool:
+def _validate_twilio(webhook_path: str, business: Optional[dict] = None) -> bool:
     dev_mode = os.getenv('DEV_MODE', 'false').lower() == 'true'
     if dev_mode:
         return True
-    webhook_url = AGENT_BASE_URL.rstrip('/') + webhook_path
-    validator   = RequestValidator(TWILIO_AUTH_TOKEN)
-    return validator.validate(
-        webhook_url,
-        request.form,
-        request.headers.get('X-Twilio-Signature', '')
-    )
+    # Use per-business agent_url if available, otherwise fall back to global env
+    base_url    = (business or {}).get('agent_url') or AGENT_BASE_URL
+    webhook_url = base_url.rstrip('/') + webhook_path
+    auth_token  = get_twilio_auth_token(business)
+    sig         = request.headers.get('X-Twilio-Signature', '')
+    validator   = RequestValidator(auth_token)
+    result      = validator.validate(webhook_url, request.form, sig)
+    if not result:
+        print(f'  ✗ Sig fail | url={webhook_url} | token={auth_token[:8]}... | sig={sig[:20]}...', flush=True)
+    return result
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    """Legacy single-tenant webhook — routes to GolfCartRentalsCR."""
-    if not _validate_twilio('/webhook'):
+    """Legacy single-tenant webhook — slug configured via DEFAULT_BUSINESS_SLUG env var."""
+    if not DEFAULT_BUSINESS_SLUG:
+        return 'No DEFAULT_BUSINESS_SLUG configured', 404
+    business = store.get_business_by_slug(DEFAULT_BUSINESS_SLUG)
+    if not business:
+        return 'Business not found', 404
+    if not _validate_twilio('/webhook', business):
         print('  ✗ Invalid Twilio signature')
         return 'Forbidden', 403
 
@@ -1355,8 +1422,7 @@ def webhook():
     if referral.get('source_type'):
         print(f'  📢 Referral: {referral["source_type"]} — {referral["headline"][:60]}')
 
-    business = store.get_business_by_slug('golfcartrentalscr')
-    reply    = handle_inbound(from_number, body, business, referral=referral)
+    reply = handle_inbound(from_number, body, business, referral=referral)
 
     resp = MessagingResponse()
     if reply:
@@ -1367,13 +1433,14 @@ def webhook():
 @app.route('/webhook/<slug>', methods=['POST'])
 def webhook_tenant(slug: str):
     """Multi-tenant webhook — routes by business slug."""
-    if not _validate_twilio(f'/webhook/{slug}'):
-        print(f'  ✗ Invalid Twilio signature for /{slug}')
-        return 'Forbidden', 403
-
+    # Load business first so we can validate with its own Twilio auth token.
     business = store.get_business_by_slug(slug)
     if not business:
         return 'Business not found', 404
+
+    if not _validate_twilio(f'/webhook/{slug}', business):
+        print(f'  ✗ Invalid Twilio signature for /{slug}')
+        return 'Forbidden', 403
 
     from_number = request.form.get('From', '')
     body        = request.form.get('Body', '').strip()
@@ -1414,8 +1481,7 @@ def payment_confirmed():
         'You will receive full details via WhatsApp shortly.</p><hr>'
         '<p style="font-size:18px">🏖️ ¡Reserva Confirmada!<br>'
         'Tu reserva está asegurada.<br>Recibirás los detalles por WhatsApp en breve.</p>'
-        '<p><a href="https://golfcartrentalscr.com" style="color:#0066cc">'
-        'Return to GolfCartRentalsCR.com</a></p>'
+        ''
         '</body></html>'
     ), 200
 
@@ -1471,22 +1537,24 @@ def _process_confirmed_payment(order_number: str):
                                 full_booking, payment.get('fee', 0), bid)
     release_contact_info_to_provider(provider_number, full_booking, client_phone, sender)
 
-    lang = detect_client_language(client_phone, business)
+    lang         = detect_client_language(client_phone, business)
+    biz_name     = (business or {}).get('name', '')
+    _pay_settings = (business or {}).get('settings', {})
     if lang == 'es':
-        confirmation = (
+        confirmation = _pay_settings.get('payment_confirmation_es') or (
             '✅ *¡Reserva Confirmada!*\n\n'
-            'Tu pago fue recibido y tu carrito de golf está asegurado. 🏖️\n\n'
-            'El proveedor local te contactará directamente para coordinar la entrega. '
-            'Si tienes alguna pregunta, estamos aquí 24/7.\n\n'
-            '_GolfCartRentalsCR — Tu ride en el paraíso_ 🌴'
+            'Tu pago fue recibido y tu reserva está asegurada. 🎉\n\n'
+            'El proveedor te contactará directamente para coordinar los detalles. '
+            f'Si tienes alguna pregunta, estamos aquí 24/7.\n\n'
+            f'_{biz_name}_'
         )
     else:
-        confirmation = (
+        confirmation = _pay_settings.get('payment_confirmation_en') or (
             '✅ *Booking Confirmed!*\n\n'
-            'Your payment has been received and your golf cart reservation is locked in. 🏖️\n\n'
-            'The local provider will contact you directly to coordinate pickup. '
-            "If you have any questions, we're here 24/7!\n\n"
-            '_GolfCartRentalsCR — Your ride in paradise_ 🌴'
+            'Your payment has been received and your reservation is locked in. 🎉\n\n'
+            'The provider will contact you directly to coordinate details. '
+            f"If you have any questions, we're here 24/7!\n\n"
+            f'_{biz_name}_'
         )
     send_whatsapp(client_phone, confirmation, sender)
     store.append_message(client_phone, 'assistant', confirmation, bid)
@@ -1585,7 +1653,7 @@ def admin():
                    f'<td>{loc}</td><td>${fee:.2f}</td><td>{age(p)}</td></tr>')
 
     html = f'''<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>GCR Admin</title>
+<html><head><meta charset="utf-8"><title>Okapi Admin</title>
 <style>
 body{{font-family:sans-serif;padding:20px;background:#f5f5f5}}
 h1{{color:#2a6496}}h2{{color:#444;margin-top:30px}}
@@ -1596,7 +1664,7 @@ td{{padding:8px 12px;border-bottom:1px solid #eee}}
 tr:last-child td{{border-bottom:none}}
 .ts{{color:#999;font-size:13px}}
 </style></head><body>
-<h1>🏖️ GolfCartRentalsCR — Admin</h1>
+<h1>Okapi Platform — Admin</h1>
 <p class="ts">Refreshed: {now_ts} &nbsp;|&nbsp;
 <a href="/admin">↻ Refresh</a> &nbsp;|&nbsp;
 <a href="/dashboard">📊 New Dashboard</a></p>
@@ -1622,9 +1690,7 @@ def cron():
     if CRON_SECRET and secret != CRON_SECRET:
         return 'Forbidden', 403
 
-    businesses = store.get_all_businesses()
-    if not businesses:
-        businesses = [store.get_business_by_slug('golfcartrentalscr') or {}]
+    businesses = store.get_all_businesses() or []
 
     for biz in businesses:
         if not biz.get('active', True):

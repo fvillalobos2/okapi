@@ -2,9 +2,20 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
-const nav = [
+type Modules = Record<string, { enabled: boolean }>
+
+interface Business {
+  name: string
+  slug: string
+  modules: Modules
+}
+
+interface NavLink { href: string; label: string; icon: React.ReactNode }
+interface NavGroup { section: string; links: NavLink[] }
+
+const CORE_NAV: NavGroup[] = [
   {
     section: 'Operaciones',
     links: [
@@ -26,40 +37,109 @@ const nav = [
     ],
   },
   {
-    section: 'Equipo',
+    section: 'Configuración',
     links: [
-      {
-        href: '/teams',
-        label: 'Sucursales',
-        icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 7V14h12V7"/><path d="M1 4l1.5-3h11L15 4H1z"/><path d="M6 14V9h4v5"/></svg>,
-      },
-      {
-        href: '/users',
-        label: 'Usuarios',
-        icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="6" cy="5" r="3"/><path d="M1 14c0-3 2-5 5-5"/><circle cx="12" cy="10" r="3"/></svg>,
-      },
-    ],
-  },
-  {
-    section: 'Catálogo',
-    links: [
-      {
-        href: '/prices',
-        label: 'Productos',
-        icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 3h12l-1 9H3L2 3z"/><path d="M6 3V2a2 2 0 014 0v1"/><path d="M6 7h4"/></svg>,
-      },
       {
         href: '/prompt',
         label: 'Agente IA',
         icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="2" y="3" width="12" height="9" rx="2"/><path d="M5 7h6M5 10h3"/><path d="M8 12v2"/></svg>,
       },
+      {
+        href: '/addons',
+        label: 'Add-ons',
+        icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M6 2h4v3H6zM2 7h4v3H2zM10 7h4v3h-4zM6 12h4v2H6z"/><path d="M8 5v2M4 10v2M12 10v2"/></svg>,
+      },
+      {
+        href: '/settings',
+        label: 'Configuración',
+        icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>,
+      },
     ],
   },
 ]
 
+const MODULE_NAV: { module: string; section: string; href: string; label: string; icon: React.ReactNode }[] = [
+  {
+    module: 'teams',
+    section: 'Equipo',
+    href: '/teams',
+    label: 'Sucursales',
+    icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 7V14h12V7"/><path d="M1 4l1.5-3h11L15 4H1z"/><path d="M6 14V9h4v5"/></svg>,
+  },
+  {
+    module: 'teams',
+    section: 'Equipo',
+    href: '/users',
+    label: 'Usuarios',
+    icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="6" cy="5" r="3"/><path d="M1 14c0-3 2-5 5-5"/><circle cx="12" cy="10" r="3"/></svg>,
+  },
+  {
+    module: 'product_catalog',
+    section: 'Catálogo',
+    href: '/prices',
+    label: 'Productos',
+    icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 3h12l-1 9H3L2 3z"/><path d="M6 3V2a2 2 0 014 0v1"/><path d="M6 7h4"/></svg>,
+  },
+  {
+    module: 'discounts',
+    section: 'Ventas',
+    href: '/discounts',
+    label: 'Descuentos',
+    icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M13 3L3 13"/><circle cx="4.5" cy="4.5" r="1.5"/><circle cx="11.5" cy="11.5" r="1.5"/></svg>,
+  },
+  {
+    module: 'crm',
+    section: 'Ventas',
+    href: '/integrations',
+    label: 'Integraciones',
+    icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M1 8h6M9 8h6M4 4v8M12 4v8"/></svg>,
+  },
+  {
+    module: 'cost_tracking',
+    section: 'Sistema',
+    href: '/costos',
+    label: 'Costos API',
+    icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>,
+  },
+]
+
+function buildNav(modules: Modules): NavGroup[] {
+  const active = MODULE_NAV.filter(m => modules[m.module]?.enabled)
+
+  const sections: Record<string, NavLink[]> = {}
+  for (const item of active) {
+    if (!sections[item.section]) sections[item.section] = []
+    sections[item.section].push({ href: item.href, label: item.label, icon: item.icon })
+  }
+
+  const nav: NavGroup[] = [...CORE_NAV]
+  for (const [section, links] of Object.entries(sections)) {
+    nav.push({ section, links })
+  }
+  return nav
+}
+
 export default function Sidebar() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const [business, setBusiness] = useState<Business | null>(null)
+
+  useEffect(() => {
+    fetch('/api/business')
+      .then(r => r.json())
+      .then(d => setBusiness(d))
+      .catch(() => null)
+  }, [])
+
+  const modules = business?.modules ?? {}
+  const nav = buildNav(modules)
+
+  const initials = (business?.name ?? 'Ag')
+    .split(' ')
+    .map(w => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
@@ -86,11 +166,13 @@ export default function Sidebar() {
           <div style={{ width: 36, height: 36, background: 'var(--accent)', borderRadius: 8,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 14, fontWeight: 800, color: '#fff', flexShrink: 0 }}>
-            Ac
+            {initials}
           </div>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', letterSpacing: '-.2px' }}>Acuarium</div>
-            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>PureSpas Agent</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', letterSpacing: '-.2px' }}>
+              {business?.name ?? '—'}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>Okapi Agent</div>
           </div>
         </div>
 

@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { supabaseAdmin } from '@/lib/supabase'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import ConversationActions from './ConversationActions'
 
 type Msg = { role: 'user' | 'assistant'; content: string; ts?: string }
 
@@ -124,10 +125,11 @@ export default async function ConversationDetailPage({ params }: { params: Promi
 
         {/* Side panel */}
         <div style={{
-          width: 240, borderLeft: '1px solid var(--border)', background: 'var(--surface)',
-          overflowY: 'auto', padding: '20px 16px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 20,
+          width: 260, borderLeft: '1px solid var(--border)', background: 'var(--surface)',
+          overflowY: 'auto', flexShrink: 0, display: 'flex', flexDirection: 'column',
         }}>
-          <div>
+          {/* Contact info */}
+          <div style={{ padding: '20px 16px', borderBottom: '1px solid var(--border)' }}>
             <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--muted)', marginBottom: 12 }}>
               Contacto
             </p>
@@ -148,15 +150,15 @@ export default async function ConversationDetailPage({ params }: { params: Promi
                 <div style={{ fontSize: 13 }}>{val}</div>
               </div>
             ))}
-          </div>
-
-          {lead && (
-            <div>
-              <Link href={`/leads/${lead.id}`} style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}>
+            {lead && (
+              <Link href={`/leads/${lead.id}`} style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 8 }}>
                 Ver ficha del lead →
               </Link>
-            </div>
-          )}
+            )}
+          </div>
+
+          {/* Actions (resolve, summary, manual send) */}
+          <ConversationActions id={conv.id} initialStatus={conv.status} />
         </div>
       </div>
     </div>

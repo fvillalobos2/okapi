@@ -9,10 +9,10 @@ export async function POST(req: Request) {
   const file = form.get('file') as File | null
   const priceItemId = form.get('price_item_id') as string | null
   const categoryId = form.get('category_id') as string | null
-  const businessId = form.get('business_id') as string | null
+  const businessId = process.env.BUSINESS_ID!
 
-  if (!file || (!priceItemId && !categoryId) || !businessId) {
-    return NextResponse.json({ error: 'file, business_id y (price_item_id o category_id) son requeridos' }, { status: 400 })
+  if (!file || (!priceItemId && !categoryId)) {
+    return NextResponse.json({ error: 'file y (price_item_id o category_id) son requeridos' }, { status: 400 })
   }
   if (!file.name.toLowerCase().endsWith('.pdf')) {
     return NextResponse.json({ error: 'Solo se aceptan archivos PDF' }, { status: 400 })

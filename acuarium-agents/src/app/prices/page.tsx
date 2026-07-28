@@ -25,7 +25,6 @@ const inp: React.CSSProperties = {
   border: '1px solid var(--border)', borderRadius: 6,
   background: '#fff', color: 'var(--text)', outline: 'none', boxSizing: 'border-box',
 }
-const BID = '818adb17-c5bc-4bbe-905d-b51b47ad2221'
 
 export default function PricesPage() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -139,7 +138,7 @@ export default function PricesPage() {
     const form = new FormData()
     form.append('file', file)
     form.append('category_id', catId)
-    form.append('business_id', BID)
+
     await fetch('/api/products/upload', { method: 'POST', body: form })
     setUploading(null)
     load()
@@ -150,7 +149,7 @@ export default function PricesPage() {
     const form = new FormData()
     form.append('file', file)
     form.append('category_id', catId)
-    form.append('business_id', BID)
+
     await fetch('/api/products/image', { method: 'POST', body: form })
     setUploadingImg(null)
     load()
@@ -170,7 +169,7 @@ export default function PricesPage() {
     const form = new FormData()
     form.append('file', file)
     form.append('price_item_id', prodId)
-    form.append('business_id', BID)
+
     await fetch('/api/products/upload', { method: 'POST', body: form })
     setUploadingProdPdf(null)
     load()
@@ -181,7 +180,7 @@ export default function PricesPage() {
     const form = new FormData()
     form.append('file', file)
     form.append('price_item_id', prodId)
-    form.append('business_id', BID)
+
     await fetch('/api/products/image', { method: 'POST', body: form })
     setUploadingProdImg(null)
     load()
