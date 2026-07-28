@@ -17,8 +17,8 @@ type Category = {
 type Team = { id: string; name: string }
 type User = { id: string; name: string; team_id: string | null; role: string }
 
-const TABS = ['Productos', 'Equipo', 'IA'] as const
-type Tab = (typeof TABS)[number]
+const ALL_TABS = ['Productos', 'Equipo', 'IA'] as const
+type Tab = (typeof ALL_TABS)[number]
 
 const inp: React.CSSProperties = {
   width: '100%', padding: '7px 10px', fontSize: 13,
@@ -30,6 +30,7 @@ export default function PricesPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [teams, setTeams] = useState<Team[]>([])
   const [users, setUsers] = useState<User[]>([])
+  const [aiInstructionsEnabled, setAiInstructionsEnabled] = useState(false)
   const [expanded, setExpanded] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<Record<string, Tab>>({})
   const [catEdits, setCatEdits] = useState<Record<string, Partial<Category & { product_keywords: string }>>>({})
@@ -55,14 +56,16 @@ export default function PricesPage() {
   const newProdRef = useRef<HTMLDialogElement | null>(null)
 
   async function load() {
-    const [catData, teamsData, usersData] = await Promise.all([
+    const [catData, teamsData, usersData, bizData] = await Promise.all([
       fetch('/api/categories').then(r => r.json()),
       fetch('/api/teams').then(r => r.json()),
       fetch('/api/users').then(r => r.json()),
+      fetch('/api/business').then(r => r.json()),
     ])
     setCategories(catData.categories ?? [])
     setTeams(teamsData ?? [])
     setUsers(usersData ?? [])
+    setAiInstructionsEnabled(!!(bizData.modules?.ai_category_instructions?.enabled))
   }
   useEffect(() => { load() }, [])
 
@@ -213,9 +216,28 @@ export default function PricesPage() {
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-.3px' }}>Productos</h1>
         <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>
-          Organiza por categoría · configura precios, equipo, instrucciones IA y material visual
+          Organiza por categoría · configura precios, equipo y material visual
         </p>
       </div>
+
+      {!aiInstructionsEnabled && (
+        <div style={{
+          background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10,
+          padding: '12px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12,
+        }}>
+          <span style={{ fontSize: 18 }}>✦</span>
+          <div style={{ flex: 1 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#15803D' }}>Add-on disponible: Instrucciones de IA por categoría</span>
+            <p style={{ fontSize: 12, color: '#166534', margin: '2px 0 0' }}>
+              Configura un guion de venta y palabras clave por categoría para que el agente adapte su enfoque automáticamente.
+            </p>
+          </div>
+          <a href="/addons" style={{ fontSize: 12, fontWeight: 600, color: '#15803D', textDecoration: 'none',
+            background: '#DCFCE7', padding: '6px 14px', borderRadius: 6, flexShrink: 0 }}>
+            Activar →
+          </a>
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {categories.length === 0 && (
@@ -249,7 +271,7 @@ export default function PricesPage() {
                   <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
                     {cat.products.length} producto{cat.products.length !== 1 ? 's' : ''}
                     {cat.documents.length > 0 && <span style={{ color: 'var(--accent)', marginLeft: 8 }}>📄 {cat.documents.length}</span>}
-                    {cat.prompt_instructions && <span style={{ color: '#15803D', marginLeft: 8 }}>✓ IA</span>}
+                    {aiInstructionsEnabled && cat.prompt_instructions && <span style={{ color: '#15803D', marginLeft: 8 }}>✓ IA</span>}
                     {cat.assigned_team_id && <span style={{ color: 'var(--muted)', marginLeft: 8 }}>· {teams.find(t => t.id === cat.assigned_team_id)?.name ?? ''}</span>}
                   </div>
                 </div>
@@ -260,7 +282,7 @@ export default function PricesPage() {
                 <div style={{ borderTop: '1px solid var(--border)' }}>
                   {/* Tab bar */}
                   <div style={{ display: 'flex', padding: '0 20px', borderBottom: '1px solid var(--border)', gap: 0 }}>
-                    {TABS.map(t => (
+                    {ALL_TABS.filter(t => t !== 'IA' || aiInstructionsEnabled).map(t => (
                       <button
                         key={t}
                         onClick={e => { e.stopPropagation(); setActiveTab(prev => ({ ...prev, [cat.id]: t })) }}

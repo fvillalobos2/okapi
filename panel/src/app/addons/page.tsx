@@ -13,7 +13,12 @@ const MODULE_CATALOG: ModuleConfig[] = [
   {
     key: 'product_catalog',
     label: 'Catálogo de productos',
-    description: 'Categorías con keywords, prompt por categoría y PDFs. El agente detecta interés y responde con información del producto.',
+    description: 'Categorías, modelos con precio y PDFs. El agente navega el catálogo y responde preguntas de producto de manera directa.',
+  },
+  {
+    key: 'ai_category_instructions',
+    label: 'Instrucciones de IA por categoría',
+    description: 'Configura un guion de venta específico y palabras clave por cada categoría de producto. El agente detecta el interés del cliente y ajusta su enfoque, argumentos y preguntas de calificación según la categoría. Recomendado para negocios con líneas de producto muy diferentes entre sí.',
   },
   {
     key: 'teams',
