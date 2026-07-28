@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 
 type Modules = Record<string, { enabled: boolean }>
@@ -121,8 +121,11 @@ function buildNav(modules: Modules): NavGroup[] {
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [business, setBusiness] = useState<Business | null>(null)
+
+  if (pathname === '/login') return null
 
   useEffect(() => {
     fetch('/api/business')
@@ -201,8 +204,20 @@ export default function Sidebar() {
 
         {/* Footer */}
         <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#16A34A', boxShadow: '0 0 0 2px #DCFCE7' }} />
-          <span style={{ fontSize: 11, color: 'var(--muted)' }}>Sistema activo</span>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#16A34A', boxShadow: '0 0 0 2px #DCFCE7', flexShrink: 0 }} />
+          <span style={{ fontSize: 11, color: 'var(--muted)', flex: 1 }}>Sistema activo</span>
+          <button
+            onClick={async () => {
+              await fetch('/api/auth/logout', { method: 'POST' })
+              router.replace('/login')
+            }}
+            title="Cerrar sesión"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--muted)', display: 'flex' }}
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M10 12l4-4-4-4M14 8H6"/>
+            </svg>
+          </button>
         </div>
       </nav>
 
