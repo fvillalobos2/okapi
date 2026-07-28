@@ -5,4 +5,4 @@ cmds = ["npm ci --production=false"]
 cmds = ["npm run build"]
 
 [start]
-cmd = "npm start"
+cmd = "npm start -- -p ${PORT:-3000}"
