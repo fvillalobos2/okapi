@@ -10,13 +10,13 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const { id } = await params
 
   const [convRes, bizRes] = await Promise.all([
-    supabaseAdmin().from('conversations').select('history, phone').eq('id', id).single(),
+    supabaseAdmin().from('conversations').select('messages, phone').eq('id', id).single(),
     supabaseAdmin().from('businesses').select('name').eq('id', BUSINESS_ID).single(),
   ])
 
   if (convRes.error) return NextResponse.json({ error: convRes.error.message }, { status: 500 })
 
-  const history: Msg[] = Array.isArray(convRes.data.history) ? convRes.data.history : []
+  const history: Msg[] = Array.isArray(convRes.data.messages) ? convRes.data.messages : []
   if (history.length === 0) return NextResponse.json({ summary: 'Sin mensajes para resumir.' })
 
   const businessName = bizRes.data?.name ?? 'el negocio'

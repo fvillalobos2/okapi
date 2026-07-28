@@ -10,7 +10,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   // Load conversation + business in parallel
   const [convRes, bizRes] = await Promise.all([
-    supabaseAdmin().from('conversations').select('phone, history').eq('id', id).single(),
+    supabaseAdmin().from('conversations').select('phone, messages').eq('id', id).single(),
     supabaseAdmin()
       .from('businesses')
       .select('twilio_account_sid, twilio_auth_token, twilio_sender')
@@ -52,13 +52,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: err.message ?? 'Twilio error' }, { status: 502 })
   }
 
-  // Append to conversation history
-  const history = Array.isArray(convRes.data.history) ? convRes.data.history : []
-  history.push({ role: 'assistant', content: message, ts: new Date().toISOString() })
+  const messages = Array.isArray(convRes.data.messages) ? convRes.data.messages : []
+  messages.push({ role: 'assistant', content: message, ts: new Date().toISOString() })
 
   await supabaseAdmin()
     .from('conversations')
-    .update({ history, updated_at: new Date().toISOString() })
+    .update({ messages, updated_at: new Date().toISOString() })
     .eq('id', id)
 
   return NextResponse.json({ ok: true })

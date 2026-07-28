@@ -2,6 +2,8 @@ export const dynamic = 'force-dynamic'
 import { supabaseAdmin } from '@/lib/supabase'
 import Link from 'next/link'
 
+const BUSINESS_ID = process.env.BUSINESS_ID!
+
 const STATUS_LABEL: Record<string, string> = {
   open: 'Abierta', assigned: 'Asignada', resolved: 'Resuelta', archived: 'Archivada',
 }
@@ -22,6 +24,7 @@ export default async function ConversationsPage({ searchParams }: { searchParams
   let q = supabaseAdmin()
     .from('conversations')
     .select('*, leads(name, phone, product_interest, zone), teams(name)')
+    .eq('business_id', BUSINESS_ID)
     .eq('archived', false)
     .order('updated_at', { ascending: false })
     .limit(200)

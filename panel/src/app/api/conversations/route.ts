@@ -1,6 +1,8 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
+const BUSINESS_ID = process.env.BUSINESS_ID!
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const status = searchParams.get('status')
@@ -8,6 +10,7 @@ export async function GET(req: Request) {
   let q = supabaseAdmin()
     .from('conversations')
     .select('*, leads(name,phone,zone,product_interest), teams(name)')
+    .eq('business_id', BUSINESS_ID)
     .eq('archived', false)
     .order('updated_at', { ascending: false })
     .limit(200)

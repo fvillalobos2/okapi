@@ -43,7 +43,7 @@ export default async function ConversationDetailPage({ params }: { params: Promi
     ? await supabaseAdmin().from('teams').select('name').eq('id', conv.team_id).single()
     : { data: null }
 
-  const messages: Msg[] = Array.isArray(conv.history) ? conv.history : []
+  const messages: Msg[] = Array.isArray(conv.messages) ? conv.messages : []
   const phone = conv.phone.replace('whatsapp:', '')
 
   let lastDay = ''
