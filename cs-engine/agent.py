@@ -151,6 +151,15 @@ def get_system_prompt(business: Optional[dict] = None, product_interest: Optiona
         if db_prompt:
             base = db_prompt
 
+    # Inject general business documents (guides, analyses) into every conversation
+    if business:
+        biz_docs = store.get_business_documents(business.get('id'))
+        if biz_docs:
+            doc_sections = '\n\n'.join(
+                f"### {d['filename']}\n{d['text']}" for d in biz_docs
+            )
+            base = f"{base}\n\n## Documentos de contexto del negocio\n{doc_sections}"
+
     if not product_interest or not business:
         return base
 

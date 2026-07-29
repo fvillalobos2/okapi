@@ -11,43 +11,55 @@ export async function POST(req: Request) {
   const categoryId = form.get('category_id') as string | null
   const businessId = process.env.BUSINESS_ID!
 
-  if (!file || (!priceItemId && !categoryId)) {
-    return NextResponse.json({ error: 'file y (price_item_id o category_id) son requeridos' }, { status: 400 })
+  const docType = (form.get('doc_type') as string | null) || 'product'
+  if (!file || (docType === 'product' && !priceItemId && !categoryId)) {
+    return NextResponse.json({ error: 'file y (price_item_id o category_id) son requeridos para documentos de producto' }, { status: 400 })
   }
-  if (!file.name.toLowerCase().endsWith('.pdf')) {
-    return NextResponse.json({ error: 'Solo se aceptan archivos PDF' }, { status: 400 })
+  const lname = file.name.toLowerCase()
+  const isPdf = lname.endsWith('.pdf')
+  const isText = lname.endsWith('.md') || lname.endsWith('.txt')
+  if (!isPdf && !(isText && docType === 'general')) {
+    return NextResponse.json({ error: 'Se aceptan PDF para productos; PDF, MD o TXT para documentos generales' }, { status: 400 })
   }
 
   const bytes = await file.arrayBuffer()
   const buffer = Buffer.from(bytes)
 
-  const pathKey = categoryId ? `cat_${categoryId}` : priceItemId
+  const pathKey = docType === 'general' ? 'general' : (categoryId ? `cat_${categoryId}` : priceItemId)
+  const contentType = isPdf ? 'application/pdf' : 'text/plain'
   const path = `${businessId}/${pathKey}/${Date.now()}_${file.name}`
   const { error: upErr } = await supabaseAdmin().storage
     .from('product-docs')
-    .upload(path, buffer, { contentType: 'application/pdf', upsert: true })
+    .upload(path, buffer, { contentType, upsert: true })
   if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 })
 
   const { data: urlData } = supabaseAdmin().storage.from('product-docs').getPublicUrl(path)
   const fileUrl = urlData.publicUrl
 
   let contentText = ''
-  try {
-    const base64 = buffer.toString('base64')
-    const msg = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 4096,
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
-          { type: 'text', text: 'Extrae todo el texto relevante de este documento de producto. Incluye especificaciones, características, precios si los hay, y cualquier información útil para un agente de ventas. Sé exhaustivo.' },
-        ],
-      }],
-    })
-    contentText = msg.content[0].type === 'text' ? msg.content[0].text : ''
-  } catch {
-    contentText = `[Extracción automática falló]\n\nArchivo: ${file.name}`
+  if (isText) {
+    contentText = buffer.toString('utf-8')
+  } else {
+    try {
+      const base64 = buffer.toString('base64')
+      const extractPrompt = docType === 'general'
+        ? 'Extrae todo el texto de este documento. Preserva la estructura, encabezados y listas. Sé exhaustivo.'
+        : 'Extrae todo el texto relevante de este documento de producto. Incluye especificaciones, características, precios si los hay, y cualquier información útil para un agente de ventas. Sé exhaustivo.'
+      const msg = await anthropic.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 4096,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
+            { type: 'text', text: extractPrompt },
+          ],
+        }],
+      })
+      contentText = msg.content[0].type === 'text' ? msg.content[0].text : ''
+    } catch {
+      contentText = `[Extracción automática falló]\n\nArchivo: ${file.name}`
+    }
   }
 
   const record: any = {
@@ -55,9 +67,12 @@ export async function POST(req: Request) {
     filename: file.name,
     content_text: contentText,
     file_url: fileUrl,
+    doc_type: docType,
   }
-  if (categoryId) record.category_id = categoryId
-  else record.price_item_id = priceItemId
+  if (docType === 'product') {
+    if (categoryId) record.category_id = categoryId
+    else record.price_item_id = priceItemId
+  }
 
   const { data, error } = await supabaseAdmin().from('product_documents').insert(record).select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

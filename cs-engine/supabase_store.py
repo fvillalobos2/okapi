@@ -936,6 +936,21 @@ def get_product_context(business_id: Optional[str], product_interest: Optional[s
         return {}
 
 
+def get_business_documents(business_id: Optional[str] = None) -> list:
+    """Return all general (doc_type='general') business documents for context injection."""
+    b = _bid(business_id)
+    if not b:
+        return []
+    try:
+        r = _sb().table('product_documents').select('content_text,filename') \
+            .eq('business_id', b).eq('doc_type', 'general').execute()
+        return [{'filename': x['filename'], 'text': x['content_text']}
+                for x in (r.data or []) if x.get('content_text')]
+    except Exception as e:
+        print(f'  ⚠ get_business_documents: {e}')
+        return []
+
+
 # ─── CLEANUP ─────────────────────────────────────────────────────────────────
 
 def cleanup_expired_entries(business_id: Optional[str] = None, ttl_hours: int = 48):

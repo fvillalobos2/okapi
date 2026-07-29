@@ -45,6 +45,11 @@ const CORE_NAV: NavGroup[] = [
         icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="2" y="3" width="12" height="9" rx="2"/><path d="M5 7h6M5 10h3"/><path d="M8 12v2"/></svg>,
       },
       {
+        href: '/documents',
+        label: 'Documentos',
+        icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M4 1.5h5.5L12.5 5v9.5H4V1.5z"/><path d="M9.5 1.5V5h3"/><path d="M6 8h5M6 11h3"/></svg>,
+      },
+      {
         href: '/addons',
         label: 'Add-ons',
         icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M6 2h4v3H6zM2 7h4v3H2zM10 7h4v3h-4zM6 12h4v2H6z"/><path d="M8 5v2M4 10v2M12 10v2"/></svg>,
