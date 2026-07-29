@@ -1,7 +1,8 @@
+import { getBusinessId } from '@/lib/getBusinessId'
 import { supabaseAdmin } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
-const BUSINESS_ID = process.env.BUSINESS_ID!
+
 
 const SELECT_FIELDS = [
   'id', 'name', 'slug', 'timezone', 'active',
@@ -15,12 +16,13 @@ const PATCHABLE = new Set([
   'name', 'timezone', 'active', 'modules', 'settings',
   'whatsapp_number', 'twilio_sender', 'twilio_account_sid', 'twilio_auth_token',
   'agent_url', 'panel_url', 'admin_whatsapp',
-  'accent_color', 'logo_url',
+  'accent_color', 'logo_url', 'admin_password',
 ])
 
 export async function GET() {
+  const BUSINESS_ID = await getBusinessId()
   if (!BUSINESS_ID) {
-    return NextResponse.json({ error: 'BUSINESS_ID env var not set' }, { status: 500 })
+    return NextResponse.json({ error: 'No business context' }, { status: 500 })
   }
   const [{ data, error }, { count }] = await Promise.all([
     supabaseAdmin()
@@ -39,6 +41,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
+  const BUSINESS_ID = await getBusinessId()
   const body = await req.json()
   const updates: Record<string, unknown> = {}
   for (const key of PATCHABLE) {

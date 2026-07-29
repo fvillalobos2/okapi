@@ -1,8 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { supabaseAdmin } from '@/lib/supabase'
+import { getBusinessId } from '@/lib/getBusinessId'
 import Link from 'next/link'
-
-const BUSINESS_ID = process.env.BUSINESS_ID!
 
 const STATUS_LABEL: Record<string, string> = {
   open: 'Abierta', assigned: 'Asignada', resolved: 'Resuelta', archived: 'Archivada',
@@ -20,6 +19,7 @@ function timeAgo(ts: string) {
 export default async function ConversationsPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
   const params = await searchParams
   const statusFilter = params.status ?? ''
+  const BUSINESS_ID = await getBusinessId()
 
   let q = supabaseAdmin()
     .from('conversations')

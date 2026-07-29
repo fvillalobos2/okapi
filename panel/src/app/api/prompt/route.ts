@@ -1,9 +1,11 @@
+import { getBusinessId } from '@/lib/getBusinessId'
 import { supabaseAdmin } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
-const BUSINESS_ID = process.env.BUSINESS_ID!
+
 
 export async function GET() {
+  const BUSINESS_ID = await getBusinessId()
   const [promptRes, bizRes] = await Promise.all([
     supabaseAdmin()
       .from('prompt_versions')
@@ -27,6 +29,7 @@ export async function GET() {
 async function run(q: PromiseLike<any>) { await q }
 
 export async function POST(req: Request) {
+  const BUSINESS_ID = await getBusinessId()
   const { prompt_snapshot, created_by, settings } = await req.json()
 
   if (prompt_snapshot !== undefined) {

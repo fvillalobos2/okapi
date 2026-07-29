@@ -5,7 +5,7 @@ export async function GET() {
   const { data, error } = await supabaseAdmin()
     .from('product_documents')
     .select('id, filename, file_url, created_at')
-    .eq('business_id', process.env.BUSINESS_ID!)
+    .eq('business_id', await getBusinessId())
     .eq('doc_type', 'general')
     .order('created_at', { ascending: false })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

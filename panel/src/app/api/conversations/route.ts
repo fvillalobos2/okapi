@@ -1,9 +1,11 @@
+import { getBusinessId } from '@/lib/getBusinessId'
 import { supabaseAdmin } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
-const BUSINESS_ID = process.env.BUSINESS_ID!
+
 
 export async function GET(req: Request) {
+  const BUSINESS_ID = await getBusinessId()
   const { searchParams } = new URL(req.url)
   const status = searchParams.get('status')
 
@@ -23,6 +25,7 @@ export async function GET(req: Request) {
 }
 
 export async function PATCH(req: Request) {
+  const BUSINESS_ID = await getBusinessId()
   const { id, ...updates } = await req.json()
   const { error } = await supabaseAdmin().from('conversations').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

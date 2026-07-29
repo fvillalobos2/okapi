@@ -1,12 +1,14 @@
+import { getBusinessId } from '@/lib/getBusinessId'
 import { supabaseAdmin } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
-const BUSINESS_ID = process.env.BUSINESS_ID!
+
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY!
 
 type Msg = { role: 'user' | 'assistant'; content: string; ts?: string }
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const BUSINESS_ID = await getBusinessId()
   const { id } = await params
 
   const [convRes, bizRes] = await Promise.all([

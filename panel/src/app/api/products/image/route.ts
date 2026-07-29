@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   const file = form.get('file') as File | null
   const priceItemId = form.get('price_item_id') as string | null
   const categoryId = form.get('category_id') as string | null
-  const businessId = process.env.BUSINESS_ID!
+  const businessId = await getBusinessId()
 
   if (!file || (!priceItemId && !categoryId)) {
     return NextResponse.json({ error: 'file y (price_item_id o category_id) son requeridos' }, { status: 400 })

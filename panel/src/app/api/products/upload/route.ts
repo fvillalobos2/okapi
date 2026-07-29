@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   const file = form.get('file') as File | null
   const priceItemId = form.get('price_item_id') as string | null
   const categoryId = form.get('category_id') as string | null
-  const businessId = process.env.BUSINESS_ID!
+  const businessId = await getBusinessId()
 
   const docType = (form.get('doc_type') as string | null) || 'product'
   if (!file || (docType === 'product' && !priceItemId && !categoryId)) {

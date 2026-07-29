@@ -1,7 +1,8 @@
+import { getBusinessId } from '@/lib/getBusinessId'
 import { supabaseAdmin } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
-const BUSINESS_ID = process.env.BUSINESS_ID!
+
 const BASE = 'https://api.pipedrive.com/v1'
 
 async function getSettings() {
@@ -14,6 +15,7 @@ async function getSettings() {
 }
 
 export async function GET() {
+  const BUSINESS_ID = await getBusinessId()
   const settings = await getSettings()
   const token = (settings.pipedrive_api_token as string) || (process.env.PIPEDRIVE_API_TOKEN ?? '')
   if (!token) return NextResponse.json({ connected: false, error: 'No API token configured' })
@@ -51,6 +53,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
+  const BUSINESS_ID = await getBusinessId()
   const { pipedrive_api_token, pipedrive_pipeline_id, pipedrive_stage_id } = await req.json()
   const settings = await getSettings()
 

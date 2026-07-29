@@ -1,9 +1,11 @@
+import { getBusinessId } from '@/lib/getBusinessId'
 import { supabaseAdmin } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
-const BUSINESS_ID = process.env.BUSINESS_ID!
+
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const BUSINESS_ID = await getBusinessId()
   const { id } = await params
   const { message } = await req.json()
   if (!message?.trim()) return NextResponse.json({ error: 'Message required' }, { status: 400 })

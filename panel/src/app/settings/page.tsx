@@ -16,6 +16,7 @@ interface BusinessData {
   admin_whatsapp: string
   accent_color: string
   logo_url: string
+  admin_password: string
 }
 
 const TIMEZONES = [
@@ -149,6 +150,7 @@ export default function SettingsPage() {
         admin_whatsapp: data.admin_whatsapp,
         accent_color: data.accent_color,
         logo_url: data.logo_url,
+        ...(data.admin_password ? { admin_password: data.admin_password } : {}),
       }
       const res = await fetch('/api/business', {
         method: 'PATCH',
@@ -291,6 +293,18 @@ export default function SettingsPage() {
             Método: <strong>HTTP POST</strong>.
           </p>
         </div>
+      </Section>
+
+      {/* Password */}
+      <Section title="Contraseña de acceso">
+        <Field
+          label="Nueva contraseña"
+          value={data.admin_password ?? ''}
+          onChange={v => set('admin_password', v)}
+          type="password"
+          placeholder="••••••••"
+          hint="Dejá vacío para no cambiarla. Se aplica en el próximo inicio de sesión."
+        />
       </Section>
 
       {/* Branding */}

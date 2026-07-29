@@ -1,9 +1,11 @@
+import { getBusinessId } from '@/lib/getBusinessId'
 import { supabaseAdmin } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
-const BUSINESS_ID = process.env.BUSINESS_ID!
+
 
 export async function GET() {
+  const BUSINESS_ID = await getBusinessId()
   const [catRes, prodRes, docRes] = await Promise.all([
     supabaseAdmin().from('product_categories')
       .select('*').eq('business_id', BUSINESS_ID).order('sort_order'),
@@ -47,6 +49,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const BUSINESS_ID = await getBusinessId()
   const { name, description } = await req.json()
   const { data, error } = await supabaseAdmin()
     .from('product_categories')
@@ -57,6 +60,7 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
+  const BUSINESS_ID = await getBusinessId()
   const { id, name, description, prompt_instructions, product_keywords, assigned_team_id, assigned_user_id, image_url } = await req.json()
   const updates: any = {}
   if (name !== undefined) updates.name = name

@@ -1,8 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase'
+import { getBusinessId } from '@/lib/getBusinessId'
 
 export const dynamic = 'force-dynamic'
-
-const BUSINESS_ID = process.env.BUSINESS_ID!
 
 const RATES = {
   claude_input_per_1m:  3.00,
@@ -16,6 +15,7 @@ const RATES = {
 }
 
 async function getCostData() {
+  const BUSINESS_ID = await getBusinessId()
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
   const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()

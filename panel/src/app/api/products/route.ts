@@ -1,10 +1,12 @@
+import { getBusinessId } from '@/lib/getBusinessId'
 import { supabaseAdmin } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
-const BUSINESS_ID = process.env.BUSINESS_ID!
+
 
 // POST create a new price_item
 export async function POST(req: Request) {
+  const BUSINESS_ID = await getBusinessId()
   const { name, model_code, description, price, currency, category_id } = await req.json()
   const { data, error } = await supabaseAdmin()
     .from('price_items')
@@ -25,6 +27,7 @@ export async function POST(req: Request) {
 
 // GET all price_items with their documents
 export async function GET() {
+  const BUSINESS_ID = await getBusinessId()
   const [{ data: items }, { data: docs }] = await Promise.all([
     supabaseAdmin().from('price_items').select('*').eq('active', true).order('sort_order'),
     supabaseAdmin().from('product_documents').select('id, price_item_id, filename, file_url, created_at').order('created_at'),
@@ -42,6 +45,7 @@ export async function GET() {
 
 // PATCH price_item fields
 export async function PATCH(req: Request) {
+  const BUSINESS_ID = await getBusinessId()
   const { id, price, name, description, prompt_snippet, product_keywords, assigned_team_id, assigned_user_id, image_url, category_id } = await req.json()
   const updates: any = { updated_at: new Date().toISOString() }
   if (price !== undefined) updates.price = price

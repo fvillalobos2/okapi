@@ -1,9 +1,11 @@
+import { getBusinessId } from '@/lib/getBusinessId'
 import { supabaseAdmin } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
-const BUSINESS_ID = process.env.BUSINESS_ID!
+
 
 export async function GET() {
+  const BUSINESS_ID = await getBusinessId()
   const { data, error } = await supabaseAdmin()
     .from('discounts')
     .select('*')
@@ -15,6 +17,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const BUSINESS_ID = await getBusinessId()
   const body = await req.json()
   const { name, type, value, condition, active } = body
   if (!name || !type || value == null) {
@@ -30,6 +33,7 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
+  const BUSINESS_ID = await getBusinessId()
   const { id, ...updates } = await req.json()
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
   const allowed = ['name', 'type', 'value', 'condition', 'active', 'sort_order']
@@ -45,6 +49,7 @@ export async function PATCH(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const BUSINESS_ID = await getBusinessId()
   const { id } = await req.json()
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
   const { error } = await supabaseAdmin()
