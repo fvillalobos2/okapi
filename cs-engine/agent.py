@@ -1589,108 +1589,6 @@ def _check_admin_auth() -> bool:
     except Exception:
         return False
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    error = ''
-    if request.method == 'POST':
-        if request.form.get('password') == ADMIN_PASSWORD:
-            session['authenticated'] = True
-            return redirect(request.args.get('next', '/dashboard'))
-        error = 'Incorrect password'
-    return f'''<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Okapi Platform — Login</title>
-<style>
-body{{font-family:system-ui,sans-serif;background:#0f172a;display:flex;
-     align-items:center;justify-content:center;height:100vh;margin:0}}
-.card{{background:#1e293b;padding:40px;border-radius:12px;width:320px;box-shadow:0 8px 32px rgba(0,0,0,.4)}}
-h1{{color:#f8fafc;margin:0 0 8px;font-size:22px}}
-p{{color:#94a3b8;margin:0 0 24px;font-size:14px}}
-input{{width:100%;padding:10px 14px;background:#0f172a;border:1px solid #334155;
-      border-radius:8px;color:#f8fafc;font-size:15px;box-sizing:border-box;margin-bottom:16px}}
-button{{width:100%;padding:11px;background:#3b82f6;border:none;border-radius:8px;
-       color:#fff;font-size:15px;font-weight:600;cursor:pointer}}
-button:hover{{background:#2563eb}}
-.error{{color:#f87171;font-size:13px;margin-bottom:12px}}
-</style></head><body>
-<div class="card">
-<h1>🐒 Okapi Platform</h1>
-<p>Admin dashboard</p>
-{"<p class='error'>"+error+"</p>" if error else ""}
-<form method="post">
-<input type="password" name="password" placeholder="Password" autofocus>
-<button type="submit">Sign in</button>
-</form>
-</div></body></html>'''
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect('/login')
-
-# ─── LEGACY ADMIN ─────────────────────────────────────────────────────────────
-
-@app.route('/admin', methods=['GET'])
-def admin():
-    if not _check_admin_auth():
-        return Response('Unauthorized', 401,
-                        {'WWW-Authenticate': 'Basic realm="Okapi Admin"'})
-
-    quotes   = store.get_all_pending_quotes()
-    payments = {k: v for k, v in store.get_all_pending_payments().items()
-                if not v.get('processed')}
-    now_ts   = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
-
-    def age(e): return f"{store._hours_old(e):.1f}h"
-
-    rows_q = ''
-    for prov, q in quotes.items():
-        loc    = _extract_booking_field(q.get('booking', ''), 'Location') or '—'
-        cart   = _extract_booking_field(q.get('booking', ''), 'Cart')     or '—'
-        qty    = _extract_booking_field(q.get('booking', ''), 'Quantity') or '1'
-        pickup = _extract_booking_field(q.get('booking', ''), 'Pick-up')  or '—'
-        status = '✅ Link sent' if q.get('link_sent') else '⏳ Awaiting quote'
-        cart_label = f'{cart} ×{qty}' if qty not in ('', '1') else cart
-        rows_q += (f'<tr><td>{prov}</td><td>{q.get("client","—")}</td>'
-                   f'<td>{loc}</td><td>{cart_label}</td><td>{pickup}</td>'
-                   f'<td>{status}</td><td>{age(q)}</td></tr>')
-
-    rows_p = ''
-    for order, p in payments.items():
-        loc = _extract_booking_field(p.get('booking', ''), 'Location') or '—'
-        fee = p.get('fee', 0)
-        rows_p += (f'<tr><td>{order}</td><td>{p.get("client","—")}</td>'
-                   f'<td>{loc}</td><td>${fee:.2f}</td><td>{age(p)}</td></tr>')
-
-    html = f'''<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Okapi Admin</title>
-<style>
-body{{font-family:sans-serif;padding:20px;background:#f5f5f5}}
-h1{{color:#2a6496}}h2{{color:#444;margin-top:30px}}
-table{{border-collapse:collapse;width:100%;background:#fff;border-radius:8px;
-       overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1)}}
-th{{background:#2a6496;color:#fff;padding:10px 12px;text-align:left}}
-td{{padding:8px 12px;border-bottom:1px solid #eee}}
-tr:last-child td{{border-bottom:none}}
-.ts{{color:#999;font-size:13px}}
-</style></head><body>
-<h1>Okapi Platform — Admin</h1>
-<p class="ts">Refreshed: {now_ts} &nbsp;|&nbsp;
-<a href="/admin">↻ Refresh</a> &nbsp;|&nbsp;
-<a href="/dashboard">📊 New Dashboard</a></p>
-
-<h2>Pending Quotes ({len(quotes)})</h2>
-<table><tr><th>Provider</th><th>Client</th><th>Location</th>
-<th>Cart</th><th>Pick-up</th><th>Status</th><th>Age</th></tr>
-{rows_q or '<tr><td colspan=7 style="color:#999;text-align:center;padding:16px">No active quotes</td></tr>'}
-</table>
-
-<h2>Pending Payments ({len(payments)})</h2>
-<table><tr><th>Order</th><th>Client</th><th>Location</th><th>Fee</th><th>Age</th></tr>
-{rows_p or '<tr><td colspan=5 style="color:#999;text-align:center;padding:16px">No pending payments</td></tr>'}
-</table>
-</body></html>'''
-    return html, 200
-
 # ─── CRON ─────────────────────────────────────────────────────────────────────
 
 @app.route('/cron', methods=['POST'])
@@ -1719,10 +1617,6 @@ def health():
     return {'status': 'ok', 'agent': 'Okapi Platform',
             'ts': datetime.utcnow().isoformat()}
 
-# ─── WEB PLATFORM ─────────────────────────────────────────────────────────────
-
-from web_platform import web_bp
-app.register_blueprint(web_bp)
 
 # ─── RUN ─────────────────────────────────────────────────────────────────────
 
