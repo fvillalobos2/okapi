@@ -6,6 +6,7 @@ type Doc = { id: string; filename: string; file_url: string; created_at: string;
 type Product = {
   id: string; name: string; model_code: string; description: string
   price: number; currency: string; category_id: string | null; active: boolean
+  price_includes_tax: boolean; tax_rate: number | null
   documents: Doc[]
 }
 type Category = {
@@ -45,7 +46,7 @@ export default function PricesPage() {
   const [newCatName, setNewCatName] = useState('')
   const [creatingCat, setCreatingCat] = useState(false)
   const [newProdCatId, setNewProdCatId] = useState<string | null>(null)
-  const [newProd, setNewProd] = useState({ name: '', model_code: '', price: '', currency: 'USD', description: '' })
+  const [newProd, setNewProd] = useState({ name: '', model_code: '', price: '', currency: 'USD', description: '', price_includes_tax: false, tax_rate: 13 })
   const [creatingProd, setCreatingProd] = useState(false)
 
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({})
@@ -130,7 +131,7 @@ export default function PricesPage() {
       body: JSON.stringify({ ...newProd, price: parseFloat(newProd.price) || 0, category_id: newProdCatId }),
     })
     setCreatingProd(false)
-    setNewProd({ name: '', model_code: '', price: '', currency: 'USD', description: '' })
+    setNewProd({ name: '', model_code: '', price: '', currency: 'USD', description: '', price_includes_tax: false, tax_rate: 13 })
     setNewProdCatId(null)
     newProdRef.current?.close()
     load()
@@ -337,6 +338,36 @@ export default function PricesPage() {
                                   >
                                     <option>USD</option><option>CRC</option>
                                   </select>
+                                </div>
+                                {/* IVA toggle */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
+                                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 12, color: 'var(--muted)', userSelect: 'none' }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={!!prodV(prod, 'price_includes_tax')}
+                                      onChange={e => patchProd(prod.id, 'price_includes_tax', e.target.checked)}
+                                      style={{ width: 14, height: 14, accentColor: 'var(--accent)', cursor: 'pointer' }}
+                                    />
+                                    Precio incluye IVA
+                                  </label>
+                                  {!prodV(prod, 'price_includes_tax') && (
+                                    <span style={{
+                                      fontSize: 11, fontWeight: 600, color: '#92400E',
+                                      background: '#FEF3C7', border: '1px solid #FDE68A',
+                                      borderRadius: 4, padding: '2px 7px', letterSpacing: '0.02em',
+                                    }}>
+                                      +IVA {prodV(prod, 'tax_rate') ?? 13}%
+                                    </span>
+                                  )}
+                                  {prodV(prod, 'price_includes_tax') && (
+                                    <span style={{
+                                      fontSize: 11, fontWeight: 600, color: '#065F46',
+                                      background: '#D1FAE5', border: '1px solid #A7F3D0',
+                                      borderRadius: 4, padding: '2px 7px',
+                                    }}>
+                                      IVA incluido
+                                    </span>
+                                  )}
                                 </div>
                                 <div style={{ marginTop: 8 }}>
                                   <input
@@ -595,6 +626,22 @@ export default function PricesPage() {
                   <option>USD</option><option>CRC</option>
                 </select>
               </div>
+            </div>
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+                <input
+                  type="checkbox"
+                  checked={newProd.price_includes_tax}
+                  onChange={e => setNewProd(p => ({ ...p, price_includes_tax: e.target.checked }))}
+                  style={{ width: 14, height: 14, accentColor: 'var(--accent)', cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: 13, color: 'var(--text)' }}>Precio incluye IVA ({newProd.tax_rate}%)</span>
+                {!newProd.price_includes_tax && (
+                  <span style={{ fontSize: 11, fontWeight: 600, color: '#92400E', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 4, padding: '2px 7px' }}>
+                    +IVA
+                  </span>
+                )}
+              </label>
             </div>
             <div>
               <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Descripción</label>

@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server'
 // POST create a new price_item
 export async function POST(req: Request) {
   const BUSINESS_ID = await getBusinessId()
-  const { name, model_code, description, price, currency, category_id } = await req.json()
+  const { name, model_code, description, price, currency, category_id, price_includes_tax, tax_rate } = await req.json()
   const { data, error } = await supabaseAdmin()
     .from('price_items')
     .insert({
@@ -18,6 +18,8 @@ export async function POST(req: Request) {
       price: price ?? 0,
       currency: currency ?? 'USD',
       category_id: category_id ?? null,
+      price_includes_tax: price_includes_tax ?? false,
+      tax_rate: tax_rate ?? 13,
       active: true,
     })
     .select().single()
@@ -46,7 +48,7 @@ export async function GET() {
 // PATCH price_item fields
 export async function PATCH(req: Request) {
   const BUSINESS_ID = await getBusinessId()
-  const { id, price, name, description, prompt_snippet, product_keywords, assigned_team_id, assigned_user_id, image_url, category_id } = await req.json()
+  const { id, price, name, description, prompt_snippet, product_keywords, assigned_team_id, assigned_user_id, image_url, category_id, price_includes_tax, tax_rate } = await req.json()
   const updates: any = { updated_at: new Date().toISOString() }
   if (price !== undefined) updates.price = price
   if (name !== undefined) updates.name = name
@@ -61,6 +63,8 @@ export async function PATCH(req: Request) {
   if (assigned_user_id !== undefined) updates.assigned_user_id = assigned_user_id || null
   if (image_url !== undefined) updates.image_url = image_url || null
   if (category_id !== undefined) updates.category_id = category_id || null
+  if (price_includes_tax !== undefined) updates.price_includes_tax = price_includes_tax
+  if (tax_rate !== undefined) updates.tax_rate = tax_rate
   const { error } = await supabaseAdmin().from('price_items').update(updates).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
