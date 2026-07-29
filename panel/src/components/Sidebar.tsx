@@ -10,6 +10,9 @@ interface Business {
   name: string
   slug: string
   modules: Modules
+  accent_color?: string
+  logo_url?: string
+  open_count?: number
 }
 
 interface NavLink { href: string; label: string; icon: React.ReactNode }
@@ -139,6 +142,12 @@ export default function Sidebar() {
       .catch(() => null)
   }, [])
 
+  useEffect(() => {
+    if (business?.accent_color) {
+      document.documentElement.style.setProperty('--accent', business.accent_color)
+    }
+  }, [business?.accent_color])
+
   const modules = business?.modules ?? {}
   const nav = buildNav(modules)
 
@@ -171,11 +180,19 @@ export default function Sidebar() {
       <nav className={`sidebar ${open ? 'open' : ''}`}>
         {/* Brand */}
         <div style={{ padding: '16px 16px 14px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 36, height: 36, background: 'var(--accent)', borderRadius: 8,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 14, fontWeight: 800, color: '#fff', flexShrink: 0 }}>
-            {initials}
-          </div>
+          {business?.logo_url ? (
+            <img
+              src={business.logo_url}
+              alt={business.name}
+              style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
+            />
+          ) : (
+            <div style={{ width: 36, height: 36, background: 'var(--accent)', borderRadius: 8,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 14, fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+              {initials}
+            </div>
+          )}
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', letterSpacing: '-.2px' }}>
               {business?.name ?? '—'}
@@ -201,6 +218,16 @@ export default function Sidebar() {
                 >
                   <span style={{ opacity: isActive(link.href) ? 1 : 0.55 }}>{link.icon}</span>
                   {link.label}
+                  {link.href === '/conversations' && (business?.open_count ?? 0) > 0 && (
+                    <span style={{
+                      marginLeft: 'auto', minWidth: 18, height: 18, padding: '0 5px',
+                      background: 'var(--accent)', color: '#fff',
+                      borderRadius: 9, fontSize: 10, fontWeight: 700,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {(business?.open_count ?? 0) > 99 ? '99+' : business?.open_count}
+                    </span>
+                  )}
                 </Link>
               ))}
             </div>

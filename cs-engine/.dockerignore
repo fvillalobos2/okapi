@@ -1,0 +1,8 @@
+ngrok
+agent.log
+conversations.json
+.env
+.railway*
+*.pyc
+__pycache__
+.agents

@@ -14,6 +14,8 @@ interface BusinessData {
   agent_url: string
   panel_url: string
   admin_whatsapp: string
+  accent_color: string
+  logo_url: string
 }
 
 const TIMEZONES = [
@@ -145,6 +147,8 @@ export default function SettingsPage() {
         agent_url: data.agent_url,
         panel_url: data.panel_url,
         admin_whatsapp: data.admin_whatsapp,
+        accent_color: data.accent_color,
+        logo_url: data.logo_url,
       }
       const res = await fetch('/api/business', {
         method: 'PATCH',
@@ -287,6 +291,54 @@ export default function SettingsPage() {
             Método: <strong>HTTP POST</strong>.
           </p>
         </div>
+      </Section>
+
+      {/* Branding */}
+      <Section title="Branding del panel">
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)',
+            textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 5 }}>
+            Color principal
+          </label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <input
+              type="color"
+              value={data.accent_color ?? '#D91E2A'}
+              onChange={e => set('accent_color', e.target.value)}
+              style={{ width: 40, height: 36, border: '1px solid var(--border)', borderRadius: 7, padding: 2, cursor: 'pointer', background: 'none' }}
+            />
+            <input
+              type="text"
+              value={data.accent_color ?? ''}
+              onChange={e => set('accent_color', e.target.value)}
+              placeholder="#D91E2A"
+              style={{ width: 120, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 7,
+                fontSize: 13, fontFamily: 'monospace', color: 'var(--text)', background: 'var(--surface2)', outline: 'none' }}
+            />
+          </div>
+          <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
+            Color de énfasis del sidebar y botones. Se aplica en tiempo real.
+          </p>
+        </div>
+        <Field
+          label="URL del logo"
+          value={data.logo_url ?? ''}
+          onChange={v => set('logo_url', v)}
+          placeholder="https://example.com/logo.png"
+          hint="Imagen cuadrada recomendada (36×36 px o mayor). Se muestra en el sidebar en lugar de las iniciales."
+          mono
+        />
+        {data.logo_url && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+            <img
+              src={data.logo_url}
+              alt="Logo preview"
+              style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--border)' }}
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+            />
+            <span style={{ fontSize: 11, color: 'var(--muted)' }}>Vista previa</span>
+          </div>
+        )}
       </Section>
 
       {/* Domain / Panel URL */}
