@@ -32,13 +32,25 @@ async function getBusinessByHost(host: string) {
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
     })
     const [biz] = await res.json()
-    if (!biz) return null
-    const entry = { id: biz.id, admin_password: biz.admin_password ?? null, exp: now + 60_000 }
+    if (biz) {
+      const entry = { id: biz.id, admin_password: biz.admin_password ?? null, exp: now + 60_000 }
+      cache.set(host, entry)
+      return entry
+    }
+  } catch {
+    // fall through to env var fallback
+  }
+
+  // Railway URL fallback: if BUSINESS_ID is set, use it regardless of panel_url mismatch
+  const envId = process.env.BUSINESS_ID ?? ''
+  const envPwd = process.env.ADMIN_PASSWORD ?? null
+  if (envId) {
+    const entry = { id: envId, admin_password: envPwd, exp: now + 60_000 }
     cache.set(host, entry)
     return entry
-  } catch {
-    return null
   }
+
+  return null
 }
 
 export async function middleware(req: NextRequest) {
