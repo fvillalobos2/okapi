@@ -39,7 +39,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
   const { data: conversations } = await supabaseAdmin()
     .from('conversations')
-    .select('id, status, updated_at, history')
+    .select('id, status, updated_at, messages')
     .eq('lead_id', id)
     .order('updated_at', { ascending: false })
 
@@ -94,7 +94,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         {convs.length === 0 ? (
           <p style={{ color: 'var(--muted)', fontSize: 13 }}>Sin conversaciones registradas</p>
         ) : convs.map((c: any) => {
-          const msgs: any[] = Array.isArray(c.history) ? c.history : []
+          const msgs: any[] = Array.isArray(c.messages) ? c.messages : []
           const last = msgs[msgs.length - 1]
           return (
             <Link key={c.id} href={`/conversations/${c.id}`} style={{ display: 'block', textDecoration: 'none', padding: '12px 14px', borderRadius: 10, marginBottom: 8, border: '1px solid var(--border)', color: 'inherit' }}>

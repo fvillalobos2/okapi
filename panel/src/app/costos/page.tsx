@@ -35,26 +35,26 @@ async function getCostData() {
       .lt('created_at', monthStart),
   ])
 
-  // Estimate message counts from conversation count (history is JSONB)
-  // We'll use conversation history to count messages
+  // Estimate message counts from conversation count (messages is JSONB)
+  // We'll use conversation messages to count messages
   const { data: convRows } = await supabaseAdmin()
     .from('conversations')
-    .select('history')
+    .select('messages')
     .eq('business_id', BUSINESS_ID)
     .gte('created_at', monthStart)
 
   const { data: prevRows } = await supabaseAdmin()
     .from('conversations')
-    .select('history')
+    .select('messages')
     .eq('business_id', BUSINESS_ID)
     .gte('created_at', prevMonthStart)
     .lt('created_at', monthStart)
 
-  function countMessages(rows: { history: unknown }[] | null) {
+  function countMessages(rows: { messages: unknown }[] | null) {
     let out = 0; let inp = 0
     for (const r of rows ?? []) {
-      const history = Array.isArray(r.history) ? r.history as { role: string }[] : []
-      for (const m of history) {
+      const messages = Array.isArray(r.messages) ? r.messages as { role: string }[] : []
+      for (const m of messages) {
         if (m.role === 'assistant') out++
         else inp++
       }
