@@ -1,3 +1,4 @@
+import { getBusinessId } from '@/lib/getBusinessId'
 import { supabaseAdmin } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 

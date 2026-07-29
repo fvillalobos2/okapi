@@ -5,18 +5,18 @@ import { NextResponse } from 'next/server'
 
 const BASE = 'https://api.pipedrive.com/v1'
 
-async function getSettings() {
+async function getSettings(bid: string) {
   const { data } = await supabaseAdmin()
     .from('businesses')
     .select('settings')
-    .eq('id', BUSINESS_ID)
+    .eq('id', bid)
     .single()
   return (data?.settings ?? {}) as Record<string, unknown>
 }
 
 export async function GET() {
   const BUSINESS_ID = await getBusinessId()
-  const settings = await getSettings()
+  const settings = await getSettings(BUSINESS_ID)
   const token = (settings.pipedrive_api_token as string) || (process.env.PIPEDRIVE_API_TOKEN ?? '')
   if (!token) return NextResponse.json({ connected: false, error: 'No API token configured' })
 
@@ -55,7 +55,7 @@ export async function GET() {
 export async function PATCH(req: Request) {
   const BUSINESS_ID = await getBusinessId()
   const { pipedrive_api_token, pipedrive_pipeline_id, pipedrive_stage_id } = await req.json()
-  const settings = await getSettings()
+  const settings = await getSettings(BUSINESS_ID)
 
   if (pipedrive_api_token !== undefined) settings.pipedrive_api_token = pipedrive_api_token
   if (pipedrive_pipeline_id !== undefined) settings.pipedrive_pipeline_id = pipedrive_pipeline_id

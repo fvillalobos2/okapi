@@ -1,11 +1,12 @@
 export const dynamic = 'force-dynamic'
 import { supabaseAdmin } from '@/lib/supabase'
+import { getBusinessId } from '@/lib/getBusinessId'
 
-async function getStats() {
+async function getStats(bid: string) {
   const [leads, convs, prices] = await Promise.all([
-    supabaseAdmin().from('leads').select('status', { count: 'exact' }),
-    supabaseAdmin().from('conversations').select('status', { count: 'exact' }).eq('archived', false),
-    supabaseAdmin().from('price_items').select('id', { count: 'exact' }).eq('active', true),
+    supabaseAdmin().from('leads').select('status', { count: 'exact' }).eq('business_id', bid),
+    supabaseAdmin().from('conversations').select('status', { count: 'exact' }).eq('business_id', bid).eq('archived', false),
+    supabaseAdmin().from('price_items').select('id', { count: 'exact' }).eq('business_id', bid).eq('active', true),
   ])
 
   const leadRows: { status: string }[] = leads.data ?? []
@@ -23,13 +24,23 @@ async function getStats() {
   }
 }
 
-async function getRecentLeads() {
+async function getRecentLeads(bid: string) {
   const { data } = await supabaseAdmin()
     .from('leads')
     .select('id, phone, name, zone, product_interest, status, last_active_at')
+    .eq('business_id', bid)
     .order('last_active_at', { ascending: false })
     .limit(8)
   return data ?? []
+}
+
+async function getBusinessName(bid: string) {
+  const { data } = await supabaseAdmin()
+    .from('businesses')
+    .select('name')
+    .eq('id', bid)
+    .single()
+  return data?.name ?? ''
 }
 
 const statusLabel: Record<string, string> = {
@@ -47,15 +58,22 @@ function timeAgo(ts: string) {
 }
 
 export default async function DashboardPage() {
-  const [stats, recentLeads] = await Promise.all([getStats(), getRecentLeads()])
+  const bid = await getBusinessId()
+  const [stats, recentLeads, businessName] = await Promise.all([
+    getStats(bid),
+    getRecentLeads(bid),
+    getBusinessName(bid),
+  ])
 
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-.3px' }}>Dashboard</h1>
-        <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>
-          Acuarium Piscinas & Spas — PureSpas
-        </p>
+        {businessName && (
+          <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>
+            {businessName}
+          </p>
+        )}
       </div>
 
       {/* KPIs */}

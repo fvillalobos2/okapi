@@ -1,11 +1,13 @@
+import { getBusinessId } from '@/lib/getBusinessId'
 import { supabaseAdmin } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
+  const BUSINESS_ID = await getBusinessId()
   const { data, error } = await supabaseAdmin()
     .from('product_documents')
     .select('id, filename, file_url, created_at')
-    .eq('business_id', await getBusinessId())
+    .eq('business_id', BUSINESS_ID)
     .eq('doc_type', 'general')
     .order('created_at', { ascending: false })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

@@ -36,8 +36,8 @@ export async function GET() {
       .eq('business_id', BUSINESS_ID)
       .eq('status', 'open'),
   ])
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ ...data, open_count: count ?? 0 })
+  if (error || !data) return NextResponse.json({ error: error?.message ?? 'Not found' }, { status: 500 })
+  return NextResponse.json(Object.assign({}, data, { open_count: count ?? 0 }))
 }
 
 export async function PATCH(req: Request) {
