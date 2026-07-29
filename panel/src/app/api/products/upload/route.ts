@@ -29,11 +29,11 @@ export async function POST(req: Request) {
   const contentType = isPdf ? 'application/pdf' : 'text/plain'
   const path = `${businessId}/${pathKey}/${Date.now()}_${file.name}`
   const { error: upErr } = await supabaseAdmin().storage
-    .from('product-docs')
+    .from('product-pdfs')
     .upload(path, buffer, { contentType, upsert: true })
   if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 })
 
-  const { data: urlData } = supabaseAdmin().storage.from('product-docs').getPublicUrl(path)
+  const { data: urlData } = supabaseAdmin().storage.from('product-pdfs').getPublicUrl(path)
   const fileUrl = urlData.publicUrl
 
   let contentText = ''
