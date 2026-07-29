@@ -10,6 +10,7 @@ export async function GET() {
     supabaseAdmin()
       .from('prompt_versions')
       .select('*')
+      .eq('business_id', BUSINESS_ID)
       .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(1)

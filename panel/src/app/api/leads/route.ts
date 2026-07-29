@@ -1,7 +1,9 @@
+import { getBusinessId } from '@/lib/getBusinessId'
 import { supabaseAdmin } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
 export async function GET(req: Request) {
+  const BUSINESS_ID = await getBusinessId()
   const { searchParams } = new URL(req.url)
   const status = searchParams.get('status')
   const teamId = searchParams.get('team_id')
@@ -9,6 +11,7 @@ export async function GET(req: Request) {
   let q = supabaseAdmin()
     .from('leads')
     .select('*, teams(name,zone), users!assigned_to(name)')
+    .eq('business_id', BUSINESS_ID)
     .order('last_active_at', { ascending: false })
     .limit(500)
 

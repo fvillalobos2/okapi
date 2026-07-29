@@ -29,8 +29,8 @@ export async function POST(req: Request) {
 export async function GET() {
   const BUSINESS_ID = await getBusinessId()
   const [{ data: items }, { data: docs }] = await Promise.all([
-    supabaseAdmin().from('price_items').select('*').eq('active', true).order('sort_order'),
-    supabaseAdmin().from('product_documents').select('id, price_item_id, filename, file_url, created_at').order('created_at'),
+    supabaseAdmin().from('price_items').select('*').eq('business_id', BUSINESS_ID).eq('active', true).order('sort_order'),
+    supabaseAdmin().from('product_documents').select('id, price_item_id, filename, file_url, created_at').eq('business_id', BUSINESS_ID).order('created_at'),
   ])
   if (!items) return NextResponse.json([])
 
