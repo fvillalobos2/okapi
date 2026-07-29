@@ -109,6 +109,7 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
 
   const load = useCallback(async () => {
     const res = await fetch('/api/business')
@@ -334,25 +335,89 @@ export default function SettingsPage() {
             Color de énfasis del sidebar y botones. Se aplica en tiempo real.
           </p>
         </div>
-        <Field
-          label="URL del logo"
-          value={data.logo_url ?? ''}
-          onChange={v => set('logo_url', v)}
-          placeholder="https://example.com/logo.png"
-          hint="Imagen cuadrada recomendada (36×36 px o mayor). Se muestra en el sidebar en lugar de las iniciales."
-          mono
-        />
-        {data.logo_url && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
-            <img
-              src={data.logo_url}
-              alt="Logo preview"
-              style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--border)' }}
-              onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
-            />
-            <span style={{ fontSize: 11, color: 'var(--muted)' }}>Vista previa</span>
+
+        <div style={{ marginBottom: 8 }}>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)',
+            textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
+            Logo
+          </label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {data.logo_url ? (
+              <img
+                src={data.logo_url}
+                alt="Logo"
+                style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover', border: '1px solid var(--border)', flexShrink: 0 }}
+                onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+              />
+            ) : (
+              <div style={{
+                width: 52, height: 52, borderRadius: 10, background: 'var(--surface2)',
+                border: '2px dashed var(--border)', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', color: 'var(--muted)', fontSize: 20, flexShrink: 0,
+              }}>
+                🖼
+              </div>
+            )}
+            <div>
+              <label style={{
+                display: 'inline-block', padding: '7px 14px',
+                background: uploadingLogo ? 'var(--muted)' : 'var(--surface)',
+                border: '1px solid var(--border)', borderRadius: 7,
+                fontSize: 13, fontWeight: 600, cursor: uploadingLogo ? 'default' : 'pointer',
+                color: 'var(--text)',
+              }}>
+                {uploadingLogo ? 'Subiendo…' : 'Subir imagen'}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                  style={{ display: 'none' }}
+                  disabled={uploadingLogo}
+                  onChange={async e => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    setUploadingLogo(true)
+                    try {
+                      const form = new FormData()
+                      form.append('file', file)
+                      const res = await fetch('/api/business/logo', { method: 'POST', body: form })
+                      const json = await res.json()
+                      if (!res.ok) throw new Error(json.error ?? 'Error')
+                      setData(prev => ({ ...prev, logo_url: json.url }))
+                    } catch (err: unknown) {
+                      setError(err instanceof Error ? err.message : 'Error al subir logo')
+                    } finally {
+                      setUploadingLogo(false)
+                      e.target.value = ''
+                    }
+                  }}
+                />
+              </label>
+              {data.logo_url && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setData(prev => ({ ...prev, logo_url: '' }))
+                    await fetch('/api/business', {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ logo_url: '' }),
+                    })
+                  }}
+                  style={{
+                    marginLeft: 8, padding: '7px 12px', borderRadius: 7,
+                    border: '1px solid var(--border)', background: 'none',
+                    fontSize: 13, color: 'var(--danger)', cursor: 'pointer',
+                  }}
+                >
+                  Quitar
+                </button>
+              )}
+              <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>
+                PNG, JPG o SVG. Máx 2 MB. Se muestra en el sidebar.
+              </p>
+            </div>
           </div>
-        )}
+        </div>
       </Section>
 
       {/* Domain / Panel URL */}
