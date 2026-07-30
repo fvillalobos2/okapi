@@ -209,7 +209,7 @@ def append_message(phone: str, role: str, content: str, business_id: Optional[st
     b = _bid(business_id)
     if not b:
         return
-    now = datetime.utcnow().isoformat()
+    now = datetime.utcnow().isoformat() + 'Z'
     new_msg = {'role': role, 'content': content, 'ts': now}
     try:
         lead_id = _get_or_create_lead(phone, b)

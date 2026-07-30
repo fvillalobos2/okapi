@@ -3,13 +3,17 @@ import { useEffect, useRef, useState } from 'react'
 
 type Msg = { role: 'user' | 'assistant'; content: string; ts?: string }
 
+function toUtc(ts: string) {
+  // cs-engine stores datetime.utcnow().isoformat() — no Z suffix → JS misreads as local
+  return ts.endsWith('Z') || ts.includes('+') ? ts : ts + 'Z'
+}
 function timeLabel(ts?: string) {
   if (!ts) return ''
-  return new Date(ts).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })
+  return new Date(toUtc(ts)).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })
 }
 function dayLabel(ts?: string) {
   if (!ts) return ''
-  return new Date(ts).toLocaleDateString('es-CR', { weekday: 'long', day: 'numeric', month: 'long' })
+  return new Date(toUtc(ts)).toLocaleDateString('es-CR', { weekday: 'long', day: 'numeric', month: 'long' })
 }
 
 export default function MessageThreadLive({

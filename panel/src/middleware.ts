@@ -41,10 +41,11 @@ async function getBusinessByHost(host: string) {
     // fall through to env var fallback
   }
 
-  // Railway URL fallback: if BUSINESS_ID is set, use it regardless of panel_url mismatch
+  // Railway subdomain fallback only — NEVER cache env-var result for custom domains.
+  // Caching Innova's BUSINESS_ID under agent.acuarium.com would leak cross-business data.
   const envId = process.env.BUSINESS_ID ?? ''
   const envPwd = process.env.ADMIN_PASSWORD ?? null
-  if (envId) {
+  if (envId && host.includes('railway.app')) {
     const entry = { id: envId, admin_password: envPwd, exp: now + 60_000 }
     cache.set(host, entry)
     return entry
