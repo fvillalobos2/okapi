@@ -77,6 +77,12 @@ TWILIO_AUTH_TOKEN  = os.getenv('TWILIO_AUTH_TOKEN')
 TWILIO_WA_NUMBER   = os.getenv('TWILIO_WA_NUMBER')
 ANTHROPIC_API_KEY  = os.getenv('ANTHROPIC_API_KEY')
 
+# Meta Cloud API — global fallbacks (overridden per-business from DB)
+META_ACCESS_TOKEN    = os.getenv('META_ACCESS_TOKEN', '')
+META_PHONE_NUMBER_ID = os.getenv('META_PHONE_NUMBER_ID', '')
+META_APP_SECRET      = os.getenv('META_APP_SECRET', '')
+META_VERIFY_TOKEN    = os.getenv('META_VERIFY_TOKEN', 'okapi_meta_webhook')
+
 # Env-var provider fallback (used if DB lookup fails)
 PROVIDERS = json.loads(os.getenv('PROVIDERS', '{}'))
 
@@ -543,6 +549,12 @@ def update_lead_contact_info(from_number: str, business_id: Optional[str] = None
             messages=[{'role': 'user', 'content': transcript}],
         )
         raw = resp.content[0].text.strip()
+        # Strip markdown code fences if Claude wrapped the JSON
+        if raw.startswith('```'):
+            raw = re.sub(r'^```(?:json)?\s*', '', raw)
+            raw = re.sub(r'\s*```$', '', raw).strip()
+        if not raw:
+            return
         parsed = json.loads(raw)
         fields = {k: v for k, v in parsed.items() if v and k in ('name', 'email')}
         if fields:
@@ -787,18 +799,75 @@ def human_delay(text: str) -> float:
     base = min(max(len(text) / 50, 1.5), 7.0)
     return base + random.uniform(-0.4, 0.4)
 
+def _get_meta_config(business: Optional[dict] = None) -> tuple[str, str]:
+    """Return (access_token, phone_number_id) for Meta Cloud API."""
+    biz = business or {}
+    token = biz.get('meta_access_token') or META_ACCESS_TOKEN
+    phone_id = biz.get('meta_phone_number_id') or META_PHONE_NUMBER_ID
+    return token, phone_id
+
+def _is_meta_business(business: Optional[dict] = None) -> bool:
+    """True if this business is configured to use Meta Cloud API instead of Twilio."""
+    token, phone_id = _get_meta_config(business)
+    return bool(token and phone_id)
+
+def _normalize_to_meta(number: str) -> str:
+    """Convert whatsapp:+506XXXXXXXX → 506XXXXXXXX (Meta format)."""
+    n = number.replace('whatsapp:', '').replace('+', '').strip()
+    return n
+
+def _send_meta_message(to: str, body: str, access_token: str, phone_number_id: str,
+                       media_url: Optional[str] = None):
+    """Send a message via Meta Cloud API."""
+    import hmac as _hmac
+    url = f'https://graph.facebook.com/v19.0/{phone_number_id}/messages'
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json',
+    }
+    recipient = _normalize_to_meta(to)
+    if media_url:
+        payload = {
+            'messaging_product': 'whatsapp',
+            'to': recipient,
+            'type': 'image',
+            'image': {'link': media_url, 'caption': body or ''},
+        }
+    else:
+        payload = {
+            'messaging_product': 'whatsapp',
+            'to': recipient,
+            'type': 'text',
+            'text': {'body': body, 'preview_url': False},
+        }
+    data = json.dumps(payload).encode()
+    req = urllib.request.Request(url, data=data,
+                                  headers={k: v for k, v in headers.items()},
+                                  method='POST')
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        return json.loads(resp.read())
+
+
 def send_whatsapp(to: str, body: str, sender: Optional[str] = None,
                   business: Optional[dict] = None, delay: float = 0,
                   media_url: Optional[str] = None):
     if delay > 0:
         time.sleep(delay)
+    suffix = ' [img]' if media_url else ''
+    if _is_meta_business(business):
+        access_token, phone_number_id = _get_meta_config(business)
+        try:
+            _send_meta_message(to, body, access_token, phone_number_id, media_url)
+            print(f'  → [meta] {to}: {body[:80]}{suffix}', flush=True)
+        except Exception as e:
+            print(f'  ✗ Failed to send to {to} via Meta: {e}', flush=True)
+        return
     effective_sender = sender or TWILIO_WA_NUMBER
     try:
         kwargs = dict(from_=effective_sender, to=to, body=body)
         if media_url:
             kwargs['media_url'] = [media_url]
         get_twilio_client(business).messages.create(**kwargs)
-        suffix = f' [img]' if media_url else ''
         print(f'  → {to}: {body[:80]}{suffix}', flush=True)
     except Exception as e:
         print(f'  ✗ Failed to send to {to}: {e}', flush=True)
@@ -1555,6 +1624,95 @@ def webhook_tenant(slug: str):
         for url in img_urls:
             send_whatsapp(from_number, '', sender, business, delay=0.5, media_url=url)
     return str(resp)
+
+
+@app.route('/webhook/meta/<slug>', methods=['GET'])
+def webhook_meta_verify(slug: str):
+    """Meta webhook verification — responds to hub.challenge."""
+    business = store.get_business_by_slug(slug)
+    if not business:
+        return 'Business not found', 404
+    verify_token = business.get('meta_verify_token') or META_VERIFY_TOKEN
+    mode      = request.args.get('hub.mode')
+    token     = request.args.get('hub.verify_token')
+    challenge = request.args.get('hub.challenge')
+    if mode == 'subscribe' and token == verify_token:
+        print(f'  ✓ Meta webhook verified for [{slug}]', flush=True)
+        return challenge, 200
+    print(f'  ✗ Meta webhook verify failed for [{slug}]: token mismatch', flush=True)
+    return 'Forbidden', 403
+
+
+@app.route('/webhook/meta/<slug>', methods=['POST'])
+@limiter.limit('60 per minute')
+def webhook_meta(slug: str):
+    """Meta Cloud API inbound webhook — handles WhatsApp messages."""
+    business = store.get_business_by_slug(slug)
+    if not business:
+        return 'Business not found', 404
+
+    # Signature verification using app secret
+    app_secret = business.get('meta_app_secret') or META_APP_SECRET
+    if app_secret:
+        import hmac, hashlib
+        sig_header = request.headers.get('X-Hub-Signature-256', '')
+        expected   = 'sha256=' + hmac.new(
+            app_secret.encode(), request.data, hashlib.sha256
+        ).hexdigest()
+        if not hmac.compare_digest(expected, sig_header):
+            print(f'  ✗ Meta sig fail for [{slug}]', flush=True)
+            return 'Forbidden', 403
+
+    payload = request.get_json(silent=True) or {}
+    # Extract message from Meta's nested payload
+    try:
+        entry   = payload.get('entry', [{}])[0]
+        change  = entry.get('changes', [{}])[0].get('value', {})
+        msgs    = change.get('messages', [])
+        if not msgs:
+            return '', 200  # status update / delivery receipt — ignore
+        msg     = msgs[0]
+        if msg.get('type') != 'text':
+            return '', 200  # ignore non-text for now
+        from_number = '+' + msg['from']  # Meta gives digits only, add +
+        body        = msg['text']['body'].strip()
+        if not body:
+            return '', 200
+    except (KeyError, IndexError):
+        return '', 200
+
+    print(f'  ← [meta/{slug}] {from_number}: {body[:80]}', flush=True)
+
+    human_mode = (business.get('settings') or {}).get('human_mode', False)
+
+    if human_mode:
+        biz_copy = business
+
+        def _process_and_send():
+            try:
+                reply = handle_inbound(from_number, body, biz_copy)
+                if reply:
+                    clean_reply, img_urls = extract_image_markers(reply, biz_copy)
+                    send_whatsapp(from_number, clean_reply or reply, None, biz_copy,
+                                  delay=human_delay(reply))
+                    for url in img_urls:
+                        send_whatsapp(from_number, '', None, biz_copy,
+                                      delay=0.5, media_url=url)
+            except Exception as exc:
+                import traceback
+                print(f'  ✗ Thread error [meta/{biz_copy.get("slug")}]: {exc}', flush=True)
+                traceback.print_exc()
+
+        threading.Thread(target=_process_and_send, daemon=True).start()
+        return '', 200
+
+    reply = handle_inbound(from_number, body, business)
+    if reply:
+        clean_reply, img_urls = extract_image_markers(reply, business)
+        send_whatsapp(from_number, clean_reply or reply, None, business)
+        for url in img_urls:
+            send_whatsapp(from_number, '', None, business, delay=0.5, media_url=url)
+    return '', 200
 
 
 @app.route('/payment-confirmed', methods=['GET'])
