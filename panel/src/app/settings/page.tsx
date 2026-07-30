@@ -17,6 +17,7 @@ interface BusinessData {
   accent_color: string
   logo_url: string
   admin_password: string
+  settings: Record<string, unknown>
 }
 
 const TIMEZONES = [
@@ -124,6 +125,11 @@ export default function SettingsPage() {
     setSaved(false)
   }
 
+  function setSetting(key: string, value: unknown) {
+    setData(prev => ({ ...prev, settings: { ...(prev.settings ?? {}), [key]: value } }))
+    setSaved(false)
+  }
+
   const webhookUrl = data.agent_url && data.slug
     ? `${data.agent_url.replace(/\/$/, '')}/webhook/${data.slug}`
     : '— configura Agent URL y slug primero —'
@@ -139,7 +145,7 @@ export default function SettingsPage() {
     setSaving(true)
     setError('')
     try {
-      const payload: Record<string, string | undefined> = {
+      const payload: Record<string, unknown> = {
         name: data.name,
         timezone: data.timezone,
         whatsapp_number: data.whatsapp_number,
@@ -151,6 +157,7 @@ export default function SettingsPage() {
         admin_whatsapp: data.admin_whatsapp,
         accent_color: data.accent_color,
         logo_url: data.logo_url,
+        settings: data.settings ?? {},
         ...(data.admin_password ? { admin_password: data.admin_password } : {}),
       }
       const res = await fetch('/api/business', {
@@ -417,6 +424,30 @@ export default function SettingsPage() {
               </p>
             </div>
           </div>
+        </div>
+      </Section>
+
+      {/* Agent behaviour */}
+      <Section title="Comportamiento del agente">
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 3 }}>
+              Modo humano
+            </p>
+            <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5 }}>
+              Sin emojis. Texto plano natural, como una persona real en WhatsApp.
+              El agente también pide confirmación antes de cotizar algo fuera de catálogo.
+              Los mensajes se envían con un delay proporcional a su largo.
+            </p>
+          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 0, cursor: 'pointer', flexShrink: 0 }}>
+            <input
+              type="checkbox"
+              checked={!!(data.settings?.human_mode)}
+              onChange={e => setSetting('human_mode', e.target.checked)}
+              style={{ width: 16, height: 16, cursor: 'pointer' }}
+            />
+          </label>
         </div>
       </Section>
 
