@@ -8,7 +8,9 @@ print(f"[startup] Python {sys.version}", flush=True)
 import base64
 import json
 import os
+import random
 import re
+import threading
 import time
 import urllib.request
 import urllib.error
@@ -56,6 +58,8 @@ def after_hours_note(business: Optional[dict] = None, language: str = 'en') -> s
 import anthropic
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, Response, session, redirect, url_for
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from twilio.request_validator import RequestValidator
 from twilio.rest import Client
 from twilio.twiml.messaging_response import MessagingResponse
@@ -115,6 +119,13 @@ claude_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 app           = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', os.urandom(24))
 
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=[],          # no global limit — apply per route
+    storage_uri='memory://',
+)
+
 # ─── SYSTEM PROMPT ───────────────────────────────────────────────────────────
 
 def _load_prompt():
@@ -150,6 +161,18 @@ def get_system_prompt(business: Optional[dict] = None, product_interest: Optiona
         db_prompt = store.get_active_prompt(business.get('id'))
         if db_prompt:
             base = db_prompt
+
+    # Human mode: prepend communication rules that override everything else
+    if business and (business.get('settings') or {}).get('human_mode'):
+        base = (
+            "REGLAS DE COMUNICACIÓN (obligatorias, sin excepciones):\n"
+            "- No uses emojis en ningún mensaje. Cero emojis.\n"
+            "- Escribe como un humano real en WhatsApp: texto plano, natural, conversacional.\n"
+            "- Sin asteriscos, sin markdown, sin negritas, sin listas con guiones.\n"
+            "- Si alguien consulta algo que no está en tu catálogo, describe un producto que no "
+            "reconocés, o pide algo fuera de lo normal, no cotices ni confirmes nada — primero "
+            "preguntá con precisión qué necesita exactamente antes de continuar.\n\n"
+        ) + base
 
     # Inject general business documents (guides, analyses) into every conversation
     if business:
@@ -759,12 +782,19 @@ def release_contact_info_to_provider(provider_number: str, full_booking: str,
     except Exception as e:
         print(f'  ✗ Failed to release contact info: {e}')
 
+def human_delay(text: str) -> float:
+    """Typing delay proportional to message length, capped at 7s with ±0.4s jitter."""
+    base = min(max(len(text) / 50, 1.5), 7.0)
+    return base + random.uniform(-0.4, 0.4)
+
 def send_whatsapp(to: str, body: str, sender: Optional[str] = None,
-                  business: Optional[dict] = None):
+                  business: Optional[dict] = None, delay: float = 0):
+    if delay > 0:
+        time.sleep(delay)
     effective_sender = sender or TWILIO_WA_NUMBER
     try:
         get_twilio_client(business).messages.create(from_=effective_sender, to=to, body=body)
-        print(f'  → {to}: {body[:80]}')
+        print(f'  → {to}: {body[:80]}', flush=True)
     except Exception as e:
         print(f'  ✗ Failed to send to {to}: {e}')
 
@@ -1404,6 +1434,7 @@ def _validate_twilio(webhook_path: str, business: Optional[dict] = None) -> bool
     return result
 
 @app.route('/webhook', methods=['POST'])
+@limiter.limit('60 per minute')
 def webhook():
     """Legacy single-tenant webhook — slug configured via DEFAULT_BUSINESS_SLUG env var."""
     if not DEFAULT_BUSINESS_SLUG:
@@ -1440,6 +1471,7 @@ def webhook():
 
 
 @app.route('/webhook/<slug>', methods=['POST'])
+@limiter.limit('60 per minute')
 def webhook_tenant(slug: str):
     """Multi-tenant webhook — routes by business slug."""
     # Load business first so we can validate with its own Twilio auth token.
@@ -1467,8 +1499,27 @@ def webhook_tenant(slug: str):
     if referral.get('source_type'):
         print(f'  📢 [{slug}] Referral: {referral["source_type"]} — {referral["headline"][:60]}')
 
-    reply = handle_inbound(from_number, body, business, referral=referral)
+    human_mode = (business.get('settings') or {}).get('human_mode', False)
 
+    if human_mode:
+        sender = business.get('twilio_sender') or TWILIO_WA_NUMBER
+        biz_copy = business  # closure capture
+
+        def _process_and_send():
+            try:
+                reply = handle_inbound(from_number, body, biz_copy, referral=referral)
+                if reply:
+                    send_whatsapp(from_number, reply, sender, biz_copy,
+                                  delay=human_delay(reply))
+            except Exception as exc:
+                import traceback
+                print(f'  ✗ Thread error [{biz_copy.get("slug")}]: {exc}', flush=True)
+                traceback.print_exc()
+
+        threading.Thread(target=_process_and_send, daemon=True).start()
+        return '', 204
+
+    reply = handle_inbound(from_number, body, business, referral=referral)
     resp = MessagingResponse()
     if reply:
         resp.message(reply)
