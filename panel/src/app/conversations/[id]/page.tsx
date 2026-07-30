@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ConversationActions from './ConversationActions'
+import MessageThreadLive from '@/components/MessageThreadLive'
 
 type Msg = { role: 'user' | 'assistant'; content: string; ts?: string }
 
@@ -10,14 +11,6 @@ const STATUS_LABEL: Record<string, string> = {
   open: 'Abierta', assigned: 'Asignada', resolved: 'Resuelta', archived: 'Archivada',
 }
 
-function timeLabel(ts?: string) {
-  if (!ts) return ''
-  return new Date(ts).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })
-}
-function dayLabel(ts?: string) {
-  if (!ts) return ''
-  return new Date(ts).toLocaleDateString('es-CR', { weekday: 'long', day: 'numeric', month: 'long' })
-}
 function fmt(ts?: string | null) {
   if (!ts) return '—'
   return new Date(ts).toLocaleString('es-CR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
@@ -34,7 +27,6 @@ export default async function ConversationDetailPage({ params }: { params: Promi
 
   if (!conv || error) notFound()
 
-  // Load lead separately to avoid FK join issues
   const { data: lead } = conv.lead_id
     ? await supabaseAdmin().from('leads').select('*').eq('id', conv.lead_id).single()
     : { data: null }
@@ -45,8 +37,6 @@ export default async function ConversationDetailPage({ params }: { params: Promi
 
   const messages: Msg[] = Array.isArray(conv.messages) ? conv.messages : []
   const phone = conv.phone.replace('whatsapp:', '')
-
-  let lastDay = ''
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -61,9 +51,7 @@ export default async function ConversationDetailPage({ params }: { params: Promi
         </Link>
         <span style={{ color: 'var(--border)' }}>/</span>
         <div style={{ flex: 1 }}>
-          <p style={{ fontWeight: 600, fontSize: 14, margin: 0 }}>
-            {lead?.name || phone}
-          </p>
+          <p style={{ fontWeight: 600, fontSize: 14, margin: 0 }}>{lead?.name || phone}</p>
           {lead?.name && <p style={{ fontSize: 11, color: 'var(--muted)', margin: '1px 0 0' }}>{phone}</p>}
         </div>
         <span style={{
@@ -78,57 +66,14 @@ export default async function ConversationDetailPage({ params }: { params: Promi
       {/* Body */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
-        {/* Chat */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px 32px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {messages.length === 0 ? (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)', fontSize: 13 }}>
-              Sin mensajes registrados
-            </div>
-          ) : messages.map((m, i) => {
-            const isOut = m.role === 'assistant'
-            const day = m.ts ? m.ts.slice(0, 10) : ''
-            const showDay = day && day !== lastDay
-            if (day) lastDay = day
-
-            return (
-              <div key={i}>
-                {showDay && (
-                  <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--muted)', margin: '12px 0 8px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-                    {dayLabel(m.ts)}
-                    <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-                  </div>
-                )}
-                <div style={{ display: 'flex', justifyContent: isOut ? 'flex-end' : 'flex-start' }}>
-                  <div style={{
-                    maxWidth: '70%', padding: '9px 13px', borderRadius: 16,
-                    fontSize: 13.5, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                    background: isOut ? '#D91E2A' : 'var(--surface)',
-                    color: isOut ? '#fff' : 'var(--text)',
-                    borderBottomRightRadius: isOut ? 3 : 16,
-                    borderBottomLeftRadius: isOut ? 16 : 3,
-                    border: isOut ? 'none' : '1px solid var(--border)',
-                    boxShadow: '0 1px 2px rgba(0,0,0,.06)',
-                  }}>
-                    {m.content}
-                    {m.ts && (
-                      <div style={{ fontSize: 10, opacity: 0.5, marginTop: 5, textAlign: isOut ? 'right' : 'left' }}>
-                        {timeLabel(m.ts)}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
+        {/* Chat — client component with live polling */}
+        <MessageThreadLive convId={conv.id} initial={messages} />
 
         {/* Side panel */}
         <div style={{
           width: 260, borderLeft: '1px solid var(--border)', background: 'var(--surface)',
           overflowY: 'auto', flexShrink: 0, display: 'flex', flexDirection: 'column',
         }}>
-          {/* Contact info */}
           <div style={{ padding: '20px 16px', borderBottom: '1px solid var(--border)' }}>
             <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--muted)', marginBottom: 12 }}>
               Contacto
@@ -157,7 +102,6 @@ export default async function ConversationDetailPage({ params }: { params: Promi
             )}
           </div>
 
-          {/* Actions (resolve, summary, manual send) */}
           <ConversationActions id={conv.id} initialStatus={conv.status} />
         </div>
       </div>
