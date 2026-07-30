@@ -788,15 +788,38 @@ def human_delay(text: str) -> float:
     return base + random.uniform(-0.4, 0.4)
 
 def send_whatsapp(to: str, body: str, sender: Optional[str] = None,
-                  business: Optional[dict] = None, delay: float = 0):
+                  business: Optional[dict] = None, delay: float = 0,
+                  media_url: Optional[str] = None):
     if delay > 0:
         time.sleep(delay)
     effective_sender = sender or TWILIO_WA_NUMBER
     try:
-        get_twilio_client(business).messages.create(from_=effective_sender, to=to, body=body)
-        print(f'  → {to}: {body[:80]}', flush=True)
+        kwargs = dict(from_=effective_sender, to=to, body=body)
+        if media_url:
+            kwargs['media_url'] = [media_url]
+        get_twilio_client(business).messages.create(**kwargs)
+        suffix = f' [img]' if media_url else ''
+        print(f'  → {to}: {body[:80]}{suffix}', flush=True)
     except Exception as e:
-        print(f'  ✗ Failed to send to {to}: {e}')
+        print(f'  ✗ Failed to send to {to}: {e}', flush=True)
+
+
+def extract_image_markers(text: str, business: Optional[dict] = None) -> tuple[str, list[str]]:
+    """Extract [SEND_IMAGE: model] markers from AI reply. Returns (clean_text, [image_urls])."""
+    import re
+    image_map = store.get_product_images(business.get('id') if business else None)
+    urls = []
+    def replacer(m):
+        key = m.group(1).strip().lower()
+        # Try exact match first, then partial
+        url = image_map.get(key)
+        if not url:
+            url = next((v for k, v in image_map.items() if key in k or k in key), None)
+        if url:
+            urls.append(url)
+        return ''
+    clean = re.sub(r'\[SEND_IMAGE:\s*([^\]]+)\]', replacer, text).strip()
+    return clean, urls
 
 def alert_admin(message: str, sender: Optional[str] = None):
     if ADMIN_WA:
@@ -1509,8 +1532,12 @@ def webhook_tenant(slug: str):
             try:
                 reply = handle_inbound(from_number, body, biz_copy, referral=referral)
                 if reply:
-                    send_whatsapp(from_number, reply, sender, biz_copy,
+                    clean_reply, img_urls = extract_image_markers(reply, biz_copy)
+                    send_whatsapp(from_number, clean_reply or reply, sender, biz_copy,
                                   delay=human_delay(reply))
+                    for url in img_urls:
+                        send_whatsapp(from_number, '', sender, biz_copy,
+                                      delay=0.5, media_url=url)
             except Exception as exc:
                 import traceback
                 print(f'  ✗ Thread error [{biz_copy.get("slug")}]: {exc}', flush=True)
@@ -1522,7 +1549,11 @@ def webhook_tenant(slug: str):
     reply = handle_inbound(from_number, body, business, referral=referral)
     resp = MessagingResponse()
     if reply:
-        resp.message(reply)
+        clean_reply, img_urls = extract_image_markers(reply, business)
+        resp.message(clean_reply or reply)
+        sender = business.get('twilio_sender') or TWILIO_WA_NUMBER
+        for url in img_urls:
+            send_whatsapp(from_number, '', sender, business, delay=0.5, media_url=url)
     return str(resp)
 
 

@@ -845,6 +845,20 @@ def get_active_prompt(business_id: Optional[str] = None) -> Optional[str]:
         return None
 
 
+def get_product_images(business_id: Optional[str] = None) -> dict:
+    """Return {name_lower: image_url} for all price_items with an image."""
+    b = _bid(business_id)
+    if not b:
+        return {}
+    try:
+        r = _sb().table('price_items').select('name,image_url') \
+            .eq('business_id', b).not_.is_('image_url', 'null').execute()
+        return {row['name'].lower(): row['image_url'] for row in (r.data or []) if row.get('image_url')}
+    except Exception as e:
+        print(f'  ⚠ get_product_images: {e}')
+        return {}
+
+
 def get_categories_keywords(business_id: Optional[str] = None) -> list:
     """Return [{id, name, product_keywords}] for all categories of a business."""
     b = _bid(business_id)
