@@ -1626,61 +1626,59 @@ def webhook_tenant(slug: str):
     return str(resp)
 
 
-@app.route('/webhook/meta/<slug>', methods=['GET'])
-def webhook_meta_verify(slug: str):
-    """Meta webhook verification — responds to hub.challenge."""
-    business = store.get_business_by_slug(slug)
-    if not business:
-        return 'Business not found', 404
-    verify_token = business.get('meta_verify_token') or META_VERIFY_TOKEN
+@app.route('/webhook/meta', methods=['GET'])
+def webhook_meta_verify():
+    """Meta webhook verification — single endpoint for all businesses."""
     mode      = request.args.get('hub.mode')
     token     = request.args.get('hub.verify_token')
     challenge = request.args.get('hub.challenge')
-    if mode == 'subscribe' and token == verify_token:
-        print(f'  ✓ Meta webhook verified for [{slug}]', flush=True)
+    if mode == 'subscribe' and token == META_VERIFY_TOKEN:
+        print('  ✓ Meta webhook verified', flush=True)
         return challenge, 200
-    print(f'  ✗ Meta webhook verify failed for [{slug}]: token mismatch', flush=True)
+    print(f'  ✗ Meta webhook verify failed: token mismatch', flush=True)
     return 'Forbidden', 403
 
 
-@app.route('/webhook/meta/<slug>', methods=['POST'])
-@limiter.limit('60 per minute')
-def webhook_meta(slug: str):
-    """Meta Cloud API inbound webhook — handles WhatsApp messages."""
-    business = store.get_business_by_slug(slug)
-    if not business:
-        return 'Business not found', 404
-
+@app.route('/webhook/meta', methods=['POST'])
+@limiter.limit('120 per minute')
+def webhook_meta():
+    """Meta Cloud API inbound webhook — routes by phone_number_id."""
     # Signature verification using app secret
-    app_secret = business.get('meta_app_secret') or META_APP_SECRET
-    if app_secret:
+    if META_APP_SECRET:
         import hmac, hashlib
         sig_header = request.headers.get('X-Hub-Signature-256', '')
         expected   = 'sha256=' + hmac.new(
-            app_secret.encode(), request.data, hashlib.sha256
+            META_APP_SECRET.encode(), request.data, hashlib.sha256
         ).hexdigest()
         if not hmac.compare_digest(expected, sig_header):
-            print(f'  ✗ Meta sig fail for [{slug}]', flush=True)
+            print('  ✗ Meta sig fail', flush=True)
             return 'Forbidden', 403
 
     payload = request.get_json(silent=True) or {}
-    # Extract message from Meta's nested payload
     try:
-        entry   = payload.get('entry', [{}])[0]
-        change  = entry.get('changes', [{}])[0].get('value', {})
-        msgs    = change.get('messages', [])
+        entry        = payload.get('entry', [{}])[0]
+        change       = entry.get('changes', [{}])[0].get('value', {})
+        phone_num_id = change.get('metadata', {}).get('phone_number_id', '')
+        msgs         = change.get('messages', [])
         if not msgs:
             return '', 200  # status update / delivery receipt — ignore
-        msg     = msgs[0]
+        msg  = msgs[0]
         if msg.get('type') != 'text':
             return '', 200  # ignore non-text for now
-        from_number = '+' + msg['from']  # Meta gives digits only, add +
+        from_number = '+' + msg['from']
         body        = msg['text']['body'].strip()
         if not body:
             return '', 200
     except (KeyError, IndexError):
         return '', 200
 
+    # Route to the right business by phone_number_id
+    business = store.get_business_by_meta_phone_number_id(phone_num_id)
+    if not business:
+        print(f'  ✗ No business found for meta phone_number_id={phone_num_id}', flush=True)
+        return '', 200
+
+    slug = business.get('slug', '?')
     print(f'  ← [meta/{slug}] {from_number}: {body[:80]}', flush=True)
 
     human_mode = (business.get('settings') or {}).get('human_mode', False)

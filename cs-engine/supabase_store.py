@@ -63,6 +63,15 @@ def get_business_by_slug(slug: str) -> Optional[dict]:
         return None
 
 
+def get_business_by_meta_phone_number_id(phone_number_id: str) -> Optional[dict]:
+    try:
+        r = _sb().table('businesses').select('*').eq('meta_phone_number_id', phone_number_id).eq('active', True).limit(1).execute()
+        return r.data[0] if r.data else None
+    except Exception as e:
+        print(f'  ⚠ get_business_by_meta_phone_number_id({phone_number_id}): {e}')
+        return None
+
+
 def get_all_businesses() -> list:
     try:
         r = _sb().table('businesses').select('*').order('name').execute()
