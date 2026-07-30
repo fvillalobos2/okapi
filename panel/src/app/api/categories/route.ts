@@ -10,9 +10,9 @@ export async function GET() {
     supabaseAdmin().from('product_categories')
       .select('*').eq('business_id', BUSINESS_ID).order('sort_order'),
     supabaseAdmin().from('price_items')
-      .select('*').eq('active', true).order('sort_order'),
+      .select('*').eq('business_id', BUSINESS_ID).eq('active', true).order('sort_order'),
     supabaseAdmin().from('product_documents')
-      .select('id, category_id, price_item_id, filename, file_url, created_at').order('created_at'),
+      .select('id, category_id, price_item_id, filename, file_url, created_at').eq('business_id', BUSINESS_ID).order('created_at'),
   ])
 
   const cats = catRes.data ?? []

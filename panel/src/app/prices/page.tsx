@@ -42,6 +42,7 @@ export default function PricesPage() {
   const [uploadingProdPdf, setUploadingProdPdf] = useState<string | null>(null)
   const [uploadingProdImg, setUploadingProdImg] = useState<string | null>(null)
   const [expandedProdMedia, setExpandedProdMedia] = useState<string | null>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
   const [newCatName, setNewCatName] = useState('')
   const [creatingCat, setCreatingCat] = useState(false)
@@ -139,24 +140,34 @@ export default function PricesPage() {
 
   async function uploadPdf(catId: string, file: File) {
     setUploading(catId)
+    setUploadError(null)
     const form = new FormData()
     form.append('file', file)
     form.append('category_id', catId)
-
-    await fetch('/api/products/upload', { method: 'POST', body: form })
+    const res = await fetch('/api/products/upload', { method: 'POST', body: form })
     setUploading(null)
-    load()
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      setUploadError(body.error ?? `Error ${res.status} al subir el PDF`)
+    } else {
+      load()
+    }
   }
 
   async function uploadImg(catId: string, file: File) {
     setUploadingImg(catId)
+    setUploadError(null)
     const form = new FormData()
     form.append('file', file)
     form.append('category_id', catId)
-
-    await fetch('/api/products/image', { method: 'POST', body: form })
+    const res = await fetch('/api/products/image', { method: 'POST', body: form })
     setUploadingImg(null)
-    load()
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      setUploadError(body.error ?? `Error ${res.status} al subir la imagen`)
+    } else {
+      load()
+    }
   }
 
   async function deleteImg(catId: string) {
@@ -170,24 +181,34 @@ export default function PricesPage() {
 
   async function uploadProdPdf(prodId: string, file: File) {
     setUploadingProdPdf(prodId)
+    setUploadError(null)
     const form = new FormData()
     form.append('file', file)
     form.append('price_item_id', prodId)
-
-    await fetch('/api/products/upload', { method: 'POST', body: form })
+    const res = await fetch('/api/products/upload', { method: 'POST', body: form })
     setUploadingProdPdf(null)
-    load()
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      setUploadError(body.error ?? `Error ${res.status} al subir el PDF`)
+    } else {
+      load()
+    }
   }
 
   async function uploadProdImg(prodId: string, file: File) {
     setUploadingProdImg(prodId)
+    setUploadError(null)
     const form = new FormData()
     form.append('file', file)
     form.append('price_item_id', prodId)
-
-    await fetch('/api/products/image', { method: 'POST', body: form })
+    const res = await fetch('/api/products/image', { method: 'POST', body: form })
     setUploadingProdImg(null)
-    load()
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      setUploadError(body.error ?? `Error ${res.status} al subir la imagen`)
+    } else {
+      load()
+    }
   }
 
   async function deleteProdImg(prodId: string) {
@@ -220,6 +241,17 @@ export default function PricesPage() {
           Organiza por categoría · configura precios, equipo y material visual
         </p>
       </div>
+
+      {uploadError && (
+        <div style={{
+          background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8,
+          padding: '10px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <span style={{ color: '#DC2626', fontSize: 14 }}>⚠</span>
+          <span style={{ fontSize: 13, color: '#B91C1C', flex: 1 }}>{uploadError}</span>
+          <button onClick={() => setUploadError(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', fontSize: 16, padding: 0 }}>×</button>
+        </div>
+      )}
 
       {!aiInstructionsEnabled && (
         <div style={{

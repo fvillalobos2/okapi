@@ -1,9 +1,6 @@
 import { getBusinessId } from '@/lib/getBusinessId'
 import { supabaseAdmin } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(req: Request) {
   const form = await req.formData()
@@ -40,26 +37,31 @@ export async function POST(req: Request) {
   let contentText = ''
   if (isText) {
     contentText = buffer.toString('utf-8')
-  } else {
-    try {
-      const base64 = buffer.toString('base64')
-      const extractPrompt = docType === 'general'
-        ? 'Extrae todo el texto de este documento. Preserva la estructura, encabezados y listas. Sé exhaustivo.'
-        : 'Extrae todo el texto relevante de este documento de producto. Incluye especificaciones, características, precios si los hay, y cualquier información útil para un agente de ventas. Sé exhaustivo.'
-      const msg = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 4096,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
-            { type: 'text', text: extractPrompt },
-          ],
-        }],
-      })
-      contentText = msg.content[0].type === 'text' ? msg.content[0].text : ''
-    } catch {
-      contentText = `[Extracción automática falló]\n\nArchivo: ${file.name}`
+  } else if (isPdf) {
+    const apiKey = process.env.ANTHROPIC_API_KEY
+    if (apiKey) {
+      try {
+        const { default: Anthropic } = await import('@anthropic-ai/sdk')
+        const anthropic = new Anthropic({ apiKey })
+        const base64 = buffer.toString('base64')
+        const extractPrompt = docType === 'general'
+          ? 'Extrae todo el texto de este documento. Preserva la estructura, encabezados y listas. Sé exhaustivo.'
+          : 'Extrae todo el texto relevante de este documento de producto. Incluye especificaciones, características, precios si los hay, y cualquier información útil para un agente de ventas. Sé exhaustivo.'
+        const msg = await anthropic.messages.create({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 4096,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
+              { type: 'text', text: extractPrompt },
+            ],
+          }],
+        })
+        contentText = msg.content[0].type === 'text' ? msg.content[0].text : ''
+      } catch {
+        contentText = `[Extracción automática falló]\n\nArchivo: ${file.name}`
+      }
     }
   }
 
