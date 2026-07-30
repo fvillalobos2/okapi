@@ -141,32 +141,42 @@ export default function PricesPage() {
   async function uploadPdf(catId: string, file: File) {
     setUploading(catId)
     setUploadError(null)
-    const form = new FormData()
-    form.append('file', file)
-    form.append('category_id', catId)
-    const res = await fetch('/api/products/upload', { method: 'POST', body: form })
-    setUploading(null)
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
-      setUploadError(body.error ?? `Error ${res.status} al subir el PDF`)
-    } else {
-      load()
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('category_id', catId)
+      const res = await fetch('/api/products/upload', { method: 'POST', body: form })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        setUploadError(body.error ?? `Error ${res.status} al subir el PDF`)
+      } else {
+        load()
+      }
+    } catch (e: any) {
+      setUploadError(e?.message ?? 'Error de red al subir el PDF')
+    } finally {
+      setUploading(null)
     }
   }
 
   async function uploadImg(catId: string, file: File) {
     setUploadingImg(catId)
     setUploadError(null)
-    const form = new FormData()
-    form.append('file', file)
-    form.append('category_id', catId)
-    const res = await fetch('/api/products/image', { method: 'POST', body: form })
-    setUploadingImg(null)
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
-      setUploadError(body.error ?? `Error ${res.status} al subir la imagen`)
-    } else {
-      load()
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('category_id', catId)
+      const res = await fetch('/api/products/image', { method: 'POST', body: form })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        setUploadError(body.error ?? `Error ${res.status} al subir la imagen`)
+      } else {
+        load()
+      }
+    } catch (e: any) {
+      setUploadError(e?.message ?? 'Error de red al subir la imagen')
+    } finally {
+      setUploadingImg(null)
     }
   }
 
@@ -182,32 +192,42 @@ export default function PricesPage() {
   async function uploadProdPdf(prodId: string, file: File) {
     setUploadingProdPdf(prodId)
     setUploadError(null)
-    const form = new FormData()
-    form.append('file', file)
-    form.append('price_item_id', prodId)
-    const res = await fetch('/api/products/upload', { method: 'POST', body: form })
-    setUploadingProdPdf(null)
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
-      setUploadError(body.error ?? `Error ${res.status} al subir el PDF`)
-    } else {
-      load()
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('price_item_id', prodId)
+      const res = await fetch('/api/products/upload', { method: 'POST', body: form })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        setUploadError(body.error ?? `Error ${res.status} al subir el PDF`)
+      } else {
+        load()
+      }
+    } catch (e: any) {
+      setUploadError(e?.message ?? 'Error de red al subir el PDF')
+    } finally {
+      setUploadingProdPdf(null)
     }
   }
 
   async function uploadProdImg(prodId: string, file: File) {
     setUploadingProdImg(prodId)
     setUploadError(null)
-    const form = new FormData()
-    form.append('file', file)
-    form.append('price_item_id', prodId)
-    const res = await fetch('/api/products/image', { method: 'POST', body: form })
-    setUploadingProdImg(null)
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
-      setUploadError(body.error ?? `Error ${res.status} al subir la imagen`)
-    } else {
-      load()
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('price_item_id', prodId)
+      const res = await fetch('/api/products/image', { method: 'POST', body: form })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        setUploadError(body.error ?? `Error ${res.status} al subir la imagen`)
+      } else {
+        load()
+      }
+    } catch (e: any) {
+      setUploadError(e?.message ?? 'Error de red al subir la imagen')
+    } finally {
+      setUploadingProdImg(null)
     }
   }
 
@@ -225,6 +245,15 @@ export default function PricesPage() {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: docId }),
+    })
+    load()
+  }
+
+  async function deleteProd(prodId: string) {
+    await fetch('/api/products', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: prodId }),
     })
     load()
   }
@@ -409,14 +438,23 @@ export default function PricesPage() {
                                     placeholder="Descripción corta"
                                   />
                                 </div>
-                                {pdirty && (
-                                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
-                                    <button className="btn btn-ghost btn-sm" onClick={() => setProdEdits(p => { const n = { ...p }; delete n[prod.id]; return n })}>Descartar</button>
-                                    <button className="btn btn-primary btn-sm" onClick={() => saveProd(prod)} disabled={saving === prod.id}>
-                                      {saving === prod.id ? 'Guardando...' : 'Guardar'}
-                                    </button>
-                                  </div>
-                                )}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                                  <button
+                                    className="btn btn-ghost btn-sm"
+                                    style={{ fontSize: 11, color: '#DC2626' }}
+                                    onClick={() => { if (confirm(`¿Eliminar "${prod.name}"?`)) deleteProd(prod.id) }}
+                                  >
+                                    Eliminar modelo
+                                  </button>
+                                  {pdirty && (
+                                    <div style={{ display: 'flex', gap: 8 }}>
+                                      <button className="btn btn-ghost btn-sm" onClick={() => setProdEdits(p => { const n = { ...p }; delete n[prod.id]; return n })}>Descartar</button>
+                                      <button className="btn btn-primary btn-sm" onClick={() => saveProd(prod)} disabled={saving === prod.id}>
+                                        {saving === prod.id ? 'Guardando...' : 'Guardar'}
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
 
                                 {/* Per-product media toggle */}
                                 <div style={{ marginTop: 8, borderTop: '1px solid var(--border)', paddingTop: 8 }}>

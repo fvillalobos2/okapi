@@ -69,3 +69,16 @@ export async function PATCH(req: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
 }
+
+// DELETE — soft-delete (active=false) to preserve document references
+export async function DELETE(req: Request) {
+  const BUSINESS_ID = await getBusinessId()
+  const { id } = await req.json()
+  const { error } = await supabaseAdmin()
+    .from('price_items')
+    .update({ active: false, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('business_id', BUSINESS_ID)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}
