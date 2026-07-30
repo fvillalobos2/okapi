@@ -516,7 +516,7 @@ export default function PricesPage() {
                         <button
                           className="btn btn-ghost btn-sm"
                           style={{ width: '100%', border: '1px dashed var(--border)', height: 38 }}
-                          onClick={() => { setNewProdCatId(cat.id); setNewProd({ name: '', model_code: '', price: '', currency: 'USD', description: '' }); newProdRef.current?.showModal() }}
+                          onClick={() => { setNewProdCatId(cat.id); setNewProd({ name: '', model_code: '', price: '', currency: 'USD', description: '', price_includes_tax: false, tax_rate: 13 }); newProdRef.current?.showModal() }}
                         >
                           + Agregar modelo
                         </button>
@@ -719,7 +719,7 @@ export default function PricesPage() {
             </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-            <button className="btn btn-ghost" onClick={() => { setNewProd({ name: '', model_code: '', price: '', currency: 'USD', description: '' }); newProdRef.current?.close() }}>Cancelar</button>
+            <button className="btn btn-ghost" onClick={() => { setNewProd({ name: '', model_code: '', price: '', currency: 'USD', description: '', price_includes_tax: false, tax_rate: 13 }); newProdRef.current?.close() }}>Cancelar</button>
             <button className="btn btn-primary" onClick={createProd} disabled={creatingProd || !newProd.name.trim()}>
               {creatingProd ? 'Creando...' : 'Crear modelo'}
             </button>
