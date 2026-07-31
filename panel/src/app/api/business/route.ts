@@ -10,6 +10,7 @@ const SELECT_FIELDS = [
   'whatsapp_number', 'twilio_sender', 'twilio_account_sid', 'twilio_auth_token',
   'agent_url', 'panel_url', 'admin_whatsapp',
   'accent_color', 'logo_url',
+  'meta_phone_number_id', 'meta_access_token', 'meta_app_secret', 'meta_verify_token',
 ].join(', ')
 
 const PATCHABLE = new Set([
@@ -17,6 +18,7 @@ const PATCHABLE = new Set([
   'whatsapp_number', 'twilio_sender', 'twilio_account_sid', 'twilio_auth_token',
   'agent_url', 'panel_url', 'admin_whatsapp',
   'accent_color', 'logo_url', 'admin_password',
+  'meta_phone_number_id', 'meta_access_token', 'meta_app_secret', 'meta_verify_token',
 ])
 
 export async function GET() {

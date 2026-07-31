@@ -1541,7 +1541,7 @@ def webhook():
     from_number = request.form.get('From', '')
     body        = request.form.get('Body', '').strip()
     if not body:
-        return '', 204
+        return str(MessagingResponse()), 200
 
     referral = {
         'source_type': request.form.get('ReferralSourceType', ''),
@@ -1578,7 +1578,7 @@ def webhook_tenant(slug: str):
     from_number = request.form.get('From', '')
     body        = request.form.get('Body', '').strip()
     if not body:
-        return '', 204
+        return str(MessagingResponse()), 200
 
     referral = {
         'source_type': request.form.get('ReferralSourceType', ''),
@@ -1613,7 +1613,7 @@ def webhook_tenant(slug: str):
                 traceback.print_exc()
 
         threading.Thread(target=_process_and_send, daemon=True).start()
-        return '', 204
+        return str(MessagingResponse()), 200
 
     reply = handle_inbound(from_number, body, business, referral=referral)
     resp = MessagingResponse()

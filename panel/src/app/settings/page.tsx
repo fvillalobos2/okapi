@@ -17,6 +17,10 @@ interface BusinessData {
   accent_color: string
   logo_url: string
   admin_password: string
+  meta_phone_number_id: string
+  meta_access_token: string
+  meta_app_secret: string
+  meta_verify_token: string
   settings: Record<string, unknown>
 }
 
@@ -157,6 +161,10 @@ export default function SettingsPage() {
         admin_whatsapp: data.admin_whatsapp,
         accent_color: data.accent_color,
         logo_url: data.logo_url,
+        meta_phone_number_id: data.meta_phone_number_id,
+        meta_access_token: data.meta_access_token,
+        meta_app_secret: data.meta_app_secret,
+        meta_verify_token: data.meta_verify_token,
         settings: data.settings ?? {},
         ...(data.admin_password ? { admin_password: data.admin_password } : {}),
       }
@@ -258,6 +266,39 @@ export default function SettingsPage() {
           onChange={v => set('whatsapp_number', v)}
           placeholder="+506 8888-8888"
           hint="Número que ven los clientes en WhatsApp. Puede diferir del número Twilio." />
+      </Section>
+
+      {/* Meta Cloud API */}
+      <Section title="Meta Cloud API — WhatsApp directo">
+        <div style={{
+          background: 'var(--accent-light)', border: '1px solid var(--accent)',
+          borderRadius: 7, padding: '10px 14px', marginBottom: 16,
+          fontSize: 12.5, color: 'var(--accent)', lineHeight: 1.5,
+        }}>
+          Integración directa con Meta (sin Twilio). Si se configura el Phone Number ID y el Access Token,
+          el agente usará Meta Cloud API en lugar de Twilio para este negocio.
+          El webhook de Meta es: <strong>https://cs.projectokapi.com/webhook/meta</strong>
+        </div>
+        <Field label="Phone Number ID"
+          value={data.meta_phone_number_id ?? ''}
+          onChange={v => set('meta_phone_number_id', v)}
+          placeholder="1246204415243478" mono
+          hint="ID numérico del número en Meta for Developers → WhatsApp → API Setup." />
+        <Field label="Access Token"
+          value={data.meta_access_token ?? ''}
+          onChange={v => set('meta_access_token', v)}
+          type="password" placeholder="EAAxxxxxxxxx..." mono
+          hint="Token permanente de System User. Nunca expira si se generó con 'Never'." />
+        <Field label="App Secret"
+          value={data.meta_app_secret ?? ''}
+          onChange={v => set('meta_app_secret', v)}
+          type="password" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" mono
+          hint="App Secret del Okapi Agents app en Meta for Developers → App Settings → Basic." />
+        <Field label="Verify Token"
+          value={data.meta_verify_token ?? ''}
+          onChange={v => set('meta_verify_token', v)}
+          placeholder="okapi_meta_webhook" mono
+          hint="Token de verificación del webhook. Por defecto: okapi_meta_webhook." />
       </Section>
 
       {/* Webhook */}
