@@ -191,18 +191,6 @@ export default function Sidebar() {
     <>
       <div className={`sidebar-overlay ${open ? 'open' : ''}`} onClick={() => setOpen(false)} />
 
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="hamburger-btn"
-        style={{ display: 'none', position: 'fixed', top: 14, left: 16, zIndex: 300,
-          background: 'none', border: 'none', cursor: 'pointer', flexDirection: 'column', gap: 4, padding: 4 }}
-        aria-label="Menu"
-      >
-        {[0,1,2].map(i => (
-          <span key={i} style={{ display: 'block', width: 18, height: 2, background: '#71717a', borderRadius: 1 }} />
-        ))}
-      </button>
-
       <nav className={`sidebar ${open ? 'open' : ''}`}>
         {/* Brand */}
         <div style={{ padding: '16px 16px 14px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -293,7 +281,6 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      <style>{`@media (max-width: 768px) { .hamburger-btn { display: flex !important; } }`}</style>
     </>
   )
 }

@@ -6,6 +6,7 @@ import ConversationActions from './ConversationActions'
 import MessageThreadLive from '@/components/MessageThreadLive'
 import { AIToggle } from '@/components/AIToggle'
 
+import ConvSidePanel from './ConvSidePanel'
 type Msg = { role: 'user' | 'assistant'; content: string; ts?: string }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -71,41 +72,7 @@ export default async function ConversationDetailPage({ params }: { params: Promi
         {/* Chat — client component with live polling */}
         <MessageThreadLive convId={conv.id} initial={messages} />
 
-        {/* Side panel */}
-        <div style={{
-          width: 260, borderLeft: '1px solid var(--border)', background: 'var(--surface)',
-          overflowY: 'auto', flexShrink: 0, display: 'flex', flexDirection: 'column',
-        }}>
-          <div style={{ padding: '20px 16px', borderBottom: '1px solid var(--border)' }}>
-            <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--muted)', marginBottom: 12 }}>
-              Contacto
-            </p>
-            {[
-              ['Teléfono', phone],
-              ['Nombre', lead?.name],
-              ['Email', lead?.email],
-              ['Zona', lead?.zone || conv.language],
-              ['Producto', lead?.product_interest],
-              ['Fuente', lead?.source],
-              ['Campaña', lead?.utm_campaign],
-              ['Sucursal', (team as any)?.name],
-              ['Creado', fmt(conv.created_at)],
-              ['Último msg', fmt(conv.updated_at)],
-            ].map(([label, val]) => !val ? null : (
-              <div key={String(label)} style={{ marginBottom: 10 }}>
-                <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 1 }}>{label}</div>
-                <div style={{ fontSize: 13 }}>{val}</div>
-              </div>
-            ))}
-            {lead && (
-              <Link href={`/leads/${lead.id}`} style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 8 }}>
-                Ver ficha del lead →
-              </Link>
-            )}
-          </div>
-
-          <ConversationActions id={conv.id} initialStatus={conv.status} />
-        </div>
+        <ConvSidePanel conv={conv} lead={lead} team={team} phone={phone} />
       </div>
     </div>
   )

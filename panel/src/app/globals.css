@@ -171,8 +171,58 @@ dialog::backdrop {
 
 /* ── Mobile ─────────────────────────────────────────── */
 @media (max-width: 768px) {
+  :root { --sidebar: 240px; }
+
   .sidebar { transform: translateX(-100%); }
   .sidebar.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,.1); }
   .sidebar-overlay.open { display: block; }
-  .main { margin-left: 0; }
+  .main { margin-left: 0; padding-top: 52px; }
+
+  /* Mobile top bar */
+  .mobile-topbar {
+    display: flex !important;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 52px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    padding: 0 12px;
+    z-index: 190;
+    gap: 10px;
+  }
+
+  /* Main content padding */
+  .main > div:first-child {
+    padding: 16px !important;
+  }
+
+  /* Conversation detail: hide side panel, make chat fill screen */
+  .conv-side-panel { display: none !important; }
+  .conv-side-panel.open { display: flex !important; position: fixed; inset: 0; z-index: 250; background: var(--surface); overflow-y: auto; }
+
+  /* Tables: smaller text, keep scroll */
+  table { font-size: 12px; }
+  table th { font-size: 10px; padding: 8px 10px; }
+  table td { padding: 8px 10px; }
+
+  /* Dialogs full-screen */
+  dialog {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    top: 0 !important; left: 0 !important;
+    transform: none !important;
+  }
+
+  /* KPI grid: 2 cols on mobile */
+  .kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+
+  /* Kanban: narrower cards */
+  .kanban-col { width: 200px !important; }
+}
+
+@media (min-width: 769px) {
+  .mobile-topbar { display: none !important; }
 }

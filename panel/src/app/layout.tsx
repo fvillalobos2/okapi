@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import Sidebar from '@/components/Sidebar'
+import MobileTopBar from '@/components/MobileTopBar'
 
 export const metadata: Metadata = {
   title: 'Okapi Agent — Panel',
@@ -12,6 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es">
       <body style={{ display: 'flex', minHeight: '100vh' }}>
         <Sidebar />
+        <MobileTopBar />
         <div className="main">
           <div style={{ padding: '28px', flex: 1, maxWidth: 1280 }}>
             {children}
