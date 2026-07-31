@@ -45,7 +45,9 @@ export default function SelectUserClient({ users }: { users: UserRow[] }) {
         {users.length === 0 ? (
           <div style={{ textAlign: 'center', color: 'var(--muted)', padding: 40 }}>
             No hay usuarios activos configurados.<br />
-            <a href="/" style={{ color: 'var(--accent)', fontSize: 13 }}>Entrar como administrador →</a>
+            <a href="/" onClick={e => { e.preventDefault(); router.replace('/') }} style={{ color: 'var(--accent)', fontSize: 13, cursor: 'pointer' }}>
+              Entrar como administrador →
+            </a>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

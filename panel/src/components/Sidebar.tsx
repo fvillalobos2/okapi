@@ -249,9 +249,18 @@ export default function Sidebar() {
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#16A34A', boxShadow: '0 0 0 2px #DCFCE7', flexShrink: 0 }} />
           <span style={{ fontSize: 11, color: 'var(--muted)', flex: 1 }}>Sistema activo</span>
+          <button
+            onClick={() => router.push('/select-user')}
+            title="Cambiar usuario"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--muted)', display: 'flex' }}
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <circle cx="6" cy="5" r="3"/><path d="M1 14c0-3 2-5 5-5"/><path d="M11 9l2 2 3-3"/>
+            </svg>
+          </button>
           <button
             onClick={async () => {
               await fetch('/api/auth/logout', { method: 'POST' })

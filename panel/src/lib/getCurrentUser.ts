@@ -1,4 +1,4 @@
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { supabaseAdmin } from './supabase'
 import type { AppRole } from './roles'
 import { isAppRole } from './roles'
@@ -11,8 +11,9 @@ export type CurrentUser = {
 }
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
-  const jar = await cookies()
-  const userId = jar.get('okapi_user')?.value
+  // Prefer header injected by middleware (avoids double cookie parse)
+  const h = await headers()
+  const userId = h.get('x-user-id') ?? (await cookies()).get('okapi_user')?.value
   if (!userId) return null
 
   const { data } = await supabaseAdmin()
