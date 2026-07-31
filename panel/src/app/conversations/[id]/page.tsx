@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ConversationActions from './ConversationActions'
 import MessageThreadLive from '@/components/MessageThreadLive'
+import { AIToggle } from '@/components/AIToggle'
 
 type Msg = { role: 'user' | 'assistant'; content: string; ts?: string }
 
@@ -54,6 +55,7 @@ export default async function ConversationDetailPage({ params }: { params: Promi
           <p style={{ fontWeight: 600, fontSize: 14, margin: 0 }}>{lead?.name || phone}</p>
           {lead?.name && <p style={{ fontSize: 11, color: 'var(--muted)', margin: '1px 0 0' }}>{phone}</p>}
         </div>
+        <AIToggle convId={conv.id} initial={conv.ai_enabled ?? true} />
         <span style={{
           fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20,
           background: conv.status === 'open' ? '#dcfce7' : conv.status === 'assigned' ? '#fef3c7' : '#f4f4f5',
