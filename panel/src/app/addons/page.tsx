@@ -47,6 +47,16 @@ const MODULE_CATALOG: ModuleConfig[] = [
     description: 'Lee parámetros de Click-to-WhatsApp (Facebook / Instagram). Identifica qué anuncio originó la conversación.',
   },
   {
+    key: 'broadcast',
+    label: 'Broadcasts',
+    description: 'Envía mensajes masivos a contactos activos dentro de la ventana de 23h de Meta. Ideal para promociones, seguimientos y anuncios.',
+  },
+  {
+    key: 'kanban',
+    label: 'Kanban de pipeline',
+    description: 'Vista de tablero para gestionar el pipeline de ventas. Las conversaciones avanzan por etapas: Nuevo → Calificado → Propuesta → Cerrado.',
+  },
+  {
     key: 'cost_tracking',
     label: 'Seguimiento de costos',
     description: 'Registra el costo de tokens de Claude por conversación. Útil para controlar gasto de API.',
