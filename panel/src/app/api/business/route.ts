@@ -1,6 +1,9 @@
 import { getBusinessId } from '@/lib/getBusinessId'
 import { supabaseAdmin } from '@/lib/supabase'
+import { encryptField } from '@/lib/encryption'
 import { NextResponse } from 'next/server'
+
+const ENCRYPT_ON_WRITE = new Set(['meta_access_token', 'twilio_auth_token'])
 
 
 
@@ -47,7 +50,11 @@ export async function PATCH(req: Request) {
   const body = await req.json()
   const updates: Record<string, unknown> = {}
   for (const key of PATCHABLE) {
-    if (body[key] !== undefined) updates[key] = body[key]
+    if (body[key] !== undefined) {
+      updates[key] = ENCRYPT_ON_WRITE.has(key) && body[key]
+        ? await encryptField(String(body[key]))
+        : body[key]
+    }
   }
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })

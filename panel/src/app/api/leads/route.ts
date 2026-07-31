@@ -7,6 +7,7 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const status = searchParams.get('status')
   const teamId = searchParams.get('team_id')
+  const reachable = searchParams.get('reachable')
 
   let q = supabaseAdmin()
     .from('leads')
@@ -17,6 +18,10 @@ export async function GET(req: Request) {
 
   if (status) q = q.eq('status', status)
   if (teamId) q = q.eq('team_id', teamId)
+  if (reachable) {
+    const cutoff = new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString()
+    q = q.gte('last_active_at', cutoff)
+  }
 
   const { data, error } = await q
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

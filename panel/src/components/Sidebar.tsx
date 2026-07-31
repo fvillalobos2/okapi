@@ -109,6 +109,13 @@ const MODULE_NAV: { module: string; section: string; href: string; label: string
     label: 'Costos API',
     icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>,
   },
+  {
+    module: 'broadcast',
+    section: 'Marketing',
+    href: '/broadcasts',
+    label: 'Broadcasts',
+    icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 8c0-3.3 2.7-6 6-6s6 2.7 6 6-2.7 6-6 6"/><circle cx="8" cy="8" r="1.5"/><path d="M5.5 5.5c.7-.7 1.5-1 2.5-1s1.8.3 2.5 1"/><path d="M3 3c1.4-1.4 3.3-2.1 5-2.1s3.6.7 5 2.1"/></svg>,
+  },
 ]
 
 function buildNav(modules: Modules): NavGroup[] {
