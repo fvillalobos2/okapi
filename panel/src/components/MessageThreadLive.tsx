@@ -1,7 +1,26 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 
-type Msg = { role: 'user' | 'assistant'; content: string; ts?: string }
+type Msg = { role: 'user' | 'assistant'; content: string; ts?: string; wam_id?: string }
+
+function MessageTick({ status }: { status?: string }) {
+  // Single gray  = sent/queued, double gray = delivered, double blue = read
+  if (!status || status === 'sent') {
+    return (
+      <svg width="14" height="9" viewBox="0 0 14 9" fill="none" style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: 3, opacity: 0.75 }}>
+        <path d="M1 4.5L4.5 8L13 1" stroke="rgba(255,255,255,.75)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    )
+  }
+  const blue = status === 'read'
+  const color = blue ? '#53BDEB' : 'rgba(255,255,255,.75)'
+  return (
+    <svg width="18" height="9" viewBox="0 0 18 9" fill="none" style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: 3 }}>
+      <path d="M1 4.5L4.5 8L13 1" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M5 4.5L8.5 8L17 1" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
 
 function toUtc(ts: string) {
   // cs-engine stores datetime.utcnow().isoformat() — no Z suffix → JS misreads as local
@@ -24,6 +43,7 @@ export default function MessageThreadLive({
   initial: Msg[]
 }) {
   const [messages, setMessages] = useState<Msg[]>(initial)
+  const [statuses, setStatuses] = useState<Record<string, string>>({})
   const [live, setLive] = useState(false)
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
@@ -44,6 +64,7 @@ export default function MessageThreadLive({
         const data = await res.json()
         const msgs: Msg[] = Array.isArray(data.messages) ? data.messages : []
         setMessages(msgs)
+        if (data.statuses) setStatuses(data.statuses)
         setLive(true)
         if (msgs.length > prevCount.current) {
           prevCount.current = msgs.length
@@ -91,7 +112,7 @@ export default function MessageThreadLive({
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send() }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
   }
 
   let lastDay = ''
@@ -145,8 +166,9 @@ export default function MessageThreadLive({
                   position: 'relative',
                 }}>
                   {m.content}
-                  <div style={{ fontSize: 10, color: isOut ? 'rgba(255,255,255,.65)' : '#667781', marginTop: 4, textAlign: 'right', lineHeight: 1 }}>
+                  <div style={{ fontSize: 10, color: isOut ? 'rgba(255,255,255,.65)' : '#667781', marginTop: 4, textAlign: 'right', lineHeight: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 2 }}>
                     {timeLabel(m.ts)}
+                    {isOut && <MessageTick status={m.wam_id ? statuses[m.wam_id] : undefined} />}
                   </div>
                 </div>
               </div>
@@ -163,7 +185,7 @@ export default function MessageThreadLive({
           value={message}
           onChange={e => { setMessage(e.target.value); setSendError(''); autoResize() }}
           onKeyDown={onKeyDown}
-          placeholder="Escribe un mensaje"
+          placeholder="Escribe un mensaje (Shift+Enter = nueva línea)"
           rows={1}
           style={{
             flex: 1,
@@ -185,7 +207,7 @@ export default function MessageThreadLive({
         <button
           onClick={send}
           disabled={sending || !message.trim()}
-          title="Enviar (⌘↵)"
+          title="Enviar (Enter)"
           style={{
             width: 42, height: 42,
             borderRadius: '50%',

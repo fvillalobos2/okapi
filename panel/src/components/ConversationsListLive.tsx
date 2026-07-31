@@ -9,6 +9,7 @@ type Conv = {
   updated_at: string
   leads?: { name?: string; zone?: string; product_interest?: string } | null
   teams?: { name?: string } | null
+  users?: { name?: string } | null
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -98,13 +99,14 @@ export default function ConversationsListLive({
               <th>Zona</th>
               <th>Sucursal</th>
               <th>Producto</th>
+              <th>Asignado</th>
               <th>Estado</th>
               <th>Última actividad</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--muted)', padding: 40 }}>Sin conversaciones</td></tr>
+              <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--muted)', padding: 40 }}>Sin conversaciones</td></tr>
             ) : rows.map(c => {
               const phone = c.phone.replace('whatsapp:', '')
               const isNew = newIds.has(c.id)
@@ -119,13 +121,20 @@ export default function ConversationsListLive({
                       </span>
                       <span style={{ display: 'table-cell', padding: '10px 14px', color: 'var(--muted)', width: '12%' }}>{c.leads?.zone || '—'}</span>
                       <span style={{ display: 'table-cell', padding: '10px 14px', color: 'var(--muted)', width: '14%' }}>{c.teams?.name || '—'}</span>
-                      <span style={{ display: 'table-cell', padding: '10px 14px', color: 'var(--muted)', width: '22%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 0 }}>{c.leads?.product_interest || '—'}</span>
-                      <span style={{ display: 'table-cell', padding: '10px 14px', width: '14%' }}>
+                      <span style={{ display: 'table-cell', padding: '10px 14px', color: 'var(--muted)', width: '18%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 0 }}>{c.leads?.product_interest || '—'}</span>
+                      <span style={{ display: 'table-cell', padding: '10px 14px', width: '12%' }}>
+                        {c.users?.name ? (
+                          <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--accent)', background: 'color-mix(in srgb, var(--accent) 12%, transparent)', borderRadius: 20, padding: '2px 8px', whiteSpace: 'nowrap' }}>
+                            {c.users.name.split(' ')[0]}
+                          </span>
+                        ) : <span style={{ color: 'var(--muted)' }}>—</span>}
+                      </span>
+                      <span style={{ display: 'table-cell', padding: '10px 14px', width: '12%' }}>
                         <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, ...statusStyle(c.status) }}>
                           {STATUS_LABEL[c.status] ?? c.status}
                         </span>
                       </span>
-                      <span style={{ display: 'table-cell', padding: '10px 14px', color: 'var(--muted)', width: '16%' }}>
+                      <span style={{ display: 'table-cell', padding: '10px 14px', color: 'var(--muted)', width: '12%' }}>
                         {c.updated_at ? timeAgo(c.updated_at) : '—'}
                       </span>
                     </Link>

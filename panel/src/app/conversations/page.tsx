@@ -21,7 +21,7 @@ export default async function ConversationsPage({
 
   let q = supabaseAdmin()
     .from('conversations')
-    .select('*, leads(name,phone,zone,product_interest), teams(name)')
+    .select('*, leads(name,phone,zone,product_interest), teams(name), users!assigned_to(name)')
     .eq('business_id', bid)
     .eq('archived', false)
     .order('updated_at', { ascending: false })

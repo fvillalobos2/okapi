@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
+import GlobalSearch from './GlobalSearch'
+import { useCurrentUser } from '@/hooks/useCurrentUser'
 
 type Modules = Record<string, { enabled: boolean }>
 
@@ -206,6 +208,11 @@ export default function Sidebar() {
             </div>
             <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>Okapi Agent</div>
           </div>
+        </div>
+
+        {/* Search */}
+        <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)' }}>
+          <GlobalSearch />
         </div>
 
         {/* Nav */}

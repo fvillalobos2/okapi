@@ -87,6 +87,14 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Require user selection — skip for /select-user and its API
+  const isSelectUser = pathname.startsWith('/select-user') || pathname.startsWith('/api/auth/select-user')
+  if (!isSelectUser && !req.cookies.get('okapi_user')?.value) {
+    const url = req.nextUrl.clone()
+    url.pathname = '/select-user'
+    return NextResponse.redirect(url)
+  }
+
   return NextResponse.next({ request: { headers: requestHeaders } })
 }
 

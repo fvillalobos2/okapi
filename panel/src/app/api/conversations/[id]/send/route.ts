@@ -1,5 +1,6 @@
 import { getBusinessId } from '@/lib/getBusinessId'
 import { supabaseAdmin } from '@/lib/supabase'
+import { decryptField } from '@/lib/encryption'
 import { NextResponse } from 'next/server'
 
 
@@ -24,7 +25,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const biz = bizRes.data
   const sid = biz?.twilio_account_sid || process.env.TWILIO_ACCOUNT_SID
-  const token = biz?.twilio_auth_token || process.env.TWILIO_AUTH_TOKEN
+  const rawToken = biz?.twilio_auth_token || process.env.TWILIO_AUTH_TOKEN
+  const token = rawToken ? await decryptField(rawToken) : undefined
   const from = biz?.twilio_sender || process.env.TWILIO_SENDER
 
   if (!sid || !token || !from) {

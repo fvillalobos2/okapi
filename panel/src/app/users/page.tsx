@@ -1,11 +1,13 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useCurrentUser } from '@/hooks/useCurrentUser'
 
 const ROLE_OPTS = [
   { value: 'super_admin', label: 'Super Admin' },
   { value: 'team_admin', label: 'Admin Sucursal' },
   { value: 'agent', label: 'Agente' },
+  { value: 'viewer', label: 'Solo lectura' },
 ]
 const NOTIF_OPTS = [
   { value: 'none', label: 'Sin notificaciones' },
@@ -14,10 +16,10 @@ const NOTIF_OPTS = [
   { value: 'both', label: 'WhatsApp + Email' },
 ]
 const ROLE_BADGE: Record<string, string> = {
-  super_admin: 'badge-qualified', team_admin: 'badge-active', agent: 'badge-new',
+  super_admin: 'badge-qualified', team_admin: 'badge-active', agent: 'badge-new', viewer: 'badge-lost',
 }
 const ROLE_LABEL: Record<string, string> = {
-  super_admin: 'Super Admin', team_admin: 'Admin Sucursal', agent: 'Agente',
+  super_admin: 'Super Admin', team_admin: 'Admin Sucursal', agent: 'Agente', viewer: 'Solo lectura',
 }
 const NOTIF_LABEL: Record<string, string> = {
   none: '—', whatsapp: 'WhatsApp', email: 'Email', both: 'WA + Email',
@@ -44,6 +46,7 @@ export default function UsersPage() {
   const [saving, setSaving] = useState(false)
   const [editing, setEditing] = useState<(typeof EMPTY & { id?: string }) | null>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const { can: perms } = useCurrentUser()
 
   async function load() {
     const [ur, tr] = await Promise.all([

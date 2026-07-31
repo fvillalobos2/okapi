@@ -11,7 +11,7 @@ export async function GET(req: Request) {
 
   let q = supabaseAdmin()
     .from('conversations')
-    .select('*, leads(name,phone,zone,product_interest), teams(name)')
+    .select('*, leads(name,phone,zone,product_interest), teams(name), users!assigned_to(name)')
     .eq('business_id', BUSINESS_ID)
     .eq('archived', false)
     .order('updated_at', { ascending: false })
