@@ -113,6 +113,8 @@ export default function AddonsPage() {
       if (!res.ok) throw new Error((await res.json()).error ?? 'Error')
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
+      // Signal sidebar to reload module nav
+      localStorage.setItem('modules_updated', String(Date.now()))
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Error al guardar')
     } finally {
