@@ -17,7 +17,7 @@ type Discount = {
 }
 
 const EMPTY = {
-  name: '', type: 'percentage' as const, value: 0, condition: '', active: true, price_item_id: '' as string,
+  name: '', type: 'percentage' as 'percentage' | 'fixed', value: 0, condition: '', active: true, price_item_id: '' as string,
 }
 
 function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
