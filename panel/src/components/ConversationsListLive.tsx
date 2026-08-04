@@ -7,6 +7,7 @@ type Conv = {
   phone: string
   status: string
   updated_at: string
+  business_line?: string | null
   leads?: { name?: string; zone?: string; product_interest?: string } | null
   teams?: { name?: string } | null
   users?: { name?: string } | null
@@ -99,6 +100,7 @@ export default function ConversationsListLive({
               <th>Zona</th>
               <th>Sucursal</th>
               <th>Producto</th>
+              <th>Línea</th>
               <th>Asignado</th>
               <th>Estado</th>
               <th>Última actividad</th>
@@ -106,22 +108,29 @@ export default function ConversationsListLive({
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--muted)', padding: 40 }}>Sin conversaciones</td></tr>
+              <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--muted)', padding: 40 }}>Sin conversaciones</td></tr>
             ) : rows.map(c => {
               const phone = c.phone.replace('whatsapp:', '')
               const isNew = newIds.has(c.id)
               return (
                 <tr key={c.id} style={isNew ? { background: '#f0fdf4' } : undefined}>
-                  <td colSpan={6} style={{ padding: 0 }}>
+                  <td colSpan={7} style={{ padding: 0 }}>
                     <Link href={`/conversations/${c.id}`} style={{ display: 'table', width: '100%', textDecoration: 'none', color: 'inherit', tableLayout: 'fixed' }}>
-                      <span style={{ display: 'table-cell', padding: '10px 14px', width: '22%' }}>
+                      <span style={{ display: 'table-cell', padding: '10px 14px', width: '20%' }}>
                         {isNew && <span style={{ fontSize: 9, fontWeight: 700, background: 'var(--success)', color: '#fff', borderRadius: 4, padding: '1px 5px', marginRight: 6, verticalAlign: 'middle' }}>NUEVA</span>}
                         <span style={{ fontWeight: 500, display: 'block' }}>{c.leads?.name || phone}</span>
                         {c.leads?.name && <span style={{ fontSize: 11, color: 'var(--muted)' }}>{phone}</span>}
                       </span>
-                      <span style={{ display: 'table-cell', padding: '10px 14px', color: 'var(--muted)', width: '12%' }}>{c.leads?.zone || '—'}</span>
-                      <span style={{ display: 'table-cell', padding: '10px 14px', color: 'var(--muted)', width: '14%' }}>{c.teams?.name || '—'}</span>
-                      <span style={{ display: 'table-cell', padding: '10px 14px', color: 'var(--muted)', width: '18%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 0 }}>{c.leads?.product_interest || '—'}</span>
+                      <span style={{ display: 'table-cell', padding: '10px 14px', color: 'var(--muted)', width: '10%' }}>{c.leads?.zone || '—'}</span>
+                      <span style={{ display: 'table-cell', padding: '10px 14px', color: 'var(--muted)', width: '12%' }}>{c.teams?.name || '—'}</span>
+                      <span style={{ display: 'table-cell', padding: '10px 14px', color: 'var(--muted)', width: '16%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 0 }}>{c.leads?.product_interest || '—'}</span>
+                      <span style={{ display: 'table-cell', padding: '10px 14px', width: '14%' }}>
+                        {c.business_line ? (
+                          <span style={{ fontSize: 11, fontWeight: 500, color: '#7c3aed', background: '#ede9fe', borderRadius: 20, padding: '2px 8px', whiteSpace: 'nowrap' }}>
+                            {c.business_line}
+                          </span>
+                        ) : <span style={{ color: 'var(--muted)' }}>—</span>}
+                      </span>
                       <span style={{ display: 'table-cell', padding: '10px 14px', width: '12%' }}>
                         {c.users?.name ? (
                           <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--accent)', background: 'color-mix(in srgb, var(--accent) 12%, transparent)', borderRadius: 20, padding: '2px 8px', whiteSpace: 'nowrap' }}>
@@ -129,12 +138,12 @@ export default function ConversationsListLive({
                           </span>
                         ) : <span style={{ color: 'var(--muted)' }}>—</span>}
                       </span>
-                      <span style={{ display: 'table-cell', padding: '10px 14px', width: '12%' }}>
+                      <span style={{ display: 'table-cell', padding: '10px 14px', width: '10%' }}>
                         <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, ...statusStyle(c.status) }}>
                           {STATUS_LABEL[c.status] ?? c.status}
                         </span>
                       </span>
-                      <span style={{ display: 'table-cell', padding: '10px 14px', color: 'var(--muted)', width: '12%' }}>
+                      <span style={{ display: 'table-cell', padding: '10px 14px', color: 'var(--muted)', width: '10%' }}>
                         {c.updated_at ? timeAgo(c.updated_at) : '—'}
                       </span>
                     </Link>

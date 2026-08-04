@@ -22,6 +22,13 @@ interface BusinessData {
   meta_app_secret: string
   meta_verify_token: string
   settings: Record<string, unknown>
+  modules: Record<string, { enabled?: boolean } & Record<string, unknown>>
+}
+
+type BusinessLineConfig = {
+  name: string
+  description: string
+  woocommerce_linked?: boolean
 }
 
 const TIMEZONES = [
@@ -110,7 +117,7 @@ function Field({
 
 export default function SettingsPage() {
   const [data, setData] = useState<Partial<BusinessData>>({})
-  const [businessLinesText, setBusinessLinesText] = useState('')
+  const [lineConfigs, setLineConfigs] = useState<BusinessLineConfig[]>([])
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
@@ -121,7 +128,10 @@ export default function SettingsPage() {
     const res = await fetch('/api/business')
     const d = await res.json()
     setData(d)
-    setBusinessLinesText(((d?.settings?.business_lines as string[]) ?? []).join('\n'))
+    const rawLines = (d?.settings?.business_lines ?? []) as (string | BusinessLineConfig)[]
+    setLineConfigs(rawLines.map(item =>
+      typeof item === 'string' ? { name: item, description: '', woocommerce_linked: false } : item
+    ))
   }, [])
 
   useEffect(() => { load() }, [load])
@@ -470,23 +480,84 @@ export default function SettingsPage() {
         </div>
       </Section>
 
-      {/* Agent behaviour */}
+      {/* Business lines */}
       <Section title="Líneas de negocio">
-        <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12, lineHeight: 1.5 }}>
-          Define las áreas de negocio de tu empresa. Se usan para asignar conversaciones a usuarios y para que el agente clasifique clientes automáticamente. Una por línea.
+        <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 14, lineHeight: 1.5 }}>
+          Define las áreas de tu negocio. El agente clasifica cada conversación automáticamente y notifica al usuario asignado. La descripción le dice al agente qué tipo de cliente corresponde a cada línea.
         </p>
-        <textarea
-          rows={6}
-          style={{ width: '100%', padding: '8px 10px', fontSize: 13, border: '1px solid var(--border)', borderRadius: 6, background: '#fff', color: 'var(--text)', outline: 'none', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6, boxSizing: 'border-box' }}
-          placeholder={'Retail\nConstrucción\nServicio técnico & mantenimiento\nDistribución\nServicio exterior'}
-          value={businessLinesText}
-          onChange={e => {
-            setBusinessLinesText(e.target.value)
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {lineConfigs.map((cfg, i) => {
+            const wooEnabled = !!(data.modules?.woocommerce?.enabled)
+            return (
+              <div key={i} style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', background: 'var(--surface2)' }}>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+                  <input
+                    value={cfg.name}
+                    onChange={e => {
+                      const next = lineConfigs.map((c, j) => j === i ? { ...c, name: e.target.value } : c)
+                      setLineConfigs(next)
+                      setSetting('business_lines', next)
+                      setSaved(false)
+                    }}
+                    placeholder="Nombre de la línea"
+                    style={{ flex: 1, padding: '6px 10px', fontSize: 13, fontWeight: 600, border: '1px solid var(--border)', borderRadius: 6, background: '#fff', color: 'var(--text)', outline: 'none' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = lineConfigs.filter((_, j) => j !== i)
+                      setLineConfigs(next)
+                      setSetting('business_lines', next)
+                      setSaved(false)
+                    }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 18, lineHeight: 1, padding: '0 4px' }}
+                  >
+                    ×
+                  </button>
+                </div>
+                <textarea
+                  rows={2}
+                  value={cfg.description}
+                  onChange={e => {
+                    const next = lineConfigs.map((c, j) => j === i ? { ...c, description: e.target.value } : c)
+                    setLineConfigs(next)
+                    setSetting('business_lines', next)
+                    setSaved(false)
+                  }}
+                  placeholder="Describe qué tipo de cliente o conversación corresponde a esta línea (guía al agente para clasificar)"
+                  style={{ width: '100%', padding: '6px 10px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, background: '#fff', color: 'var(--muted)', outline: 'none', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5, boxSizing: 'border-box' }}
+                />
+                {wooEnabled && (
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 8, cursor: 'pointer', fontSize: 12, color: 'var(--muted)' }}>
+                    <input
+                      type="checkbox"
+                      checked={!!cfg.woocommerce_linked}
+                      onChange={e => {
+                        const next = lineConfigs.map((c, j) => j === i ? { ...c, woocommerce_linked: e.target.checked } : c)
+                        setLineConfigs(next)
+                        setSetting('business_lines', next)
+                        setSaved(false)
+                      }}
+                    />
+                    Vincular con catálogo WooCommerce (detecta productos automáticamente)
+                  </label>
+                )}
+              </div>
+            )
+          })}
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            const next = [...lineConfigs, { name: '', description: '', woocommerce_linked: false }]
+            setLineConfigs(next)
+            setSetting('business_lines', next)
             setSaved(false)
-            const lines = e.target.value.split('\n').map(s => s.trim()).filter(Boolean)
-            setData(prev => ({ ...prev, settings: { ...(prev.settings ?? {}), business_lines: lines } }))
           }}
-        />
+          style={{ marginTop: 10, padding: '7px 14px', fontSize: 13, border: '1px dashed var(--border)', borderRadius: 7, background: 'none', color: 'var(--muted)', cursor: 'pointer', width: '100%' }}
+        >
+          + Agregar línea
+        </button>
       </Section>
 
       <Section title="Comportamiento del agente">

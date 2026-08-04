@@ -57,7 +57,8 @@ export default function UsersPage() {
     ])
     setUsers(ur ?? [])
     setTeams(tr ?? [])
-    setBusinessLines((br?.settings?.business_lines as string[]) ?? [])
+    const rawLines = (br?.settings?.business_lines ?? []) as (string | { name: string })[]
+    setBusinessLines(rawLines.map(item => typeof item === 'string' ? item : item.name).filter(Boolean))
     setLoading(false)
   }
 
