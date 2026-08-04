@@ -521,16 +521,18 @@ def detect_client_language(phone: str, business: Optional[dict] = None) -> str:
     return 'es' if hits >= 1 else 'en'
 
 def ask_claude(phone: str, user_message: str, business: Optional[dict] = None,
-               ad_product_interest: Optional[str] = None) -> str:
+               ad_product_interest: Optional[str] = None,
+               is_first: bool = False) -> str:
     bid     = business.get('id') if business else None
     history = store.get_history(phone, bid)
     messages = [{'role': m['role'], 'content': m['content']} for m in history]
-    messages.append({'role': 'user', 'content': user_message})
+    # Only append user message if it's not already the last entry in history
+    if not (messages and messages[-1]['role'] == 'user' and messages[-1]['content'] == user_message):
+        messages.append({'role': 'user', 'content': user_message})
     clean_phone = phone.replace('whatsapp:', '').strip()
     now_local   = biz_now(business)
     today_str   = now_local.strftime('%A, %B %d, %Y')
     time_str    = now_local.strftime('%H:%M')
-    is_first    = len(history) == 0
 
     # Real-time category detection: scan current message + last 5 history messages
     recent_texts = [m['content'] for m in history[-5:] if m.get('content')]
@@ -1770,6 +1772,7 @@ def handle_inbound(from_number: str, body: str,
                 store.append_message(from_number, 'assistant', _reply, bid)
                 return ''
 
+    _is_first_msg = len(store.get_history(from_number, bid)) == 0
     store.append_message(from_number, 'user', body, bid)
 
     # ── Human agent detection ─────────────────────────────────────────────────
@@ -1791,7 +1794,7 @@ def handle_inbound(from_number: str, body: str,
         print(f'  ⏸ AI disabled for {from_number} — human agent handling', flush=True)
         return None
 
-    reply = ask_claude(from_number, body, business, ad_product_interest=ad_product_interest)
+    reply = ask_claude(from_number, body, business, ad_product_interest=ad_product_interest, is_first=_is_first_msg)
 
     # AI handoff — model signals it can't help, disable AI for this conversation
     reply, handoff_requested = extract_handoff_marker(reply)
