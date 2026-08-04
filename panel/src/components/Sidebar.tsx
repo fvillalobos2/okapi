@@ -20,6 +20,16 @@ interface Business {
 interface NavLink { href: string; label: string; icon: React.ReactNode }
 interface NavGroup { section: string; links: NavLink[] }
 
+// amount > 0 lightens (mix toward white), amount < 0 darkens (scale toward black)
+function adjustHex(hex: string, amount: number): string {
+  const m = hex.replace('#', '').match(/.{2}/g)
+  if (!m || m.length < 3) return hex
+  const [r, g, b] = m.map(x => parseInt(x, 16))
+  const clamp = (v: number) => Math.min(255, Math.max(0, Math.round(v)))
+  const adj = (v: number) => amount > 0 ? v + (255 - v) * amount : v * (1 + amount)
+  return '#' + [r, g, b].map(v => clamp(adj(v)).toString(16).padStart(2, '0')).join('')
+}
+
 const CORE_NAV: NavGroup[] = [
   {
     section: 'Operaciones',
@@ -170,7 +180,10 @@ export default function Sidebar() {
 
   useEffect(() => {
     if (business?.accent_color) {
-      document.documentElement.style.setProperty('--accent', business.accent_color)
+      const c = business.accent_color
+      document.documentElement.style.setProperty('--accent', c)
+      document.documentElement.style.setProperty('--accent2', adjustHex(c, -0.1))
+      document.documentElement.style.setProperty('--accent-light', adjustHex(c, 0.85))
     }
   }, [business?.accent_color])
 

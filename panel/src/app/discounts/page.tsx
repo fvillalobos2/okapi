@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react'
 
+type PriceItem = { id: string; name: string }
+
 type Discount = {
   id: string
   name: string
@@ -10,10 +12,12 @@ type Discount = {
   condition: string | null
   active: boolean
   sort_order: number
+  price_item_id: string | null
+  price_items: PriceItem | null
 }
 
-const EMPTY: Omit<Discount, 'id' | 'sort_order'> = {
-  name: '', type: 'percentage', value: 0, condition: '', active: true,
+const EMPTY = {
+  name: '', type: 'percentage' as const, value: 0, condition: '', active: true, price_item_id: '' as string,
 }
 
 function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
@@ -36,8 +40,27 @@ function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: b
   )
 }
 
+const selectStyle: React.CSSProperties = {
+  width: '100%', padding: '7px 10px', borderRadius: 7,
+  border: '1px solid var(--border)', fontSize: 13,
+  color: 'var(--text)', background: 'var(--surface2)', outline: 'none',
+}
+
+const inputStyle: React.CSSProperties = {
+  width: '100%', padding: '7px 10px', borderRadius: 7,
+  border: '1px solid var(--border)', fontSize: 13,
+  color: 'var(--text)', background: 'var(--surface2)',
+  outline: 'none', boxSizing: 'border-box',
+}
+
+const labelStyle: React.CSSProperties = {
+  display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)',
+  textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4,
+}
+
 export default function DiscountsPage() {
   const [items, setItems] = useState<Discount[]>([])
+  const [priceItems, setPriceItems] = useState<PriceItem[]>([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ ...EMPTY })
   const [editing, setEditing] = useState<string | null>(null)
@@ -46,8 +69,13 @@ export default function DiscountsPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const res = await fetch('/api/discounts')
-    setItems(await res.json())
+    const [discRes, priceRes] = await Promise.all([
+      fetch('/api/discounts'),
+      fetch('/api/prices'),
+    ])
+    setItems(await discRes.json())
+    const priceData = await priceRes.json()
+    setPriceItems(Array.isArray(priceData) ? priceData : (priceData.items ?? []))
     setLoading(false)
   }, [])
 
@@ -55,7 +83,11 @@ export default function DiscountsPage() {
 
   function startEdit(d: Discount) {
     setEditing(d.id)
-    setForm({ name: d.name, type: d.type, value: d.value, condition: d.condition ?? '', active: d.active })
+    setForm({
+      name: d.name, type: d.type, value: d.value,
+      condition: d.condition ?? '', active: d.active,
+      price_item_id: d.price_item_id ?? '',
+    })
     setError('')
   }
 
@@ -72,7 +104,11 @@ export default function DiscountsPage() {
     }
     setSaving(true)
     setError('')
-    const payload = { ...form, condition: form.condition?.trim() || null }
+    const payload = {
+      ...form,
+      condition: form.condition?.trim() || null,
+      price_item_id: form.price_item_id || null,
+    }
 
     if (editing) {
       const res = await fetch('/api/discounts', {
@@ -139,37 +175,22 @@ export default function DiscountsPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 110px', gap: 10, marginBottom: 10 }}>
           {/* Name */}
           <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)',
-              textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>
-              Nombre
-            </label>
+            <label style={labelStyle}>Nombre</label>
             <input
               value={form.name}
               onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
               placeholder="Ej: Descuento fidelidad"
-              style={{
-                width: '100%', padding: '7px 10px', borderRadius: 7,
-                border: '1px solid var(--border)', fontSize: 13,
-                color: 'var(--text)', background: 'var(--surface2)',
-                outline: 'none', boxSizing: 'border-box',
-              }}
+              style={inputStyle}
             />
           </div>
 
           {/* Type */}
           <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)',
-              textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>
-              Tipo
-            </label>
+            <label style={labelStyle}>Tipo</label>
             <select
               value={form.type}
               onChange={e => setForm(f => ({ ...f, type: e.target.value as 'percentage' | 'fixed' }))}
-              style={{
-                width: '100%', padding: '7px 10px', borderRadius: 7,
-                border: '1px solid var(--border)', fontSize: 13,
-                color: 'var(--text)', background: 'var(--surface2)', outline: 'none',
-              }}
+              style={selectStyle}
             >
               <option value="percentage">Porcentaje (%)</option>
               <option value="fixed">Monto fijo ($)</option>
@@ -178,42 +199,46 @@ export default function DiscountsPage() {
 
           {/* Value */}
           <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)',
-              textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>
-              Valor
-            </label>
+            <label style={labelStyle}>Valor</label>
             <input
               type="number"
               min={0}
               step={form.type === 'percentage' ? 1 : 0.01}
               value={form.value}
               onChange={e => setForm(f => ({ ...f, value: parseFloat(e.target.value) || 0 }))}
-              style={{
-                width: '100%', padding: '7px 10px', borderRadius: 7,
-                border: '1px solid var(--border)', fontSize: 13,
-                color: 'var(--text)', background: 'var(--surface2)',
-                outline: 'none', boxSizing: 'border-box',
-              }}
+              style={inputStyle}
             />
           </div>
         </div>
 
+        {/* Product link */}
+        {priceItems.length > 0 && (
+          <div style={{ marginBottom: 10 }}>
+            <label style={labelStyle}>Producto / Servicio (opcional)</label>
+            <select
+              value={form.price_item_id}
+              onChange={e => setForm(f => ({ ...f, price_item_id: e.target.value }))}
+              style={selectStyle}
+            >
+              <option value="">— Aplica a cualquier producto —</option>
+              {priceItems.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
+              Vincula este descuento a un producto específico del catálogo.
+            </p>
+          </div>
+        )}
+
         {/* Condition */}
         <div style={{ marginBottom: 12 }}>
-          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)',
-            textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>
-            Condición (opcional)
-          </label>
+          <label style={labelStyle}>Condición (opcional)</label>
           <input
             value={form.condition ?? ''}
             onChange={e => setForm(f => ({ ...f, condition: e.target.value }))}
             placeholder="Ej: Aplica a reservas de más de 3 noches"
-            style={{
-              width: '100%', padding: '7px 10px', borderRadius: 7,
-              border: '1px solid var(--border)', fontSize: 13,
-              color: 'var(--text)', background: 'var(--surface2)',
-              outline: 'none', boxSizing: 'border-box',
-            }}
+            style={inputStyle}
           />
           <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
             El agente mencionará esta condición cuando ofrezca el descuento.
@@ -275,7 +300,7 @@ export default function DiscountsPage() {
               <ToggleSwitch checked={d.active} onChange={() => toggleActive(d)} />
 
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{d.name}</span>
                   <span style={{
                     fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
@@ -284,6 +309,15 @@ export default function DiscountsPage() {
                   }}>
                     {formatValue(d)}
                   </span>
+                  {d.price_items && (
+                    <span style={{
+                      fontSize: 11, padding: '2px 8px', borderRadius: 20,
+                      background: 'var(--accent-light)', color: 'var(--accent)',
+                      fontWeight: 600,
+                    }}>
+                      {d.price_items.name}
+                    </span>
+                  )}
                 </div>
                 {d.condition && (
                   <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 3 }}>{d.condition}</p>

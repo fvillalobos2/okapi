@@ -3,7 +3,9 @@ Supabase-backed storage — drop-in replacement for all JSON file functions.
 All public functions maintain the same signatures as the original implementations.
 """
 
+import base64
 import os
+import secrets as _secrets
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 
@@ -13,6 +15,45 @@ try:
 except ImportError as _e:
     print(f"[supabase_store] FATAL: supabase not installed: {_e}", flush=True)
     raise
+
+# ─── FIELD ENCRYPTION (AES-256-GCM) ─────────────────────────────────────────
+# Format: base64(nonce[12] + tag[16] + ciphertext[n])  — compatible with panel TS impl
+_ENC_KEY_HEX = os.environ.get('ENCRYPTION_KEY', '')
+_ENC_KEY      = bytes.fromhex(_ENC_KEY_HEX) if len(_ENC_KEY_HEX) == 64 else None
+_SENSITIVE    = {'meta_access_token', 'twilio_auth_token'}
+
+def _encrypt_field(value: str) -> str:
+    if not _ENC_KEY or not value:
+        return value
+    try:
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+        nonce = _secrets.token_bytes(12)
+        ct_tag = AESGCM(_ENC_KEY).encrypt(nonce, value.encode(), None)
+        ct, tag = ct_tag[:-16], ct_tag[-16:]
+        return base64.b64encode(nonce + tag + ct).decode()
+    except Exception as e:
+        print(f'  ⚠ encrypt_field: {e}', flush=True)
+        return value
+
+def _decrypt_field(value: str) -> str:
+    if not _ENC_KEY or not value:
+        return value
+    try:
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+        buf = base64.b64decode(value)
+        nonce, tag, ct = buf[:12], buf[12:28], buf[28:]
+        return AESGCM(_ENC_KEY).decrypt(nonce, ct + tag, None).decode()
+    except Exception:
+        return value  # plaintext fallback during migration window
+
+def _decrypt_business(biz: Optional[dict]) -> Optional[dict]:
+    if not biz or not _ENC_KEY:
+        return biz
+    result = dict(biz)
+    for f in _SENSITIVE:
+        if result.get(f):
+            result[f] = _decrypt_field(result[f])
+    return result
 
 SUPABASE_URL = os.getenv('SUPABASE_URL', 'https://bzdaxldhvxsnolzkcgrs.supabase.co')
 SUPABASE_KEY = os.getenv('SUPABASE_SERVICE_KEY',
@@ -57,7 +98,7 @@ def _bid(business_id: Optional[str] = None) -> Optional[str]:
 def get_business_by_slug(slug: str) -> Optional[dict]:
     try:
         r = _sb().table('businesses').select('*').eq('slug', slug).eq('active', True).limit(1).execute()
-        return r.data[0] if r.data else None
+        return _decrypt_business(r.data[0]) if r.data else None
     except Exception as e:
         print(f'  ⚠ get_business_by_slug({slug}): {e}')
         return None
@@ -66,7 +107,7 @@ def get_business_by_slug(slug: str) -> Optional[dict]:
 def get_business_by_meta_phone_number_id(phone_number_id: str) -> Optional[dict]:
     try:
         r = _sb().table('businesses').select('*').eq('meta_phone_number_id', phone_number_id).eq('active', True).limit(1).execute()
-        return r.data[0] if r.data else None
+        return _decrypt_business(r.data[0]) if r.data else None
     except Exception as e:
         print(f'  ⚠ get_business_by_meta_phone_number_id({phone_number_id}): {e}')
         return None
@@ -75,7 +116,7 @@ def get_business_by_meta_phone_number_id(phone_number_id: str) -> Optional[dict]
 def get_all_businesses() -> list:
     try:
         r = _sb().table('businesses').select('*').order('name').execute()
-        return r.data or []
+        return [_decrypt_business(b) for b in (r.data or [])]
     except Exception as e:
         print(f'  ⚠ get_all_businesses: {e}')
         return []
@@ -101,9 +142,15 @@ def update_business(business_id: str, data: dict) -> bool:
 
 # ─── LEAD HELPERS ────────────────────────────────────────────────────────────
 
+def _normalize_phone(phone: str) -> str:
+    """Strip whatsapp: prefix so Twilio and Meta formats match."""
+    return phone.replace('whatsapp:', '').strip() if phone else phone
+
+
 def _get_or_create_lead(phone: str, business_id: str) -> Optional[str]:
+    phone = _normalize_phone(phone)
+    now = datetime.utcnow().isoformat()
     try:
-        now = datetime.utcnow().isoformat()
         r = _sb().table('leads').select('id').eq('phone', phone).eq('business_id', business_id).limit(1).execute()
         if r.data:
             lid = r.data[0]['id']
@@ -115,11 +162,20 @@ def _get_or_create_lead(phone: str, business_id: str) -> Optional[str]:
         }).execute()
         return ins.data[0]['id'] if ins.data else None
     except Exception as e:
+        # Unique constraint violation — concurrent insert won the race, re-query
+        if '23505' in str(e) or 'duplicate' in str(e).lower():
+            try:
+                r = _sb().table('leads').select('id').eq('phone', phone).eq('business_id', business_id).limit(1).execute()
+                return r.data[0]['id'] if r.data else None
+            except Exception as e2:
+                print(f'  ⚠ _get_or_create_lead retry: {e2}')
+                return None
         print(f'  ⚠ _get_or_create_lead: {e}')
         return None
 
 
 def update_lead_info(phone: str, data: dict, business_id: Optional[str] = None):
+    phone = _normalize_phone(phone)
     b = _bid(business_id)
     if not b:
         return
@@ -158,6 +214,7 @@ def get_leads(business_id: Optional[str] = None, status: Optional[str] = None,
 
 
 def get_lead_by_phone(phone: str, business_id: Optional[str] = None) -> Optional[dict]:
+    phone = _normalize_phone(phone)
     b = _bid(business_id)
     if not b:
         return None
@@ -170,6 +227,7 @@ def get_lead_by_phone(phone: str, business_id: Optional[str] = None) -> Optional
 
 
 def delete_lead(phone: str, business_id: Optional[str] = None) -> bool:
+    phone = _normalize_phone(phone)
     b = _bid(business_id)
     if not b:
         return False
@@ -184,6 +242,7 @@ def delete_lead(phone: str, business_id: Optional[str] = None) -> bool:
 
 def update_lead_fields_if_empty(phone: str, fields: dict, business_id: Optional[str] = None):
     """Update lead fields only if they are currently null/empty — never overwrite existing data."""
+    phone = _normalize_phone(phone)
     b = _bid(business_id)
     if not b or not fields:
         return
@@ -203,6 +262,7 @@ def update_lead_fields_if_empty(phone: str, fields: dict, business_id: Optional[
 # ─── CONVERSATION STORE ───────────────────────────────────────────────────────
 
 def get_history(phone: str, business_id: Optional[str] = None) -> list:
+    phone = _normalize_phone(phone)
     b = _bid(business_id)
     if not b:
         return []
@@ -214,12 +274,16 @@ def get_history(phone: str, business_id: Optional[str] = None) -> list:
         return []
 
 
-def append_message(phone: str, role: str, content: str, business_id: Optional[str] = None):
+def append_message(phone: str, role: str, content: str, business_id: Optional[str] = None,
+                   wam_id: Optional[str] = None):
+    phone = _normalize_phone(phone)
     b = _bid(business_id)
     if not b:
         return
     now = datetime.utcnow().isoformat() + 'Z'
-    new_msg = {'role': role, 'content': content, 'ts': now}
+    new_msg: dict = {'role': role, 'content': content, 'ts': now}
+    if wam_id:
+        new_msg['wam_id'] = wam_id
     try:
         lead_id = _get_or_create_lead(phone, b)
         if lead_id:
@@ -233,15 +297,28 @@ def append_message(phone: str, role: str, content: str, business_id: Optional[st
                 msgs = msgs[-30:]
             _sb().table('conversations').update({_HIST_COL: msgs, _TS_COL: now}).eq('id', r.data[0]['id']).execute()
         else:
-            _sb().table('conversations').insert({
-                'phone': phone, 'business_id': b, 'lead_id': lead_id,
-                _HIST_COL: [new_msg], _TS_COL: now,
-            }).execute()
+            try:
+                _sb().table('conversations').insert({
+                    'phone': phone, 'business_id': b, 'lead_id': lead_id,
+                    _HIST_COL: [new_msg], _TS_COL: now,
+                }).execute()
+            except Exception as ins_e:
+                # Race: another thread created it first — just update
+                if '23505' in str(ins_e) or 'duplicate' in str(ins_e).lower():
+                    r2 = _sb().table('conversations').select(f'id,{_HIST_COL}').eq('phone', phone).eq('business_id', b).limit(1).execute()
+                    if r2.data:
+                        msgs = r2.data[0].get(_HIST_COL, []) + [new_msg]
+                        if len(msgs) > 30:
+                            msgs = msgs[-30:]
+                        _sb().table('conversations').update({_HIST_COL: msgs, _TS_COL: now}).eq('id', r2.data[0]['id']).execute()
+                else:
+                    raise
     except Exception as e:
         print(f'  ⚠ append_message: {e}')
 
 
 def clear_history(phone: str, business_id: Optional[str] = None):
+    phone = _normalize_phone(phone)
     b = _bid(business_id)
     if not b:
         return
@@ -250,6 +327,51 @@ def clear_history(phone: str, business_id: Optional[str] = None):
         update_lead_status(phone, 'new', b)
     except Exception as e:
         print(f'  ⚠ clear_history: {e}')
+
+
+def get_ai_enabled(phone: str, business_id: Optional[str] = None) -> bool:
+    """Return False if AI auto-reply has been disabled for this conversation."""
+    phone = _normalize_phone(phone)
+    b = _bid(business_id)
+    if not b:
+        return True
+    try:
+        r = _sb().table('conversations').select('ai_enabled').eq('phone', phone).eq('business_id', b).limit(1).execute()
+        if r.data:
+            val = r.data[0].get('ai_enabled')
+            return val if val is not None else True
+        return True
+    except Exception as e:
+        print(f'  ⚠ get_ai_enabled: {e}')
+        return True
+
+
+def set_ai_enabled(phone: str, enabled: bool, business_id: Optional[str] = None):
+    """Enable or disable AI auto-reply for a specific conversation."""
+    phone = _normalize_phone(phone)
+    b = _bid(business_id)
+    if not b:
+        return
+    try:
+        _sb().table('conversations').update({'ai_enabled': enabled}).eq('phone', phone).eq('business_id', b).execute()
+        print(f'  {"✓" if enabled else "⏸"} AI {"enabled" if enabled else "disabled"} for {phone}', flush=True)
+    except Exception as e:
+        print(f'  ⚠ set_ai_enabled: {e}')
+
+
+def upsert_message_status(wam_id: str, phone: str, status: str, business_id: Optional[str] = None):
+    """Track delivery/read status for a sent WhatsApp message."""
+    b = _bid(business_id)
+    if not b or not wam_id:
+        return
+    try:
+        from datetime import datetime as _dt
+        _sb().table('message_statuses').upsert({
+            'wam_id': wam_id, 'business_id': b, 'phone': _normalize_phone(phone),
+            'status': status, 'updated_at': _dt.utcnow().isoformat() + 'Z',
+        }).execute()
+    except Exception as e:
+        print(f'  ⚠ upsert_message_status: {e}')
 
 
 def get_conversations(business_id: Optional[str] = None, limit: int = 100) -> list:
@@ -265,6 +387,7 @@ def get_conversations(business_id: Optional[str] = None, limit: int = 100) -> li
 
 
 def get_conversation_by_phone(phone: str, business_id: Optional[str] = None) -> Optional[dict]:
+    phone = _normalize_phone(phone)
     b = _bid(business_id)
     if not b:
         return None
@@ -868,6 +991,28 @@ def get_product_images(business_id: Optional[str] = None) -> dict:
         return {}
 
 
+def get_product_pdfs(business_id: Optional[str] = None) -> dict:
+    """Return {name_lower: (file_url, filename)} for products that have a PDF document."""
+    b = _bid(business_id)
+    if not b:
+        return {}
+    try:
+        items_r = _sb().table('price_items').select('id,name').eq('business_id', b).execute()
+        id_to_name = {row['id']: row['name'] for row in (items_r.data or [])}
+        docs_r = _sb().table('product_documents').select('price_item_id,file_url,filename') \
+            .eq('business_id', b).eq('doc_type', 'product') \
+            .not_.is_('price_item_id', 'null').not_.is_('file_url', 'null').execute()
+        result = {}
+        for row in (docs_r.data or []):
+            name = id_to_name.get(row['price_item_id'])
+            if name and row.get('file_url'):
+                result[name.lower()] = (row['file_url'], row.get('filename', 'ficha_tecnica.pdf'))
+        return result
+    except Exception as e:
+        print(f'  ⚠ get_product_pdfs: {e}')
+        return {}
+
+
 def get_categories_keywords(business_id: Optional[str] = None) -> list:
     """Return [{id, name, product_keywords}] for all categories of a business."""
     b = _bid(business_id)
@@ -1241,3 +1386,148 @@ def _hours_old(entry: dict) -> float:
         return (datetime.now(timezone.utc) - created).total_seconds() / 3600
     except Exception:
         return 0.0
+
+
+# ─── BROADCASTS ───────────────────────────────────────────────────────────────
+
+def get_broadcast(broadcast_id: str, business_id: Optional[str] = None) -> Optional[dict]:
+    b = _bid(business_id)
+    if not b:
+        return None
+    try:
+        r = _sb().table('broadcasts').select('*').eq('id', broadcast_id).eq('business_id', b).limit(1).execute()
+        return r.data[0] if r.data else None
+    except Exception as e:
+        print(f'  ⚠ get_broadcast: {e}')
+        return None
+
+
+def get_broadcast_recipients(broadcast_id: str, status: Optional[str] = None) -> list:
+    try:
+        q = _sb().table('broadcast_recipients').select('*').eq('broadcast_id', broadcast_id)
+        if status:
+            q = q.eq('status', status)
+        return (q.execute().data or [])
+    except Exception as e:
+        print(f'  ⚠ get_broadcast_recipients: {e}')
+        return []
+
+
+def update_broadcast_recipient(recipient_id: str, updates: dict):
+    try:
+        _sb().table('broadcast_recipients').update(updates).eq('id', recipient_id).execute()
+    except Exception as e:
+        print(f'  ⚠ update_broadcast_recipient: {e}')
+
+
+def update_broadcast(broadcast_id: str, updates: dict):
+    try:
+        _sb().table('broadcasts').update(updates).eq('id', broadcast_id).execute()
+    except Exception as e:
+        print(f'  ⚠ update_broadcast: {e}')
+
+
+def get_reachable_leads(business_id: Optional[str] = None, within_hours: int = 23) -> list:
+    """Return leads who messaged within `within_hours` (within Meta's 24h free-form window)."""
+    b = _bid(business_id)
+    if not b:
+        return []
+    try:
+        cutoff = (datetime.utcnow() - timedelta(hours=within_hours)).isoformat()
+        r = _sb().table('leads').select('id,phone,name').eq('business_id', b) \
+            .gte('last_active_at', cutoff).execute()
+        return r.data or []
+    except Exception as e:
+        print(f'  ⚠ get_reachable_leads: {e}')
+        return []
+
+
+# ─── TOKEN ENCRYPTION HELPERS (used by migration script) ─────────────────────
+
+def migrate_encrypt_tokens():
+    """One-time migration: encrypt plaintext tokens in the businesses table."""
+    if not _ENC_KEY:
+        print('  ⚠ ENCRYPTION_KEY not set — skipping token migration')
+        return
+    try:
+        rows = _sb().table('businesses').select('id,meta_access_token,twilio_auth_token').execute().data or []
+        for row in rows:
+            updates = {}
+            for field in ('meta_access_token', 'twilio_auth_token'):
+                val = row.get(field)
+                if val and not val.startswith('enc:'):
+                    encrypted = _encrypt_field(val)
+                    updates[field] = encrypted
+            if updates:
+                _sb().table('businesses').update(updates).eq('id', row['id']).execute()
+                print(f'  ✓ Encrypted tokens for business {row["id"][:8]}…')
+        print('  ✓ Token migration complete')
+    except Exception as e:
+        print(f'  ⚠ migrate_encrypt_tokens: {e}')
+
+
+# ─── PERSISTENT MESSAGE QUEUE ─────────────────────────────────────────────────
+
+def get_business_by_id(business_id: str) -> Optional[dict]:
+    try:
+        r = _sb().table('businesses').select('*').eq('id', business_id).limit(1).execute()
+        if r.data:
+            return _decrypt_business(r.data[0])
+    except Exception as e:
+        print(f'  ⚠ get_business_by_id: {e}', flush=True)
+    return None
+
+
+def enqueue_message(business_id: str, to_number: str, payload: dict, send_at) -> None:
+    """Persist a message to send at send_at (datetime). Survives deploys."""
+    try:
+        _sb().table('queued_messages').insert({
+            'business_id': business_id,
+            'to_number': to_number,
+            'payload': payload,
+            'send_at': send_at.isoformat() if hasattr(send_at, 'isoformat') else send_at,
+            'status': 'pending',
+        }).execute()
+    except Exception as e:
+        print(f'  ✗ enqueue_message: {e}', flush=True)
+
+
+def reset_stale_processing_messages() -> None:
+    """On startup: reset any messages stuck in 'processing' back to 'pending'."""
+    try:
+        _sb().table('queued_messages').update({'status': 'pending'}).eq('status', 'processing').execute()
+    except Exception as e:
+        print(f'  ⚠ reset_stale_processing_messages: {e}', flush=True)
+
+
+def claim_due_messages() -> list:
+    """Return pending messages whose send_at has passed and mark them as processing."""
+    try:
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).isoformat()
+        r = _sb().table('queued_messages') \
+            .select('*') \
+            .eq('status', 'pending') \
+            .lte('send_at', now) \
+            .execute()
+        if not r.data:
+            return []
+        ids = [row['id'] for row in r.data]
+        _sb().table('queued_messages') \
+            .update({'status': 'processing', 'attempt_count': 1}) \
+            .in_('id', ids) \
+            .execute()
+        return r.data
+    except Exception as e:
+        print(f'  ✗ claim_due_messages: {e}', flush=True)
+        return []
+
+
+def complete_queued_message(msg_id: str, success: bool, error_msg: Optional[str] = None) -> None:
+    try:
+        patch = {'status': 'sent' if success else 'failed'}
+        if error_msg:
+            patch['error_msg'] = error_msg
+        _sb().table('queued_messages').update(patch).eq('id', msg_id).execute()
+    except Exception as e:
+        print(f'  ✗ complete_queued_message: {e}', flush=True)

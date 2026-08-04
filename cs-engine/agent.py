@@ -18,6 +18,16 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional
 from zoneinfo import ZoneInfo
 
+# Per-conversation processing lock — prevents AI burst from concurrent inbound messages
+_conv_locks: dict = {}
+_conv_locks_mutex = threading.Lock()
+
+def _get_conv_lock(key: str) -> threading.Lock:
+    with _conv_locks_mutex:
+        if key not in _conv_locks:
+            _conv_locks[key] = threading.Lock()
+        return _conv_locks[key]
+
 def biz_now(business: Optional[dict] = None) -> datetime:
     tz_name = (business or {}).get('timezone', 'America/Costa_Rica')
     try:
@@ -745,7 +755,8 @@ def notify_provider(booking_text: str, client_phone: str,
         print(f'  ✗ Failed to notify provider: {e}')
 
 def _send_full_booking_to_provider(provider_number: str, pending: dict,
-                                    sender: Optional[str] = None):
+                                    sender: Optional[str] = None,
+                                    business: Optional[dict] = None):
     """After commission accepted, send the full booking details asking for price."""
     booking_text    = pending.get('booking', '')
     redacted        = _redact_contacts(booking_text)
@@ -768,7 +779,7 @@ def _send_full_booking_to_provider(provider_number: str, pending: dict,
         f'Responda con el precio (ej. "$500" o "80000 colones").'
     )
     try:
-        get_twilio_client(business).messages.create(from_=effective_sender, to=provider_number, body=msg)
+        send_whatsapp(provider_number, msg, effective_sender, business)
         print(f'  ✓ Full booking sent to provider {provider_number}')
         booking_id = store.get_booking_id_by_provider(provider_number, pending.get('business_id'))
         if booking_id:
@@ -778,7 +789,8 @@ def _send_full_booking_to_provider(provider_number: str, pending: dict,
 
 def release_contact_info_to_provider(provider_number: str, full_booking: str,
                                       client_phone: str,
-                                      sender: Optional[str] = None):
+                                      sender: Optional[str] = None,
+                                      business: Optional[dict] = None):
     effective_sender = sender or TWILIO_WA_NUMBER
     msg = (
         f'✅ *Reserva Confirmada — Pago Recibido*\n\n'
@@ -789,7 +801,7 @@ def release_contact_info_to_provider(provider_number: str, full_booking: str,
         f'Por favor coordine la entrega directamente con el cliente. ¡Gracias! 🏖️'
     )
     try:
-        get_twilio_client(business).messages.create(from_=effective_sender, to=provider_number, body=msg)
+        send_whatsapp(provider_number, msg, effective_sender, business)
         print(f'  ✓ Contact info released to provider ({provider_number})')
     except Exception as e:
         print(f'  ✗ Failed to release contact info: {e}')
@@ -817,7 +829,8 @@ def _normalize_to_meta(number: str) -> str:
     return n
 
 def _send_meta_message(to: str, body: str, access_token: str, phone_number_id: str,
-                       media_url: Optional[str] = None):
+                       media_url: Optional[str] = None, media_type: str = 'image',
+                       media_filename: Optional[str] = None):
     """Send a message via Meta Cloud API."""
     import hmac as _hmac
     url = f'https://graph.facebook.com/v19.0/{phone_number_id}/messages'
@@ -826,7 +839,14 @@ def _send_meta_message(to: str, body: str, access_token: str, phone_number_id: s
         'Content-Type': 'application/json',
     }
     recipient = _normalize_to_meta(to)
-    if media_url:
+    if media_url and media_type == 'document':
+        payload = {
+            'messaging_product': 'whatsapp',
+            'to': recipient,
+            'type': 'document',
+            'document': {'link': media_url, 'filename': media_filename or 'documento.pdf'},
+        }
+    elif media_url:
         payload = {
             'messaging_product': 'whatsapp',
             'to': recipient,
@@ -845,23 +865,32 @@ def _send_meta_message(to: str, body: str, access_token: str, phone_number_id: s
                                   headers={k: v for k, v in headers.items()},
                                   method='POST')
     with urllib.request.urlopen(req, timeout=15) as resp:
-        return json.loads(resp.read())
+        result = json.loads(resp.read())
+        # Return wam_id for status tracking
+        try:
+            return result.get('messages', [{}])[0].get('id')
+        except Exception:
+            return None
 
 
 def send_whatsapp(to: str, body: str, sender: Optional[str] = None,
                   business: Optional[dict] = None, delay: float = 0,
-                  media_url: Optional[str] = None):
+                  media_url: Optional[str] = None, media_type: str = 'image',
+                  media_filename: Optional[str] = None) -> Optional[str]:
+    """Send a WhatsApp message. Returns wam_id for Meta messages (for status tracking)."""
     if delay > 0:
         time.sleep(delay)
-    suffix = ' [img]' if media_url else ''
+    suffix = f' [{media_type}]' if media_url else ''
     if _is_meta_business(business):
         access_token, phone_number_id = _get_meta_config(business)
         try:
-            _send_meta_message(to, body, access_token, phone_number_id, media_url)
+            wam_id = _send_meta_message(to, body, access_token, phone_number_id,
+                                        media_url, media_type, media_filename)
             print(f'  → [meta] {to}: {body[:80]}{suffix}', flush=True)
+            return wam_id
         except Exception as e:
             print(f'  ✗ Failed to send to {to} via Meta: {e}', flush=True)
-        return
+            return None
     effective_sender = sender or TWILIO_WA_NUMBER
     try:
         kwargs = dict(from_=effective_sender, to=to, body=body)
@@ -889,6 +918,30 @@ def extract_image_markers(text: str, business: Optional[dict] = None) -> tuple[s
         return ''
     clean = re.sub(r'\[SEND_IMAGE:\s*([^\]]+)\]', replacer, text).strip()
     return clean, urls
+
+def extract_pdf_markers(text: str, business: Optional[dict] = None) -> tuple[str, list[tuple[str, str]]]:
+    """Extract [SEND_PDF: model] markers. Returns (clean_text, [(file_url, filename)])."""
+    import re
+    pdf_map = store.get_product_pdfs(business.get('id') if business else None)
+    pdfs = []
+    def replacer(m):
+        key = m.group(1).strip().lower()
+        entry = pdf_map.get(key)
+        if not entry:
+            entry = next((v for k, v in pdf_map.items() if key in k or k in key), None)
+        if entry:
+            pdfs.append(entry)
+        return ''
+    clean = re.sub(r'\[SEND_PDF:\s*([^\]]+)\]', replacer, text).strip()
+    return clean, pdfs
+
+
+def extract_handoff_marker(text: str) -> tuple[str, bool]:
+    """Strip [HANDOFF] from reply. Returns (clean_text, handoff_requested)."""
+    handoff = bool(re.search(r'\[HANDOFF\]', text, re.IGNORECASE))
+    clean = re.sub(r'\[HANDOFF\]\s*', '', text, flags=re.IGNORECASE).strip()
+    return clean, handoff
+
 
 def alert_admin(message: str, sender: Optional[str] = None):
     if ADMIN_WA:
@@ -918,14 +971,11 @@ def send_provider_followups(business: Optional[dict] = None,
         store.mark_provider_followup_sent(provider_num, bid)
 
         try:
-            get_twilio_client(business).messages.create(
-                from_=effective_sender, to=provider_num,
-                body=(
-                    '🔔 *Recordatorio — Solicitud de Reserva Pendiente*\n\n'
-                    'Aún esperamos su cotización de precio. '
-                    'Por favor responda lo antes posible. ¡Gracias!'
-                )
-            )
+            send_whatsapp(provider_num,
+                          '🔔 *Recordatorio — Solicitud de Reserva Pendiente*\n\n'
+                          'Aún esperamos su cotización de precio. '
+                          'Por favor responda lo antes posible. ¡Gracias!',
+                          effective_sender, business)
             print(f'  ↺ Follow-up sent to provider {provider_num}')
         except Exception as e:
             print(f'  ✗ Provider follow-up failed: {e}')
@@ -941,7 +991,7 @@ def send_provider_followups(business: Optional[dict] = None,
                 'We\'ll notify you as soon as we hear back. Thanks for your patience! 🙏'
             )
             try:
-                get_twilio_client(business).messages.create(from_=effective_sender, to=client_phone, body=msg)
+                send_whatsapp(client_phone, msg, effective_sender, business)
                 store.append_message(client_phone, 'assistant', msg, bid)
                 print(f'  ↺ Follow-up sent to client {client_phone}')
             except Exception as e:
@@ -967,10 +1017,7 @@ def send_cold_lead_followups(business: Optional[dict] = None, sender: Optional[s
         msg_en  = biz_settings.get('follow_up_message_en', 'Hey! Just checking in — still interested? 🙂')
         msg     = msg_es if lang == 'es' else msg_en
         try:
-            get_twilio_client(business).messages.create(
-                from_=effective_sender,
-                to=phone if phone.startswith('whatsapp:') else f'whatsapp:{phone}',
-                body=msg)
+            send_whatsapp(phone, msg, effective_sender, business)
             store.mark_follow_up_sent(phone, bid)
             print(f'  ↺ Cold lead follow-up sent to {phone}')
         except Exception as e:
@@ -1113,14 +1160,12 @@ def _execute_cancellation(client_phone: str, pc: dict,
         location = _extract_booking_field(booking_text, 'Location')
         pickup   = _extract_booking_field(booking_text, 'Pick-up')
         try:
-            get_twilio_client(business).messages.create(
-                from_=sender or TWILIO_WA_NUMBER,
-                to=provider_num,
-                body=(f'❌ *Reserva Cancelada — {(business or {}).get("name", "Okapi")}*\n\n'
-                      f'El cliente ha cancelado la reserva:\n'
-                      f'📍 {location}  |  📅 {pickup}\n\n'
-                      f'No es necesario ningún otro paso de su parte. ¡Gracias!')
-            )
+            send_whatsapp(provider_num,
+                          f'❌ *Reserva Cancelada — {(business or {}).get("name", "Okapi")}*\n\n'
+                          f'El cliente ha cancelado la reserva:\n'
+                          f'📍 {location}  |  📅 {pickup}\n\n'
+                          f'No es necesario ningún otro paso de su parte. ¡Gracias!',
+                          sender, business)
         except Exception as e:
             print(f'  ✗ Could not notify provider of cancellation: {e}')
 
@@ -1257,7 +1302,7 @@ def handle_inbound(from_number: str, body: str,
                     pct = pending.get('commission_pct', 10.0)
                     store.update_commission_status(from_number, 'accepted',
                                                    final_pct=pct, business_id=bid)
-                    _send_full_booking_to_provider(from_number, pending, sender)
+                    _send_full_booking_to_provider(from_number, pending, sender, business)
                     return '✅ Comisión aceptada. Le enviamos los detalles de la reserva.'
 
                 elif counter is not None and 'no' not in re.split(r'\W+', body_lower):
@@ -1271,7 +1316,7 @@ def handle_inbound(from_number: str, body: str,
                         # Auto-accept (within tolerance)
                         store.update_commission_status(from_number, 'accepted',
                                                        final_pct=counter, business_id=bid)
-                        _send_full_booking_to_provider(from_number, pending, sender)
+                        _send_full_booking_to_provider(from_number, pending, sender, business)
                         return f'✅ Contrapropuesta de {counter:.0f}% aceptada automáticamente.'
                     else:
                         # Alert admin + create notification
@@ -1485,7 +1530,18 @@ def handle_inbound(from_number: str, body: str,
         )
         alert_admin(f'🆘 *Human agent needed*\n\nCustomer: {from_number}\nMessage: {body}', sender)
 
+    # Per-conversation AI toggle — panel can disable AI for a specific chat
+    if not store.get_ai_enabled(from_number, bid):
+        print(f'  ⏸ AI disabled for {from_number} — human agent handling', flush=True)
+        return None
+
     reply = ask_claude(from_number, body, business, ad_product_interest=ad_product_interest)
+
+    # AI handoff — model signals it can't help, disable AI for this conversation
+    reply, handoff_requested = extract_handoff_marker(reply)
+    if handoff_requested:
+        store.set_ai_enabled(from_number, False, bid)
+        alert_admin(f'🤝 *AI handoff requested*\n\nConversation: {from_number}\nBusiness: {(business or {}).get("slug", "?")}', sender)
 
     booking = extract_booking(reply)
     if booking:
@@ -1595,22 +1651,30 @@ def webhook_tenant(slug: str):
 
     if human_mode:
         sender = business.get('twilio_sender') or TWILIO_WA_NUMBER
-        biz_copy = business  # closure capture
+        biz_copy = business
+        conv_key = f"{biz_copy.get('id')}:{from_number}"
 
         def _process_and_send():
-            try:
-                reply = handle_inbound(from_number, body, biz_copy, referral=referral)
-                if reply:
-                    clean_reply, img_urls = extract_image_markers(reply, biz_copy)
-                    send_whatsapp(from_number, clean_reply or reply, sender, biz_copy,
-                                  delay=human_delay(reply))
-                    for url in img_urls:
-                        send_whatsapp(from_number, '', sender, biz_copy,
-                                      delay=0.5, media_url=url)
-            except Exception as exc:
-                import traceback
-                print(f'  ✗ Thread error [{biz_copy.get("slug")}]: {exc}', flush=True)
-                traceback.print_exc()
+            lock = _get_conv_lock(conv_key)
+            with lock:
+                try:
+                    reply = handle_inbound(from_number, body, biz_copy, referral=referral)
+                    if reply:
+                        clean_reply, img_urls = extract_image_markers(reply, biz_copy)
+                        clean_reply, pdf_entries = extract_pdf_markers(clean_reply, biz_copy)
+                        text = clean_reply or reply
+                        send_at = datetime.now(timezone.utc) + timedelta(seconds=human_delay(reply))
+                        payload = {
+                            'body': text,
+                            'sender': sender,
+                            'img_urls': img_urls,
+                            'pdf_entries': [[u, f] for u, f in pdf_entries],
+                        }
+                        store.enqueue_message(biz_copy.get('id'), from_number, payload, send_at)
+                except Exception as exc:
+                    import traceback
+                    print(f'  ✗ Thread error [{biz_copy.get("slug")}]: {exc}', flush=True)
+                    traceback.print_exc()
 
         threading.Thread(target=_process_and_send, daemon=True).start()
         return str(MessagingResponse()), 200
@@ -1619,10 +1683,15 @@ def webhook_tenant(slug: str):
     resp = MessagingResponse()
     if reply:
         clean_reply, img_urls = extract_image_markers(reply, business)
+        clean_reply, pdf_entries = extract_pdf_markers(clean_reply, business)
         resp.message(clean_reply or reply)
         sender = business.get('twilio_sender') or TWILIO_WA_NUMBER
         for url in img_urls:
             send_whatsapp(from_number, '', sender, business, delay=0.5, media_url=url)
+        for file_url, filename in pdf_entries:
+            send_whatsapp(from_number, '', sender, business,
+                          delay=0.5, media_url=file_url,
+                          media_type='document', media_filename=filename)
     return str(resp)
 
 
@@ -1659,9 +1728,24 @@ def webhook_meta():
         entry        = payload.get('entry', [{}])[0]
         change       = entry.get('changes', [{}])[0].get('value', {})
         phone_num_id = change.get('metadata', {}).get('phone_number_id', '')
-        msgs         = change.get('messages', [])
+
+        # Handle delivery/read status updates
+        statuses = change.get('statuses', [])
+        if statuses:
+            biz = store.get_business_by_meta_phone_number_id(phone_num_id)
+            bid = biz.get('id') if biz else None
+            for s in statuses:
+                wam_id  = s.get('id')
+                status  = s.get('status')  # sent / delivered / read / failed
+                phone   = '+' + s.get('recipient_id', '').lstrip('+')
+                if wam_id and status and bid:
+                    store.upsert_message_status(wam_id, phone, status, bid)
+                    print(f'  ✓ [meta] status {status} for {wam_id[:12]}…', flush=True)
+            return '', 200
+
+        msgs = change.get('messages', [])
         if not msgs:
-            return '', 200  # status update / delivery receipt — ignore
+            return '', 200
         msg  = msgs[0]
         if msg.get('type') != 'text':
             return '', 200  # ignore non-text for now
@@ -1685,21 +1769,28 @@ def webhook_meta():
 
     if human_mode:
         biz_copy = business
+        conv_key = f"{biz_copy.get('id')}:{from_number}"
 
         def _process_and_send():
-            try:
-                reply = handle_inbound(from_number, body, biz_copy)
-                if reply:
-                    clean_reply, img_urls = extract_image_markers(reply, biz_copy)
-                    send_whatsapp(from_number, clean_reply or reply, None, biz_copy,
-                                  delay=human_delay(reply))
-                    for url in img_urls:
-                        send_whatsapp(from_number, '', None, biz_copy,
-                                      delay=0.5, media_url=url)
-            except Exception as exc:
-                import traceback
-                print(f'  ✗ Thread error [meta/{biz_copy.get("slug")}]: {exc}', flush=True)
-                traceback.print_exc()
+            lock = _get_conv_lock(conv_key)
+            with lock:
+                try:
+                    reply = handle_inbound(from_number, body, biz_copy)
+                    if reply:
+                        clean_reply, img_urls = extract_image_markers(reply, biz_copy)
+                        clean_reply, pdf_entries = extract_pdf_markers(clean_reply, biz_copy)
+                        text = clean_reply or reply
+                        send_at = datetime.now(timezone.utc) + timedelta(seconds=human_delay(reply))
+                        payload = {
+                            'body': text,
+                            'img_urls': img_urls,
+                            'pdf_entries': [[u, f] for u, f in pdf_entries],
+                        }
+                        store.enqueue_message(biz_copy.get('id'), from_number, payload, send_at)
+                except Exception as exc:
+                    import traceback
+                    print(f'  ✗ Thread error [meta/{biz_copy.get("slug")}]: {exc}', flush=True)
+                    traceback.print_exc()
 
         threading.Thread(target=_process_and_send, daemon=True).start()
         return '', 200
@@ -1707,9 +1798,16 @@ def webhook_meta():
     reply = handle_inbound(from_number, body, business)
     if reply:
         clean_reply, img_urls = extract_image_markers(reply, business)
-        send_whatsapp(from_number, clean_reply or reply, None, business)
+        clean_reply, pdf_entries = extract_pdf_markers(clean_reply, business)
+        wam_id = send_whatsapp(from_number, clean_reply or reply, None, business)
+        if wam_id:
+            store.upsert_message_status(wam_id, from_number, 'sent', business.get('id') if business else None)
         for url in img_urls:
             send_whatsapp(from_number, '', None, business, delay=0.5, media_url=url)
+        for file_url, filename in pdf_entries:
+            send_whatsapp(from_number, '', None, business,
+                          delay=0.5, media_url=file_url,
+                          media_type='document', media_filename=filename)
     return '', 200
 
 
@@ -1782,7 +1880,7 @@ def _process_confirmed_payment(order_number: str):
 
     store.add_confirmed_booking(client_phone, order_number, provider_number,
                                 full_booking, payment.get('fee', 0), bid)
-    release_contact_info_to_provider(provider_number, full_booking, client_phone, sender)
+    release_contact_info_to_provider(provider_number, full_booking, client_phone, sender, business)
 
     lang         = detect_client_language(client_phone, business)
     biz_name     = (business or {}).get('name', '')
@@ -1848,12 +1946,129 @@ def cron():
 
     return jsonify({'status': 'ok', 'ts': datetime.utcnow().isoformat()}), 200
 
+# ─── BROADCASTS ──────────────────────────────────────────────────────────────
+
+CS_API_KEY = os.environ.get('CS_API_KEY', '')
+
+def _require_api_key():
+    """Reject requests that don't carry the CS_API_KEY header."""
+    key = request.headers.get('X-CS-API-Key', '')
+    if not CS_API_KEY or key != CS_API_KEY:
+        return jsonify({'error': 'Unauthorized'}), 401
+    return None
+
+
+@app.route('/api/broadcasts/<broadcast_id>/send', methods=['POST'])
+def send_broadcast(broadcast_id: str):
+    err = _require_api_key()
+    if err:
+        return err
+
+    body = request.get_json(silent=True) or {}
+    business_id = body.get('business_id')
+    broadcast = store.get_broadcast(broadcast_id, business_id)
+    if not broadcast:
+        return jsonify({'error': 'Broadcast not found'}), 404
+    if broadcast['status'] not in ('draft', 'failed'):
+        return jsonify({'error': f'Broadcast status is {broadcast["status"]} — cannot re-send'}), 400
+
+    business = store.get_business_by_slug(
+        next((b['slug'] for b in store.get_all_businesses() if b['id'] == broadcast['business_id']), '')
+    ) if not business_id else None
+
+    # Load business from DB
+    biz_rows = store.get_all_businesses()
+    biz = next((b for b in biz_rows if b['id'] == broadcast['business_id']), None)
+    if not biz:
+        return jsonify({'error': 'Business not found'}), 404
+
+    pending = store.get_broadcast_recipients(broadcast_id, status='pending')
+    if not pending:
+        return jsonify({'error': 'No pending recipients'}), 400
+
+    store.update_broadcast(broadcast_id, {'status': 'sending'})
+
+    def _fan_out():
+        sent = err_count = 0
+        for r in pending:
+            try:
+                wam_id = send_whatsapp(r['phone'], broadcast['message'], None, biz)
+                updates = {'status': 'sent', 'sent_at': datetime.utcnow().isoformat() + 'Z'}
+                if wam_id:
+                    updates['wam_id'] = wam_id
+                    store.upsert_message_status(wam_id, r['phone'], 'sent', biz['id'])
+                store.update_broadcast_recipient(r['id'], updates)
+                sent += 1
+            except Exception as e:
+                store.update_broadcast_recipient(r['id'], {'status': 'failed', 'error_msg': str(e)[:200]})
+                err_count += 1
+            time.sleep(0.5)  # Meta rate limit: ~2 msg/sec per number
+        store.update_broadcast(broadcast_id, {
+            'status': 'completed' if not err_count else 'failed',
+            'sent_count': sent, 'error_count': err_count,
+            'sent_at': datetime.utcnow().isoformat() + 'Z',
+        })
+        print(f'  ✓ Broadcast {broadcast_id[:8]}… done: {sent} sent, {err_count} errors', flush=True)
+
+    threading.Thread(target=_fan_out, daemon=True).start()
+    return jsonify({'status': 'sending', 'total': len(pending)}), 202
+
+
+@app.route('/api/businesses/reachable-leads', methods=['GET'])
+def reachable_leads():
+    err = _require_api_key()
+    if err:
+        return err
+    business_id = request.args.get('business_id')
+    within_hours = int(request.args.get('within_hours', 23))
+    leads = store.get_reachable_leads(business_id, within_hours)
+    return jsonify(leads), 200
+
+
 # ─── HEALTH ──────────────────────────────────────────────────────────────────
 
 @app.route('/health', methods=['GET'])
 def health():
     return {'status': 'ok', 'agent': 'Okapi Platform',
             'ts': datetime.utcnow().isoformat()}
+
+
+# ─── PERSISTENT QUEUE WORKER ─────────────────────────────────────────────────
+
+def _run_queue_worker():
+    """Poll queued_messages every second and send due messages. Survives deploys."""
+    store.reset_stale_processing_messages()
+    print('  ✓ Queue worker started', flush=True)
+    while True:
+        try:
+            messages = store.claim_due_messages()
+            for msg in messages:
+                business = store.get_business_by_id(msg['business_id'])
+                if not business:
+                    store.complete_queued_message(msg['id'], success=False, error_msg='business not found')
+                    continue
+                payload = msg.get('payload', {})
+                try:
+                    text = payload.get('body', '')
+                    sender = payload.get('sender')
+                    wam_id = send_whatsapp(msg['to_number'], text, sender, business)
+                    if wam_id:
+                        store.append_message(msg['to_number'], 'assistant', text,
+                                             msg['business_id'], wam_id=wam_id)
+                        store.upsert_message_status(wam_id, msg['to_number'], 'sent', msg['business_id'])
+                    for url in payload.get('img_urls', []):
+                        send_whatsapp(msg['to_number'], '', sender, business, delay=0.5, media_url=url)
+                    for entry in payload.get('pdf_entries', []):
+                        send_whatsapp(msg['to_number'], '', sender, business,
+                                      delay=0.5, media_url=entry[0],
+                                      media_type='document', media_filename=entry[1])
+                    store.complete_queued_message(msg['id'], success=True)
+                except Exception as exc:
+                    print(f'  ✗ Queue send failed: {exc}', flush=True)
+                    store.complete_queued_message(msg['id'], success=False, error_msg=str(exc))
+        except Exception as exc:
+            print(f'  ✗ Queue worker error: {exc}', flush=True)
+        time.sleep(1)
 
 
 # ─── RUN ─────────────────────────────────────────────────────────────────────
@@ -1867,5 +2082,6 @@ if __name__ == '__main__':
     print(f'   Supabase   : {"✓" if store.SUPABASE_URL else "⚠ SUPABASE_URL not set"}')
     print(f'   Dev mode   : {os.getenv("DEV_MODE", "false")}')
     print(f'   Admin      : {"✓ password set" if ADMIN_PASSWORD else "⚠ ADMIN_PASSWORD not set"}')
+    threading.Thread(target=_run_queue_worker, daemon=True, name='queue-worker').start()
     port = int(os.getenv('PORT', 5001))
     app.run(host='0.0.0.0', port=port, debug=False)
