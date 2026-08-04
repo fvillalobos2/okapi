@@ -219,6 +219,7 @@ export default function ConvSidePanel({ conv, lead: initialLead, team, phone }: 
         {[
           ['Línea de negocio', freshConv.business_line],
           ['Sucursal', (freshConv.teams as any)?.name ?? team?.name],
+          ['Asignado a', freshConv.assigned_to],
           ['Fuente', lead?.source],
           ['Campaña', lead?.utm_campaign],
           ['Creado', fmt(freshConv.created_at)],

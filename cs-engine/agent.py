@@ -31,7 +31,7 @@ def _get_conv_lock(key: str) -> threading.Lock:
 # Message debounce buffer — merges rapid messages before processing
 _msg_buffer: dict = {}          # conv_key → {'messages': [str], 'timer': Timer}
 _msg_buffer_lock = threading.Lock()
-MSG_DEBOUNCE_SECS = 2.5
+MSG_DEBOUNCE_SECS = 4.0
 
 def biz_now(business: Optional[dict] = None) -> datetime:
     tz_name = (business or {}).get('timezone', 'America/Costa_Rica')
@@ -539,12 +539,21 @@ def ask_claude(phone: str, user_message: str, business: Optional[dict] = None,
         or ad_product_interest
     )
 
+    # Build greeting prefill for first message — injected as assistant turn so model can't skip it
+    hour = now_local.hour
+    if hour < 12:
+        _saludo = 'días'
+    elif hour < 18:
+        _saludo = 'tardes'
+    else:
+        _saludo = 'noches'
+    biz_name = (business or {}).get('name') or 'Acuarium'
+    _greeting_prefill = f'Buenas {_saludo}, {biz_name}, con gusto. '
+
     greeting_note = (
-        'Es el PRIMER mensaje de esta conversación — saludá con el saludo correcto según la hora '
-        '("Buenos días" antes de mediodía, "Buenas tardes" 12:00–18:00, "Buenas noches" después de las 18:00), '
-        'luego preguntá en qué podés ayudar.'
-        if is_first else
         'La conversación ya está en curso — NO repitas el saludo inicial, respondé directamente.'
+        if not is_first else
+        f'Es el PRIMER mensaje. Tu respuesta YA empieza con "{_greeting_prefill}" — completá con la pregunta de calificación.'
     )
 
     system = (
@@ -555,15 +564,23 @@ def ask_claude(phone: str, user_message: str, business: Optional[dict] = None,
         + f'\n\n## WhatsApp del cliente\n'
         + f'Esta conversación viene del número: {clean_phone}\n'
         + f'Al confirmar el teléfono, usa este número en lugar de pedirle que lo escriba. '
-        + f'Ejemplo: "¿Es {clean_phone} el mejor número para contactarte? 📱"'
+        + f'Ejemplo: "¿Es {clean_phone} el mejor número para contactarte?"'
     )
+
+    # Prefill assistant turn on first message — forces model to start with the correct greeting
+    if is_first:
+        messages.append({'role': 'assistant', 'content': _greeting_prefill})
+
     response = claude_client.messages.create(
         model='claude-sonnet-4-6',
         max_tokens=1024,
         system=system,
         messages=messages,
     )
-    return response.content[0].text
+    text = response.content[0].text
+    if is_first:
+        text = _greeting_prefill + text
+    return text
 
 _CRC_KEYWORDS = ('colones', 'colon', '₡', ' crc')
 _MIN_PRICE_USD = 20.0
@@ -1035,7 +1052,7 @@ def alert_admin(message: str, sender: Optional[str] = None):
                       message, sender)
 
 
-def send_email(to: str, subject: str, html: str, from_addr: str = 'noreply@projectokapi.com') -> bool:
+def send_email(to: str, subject: str, html: str, from_addr: str = 'onboarding@resend.dev') -> bool:
     """Send email via Resend API. Returns True on success."""
     if not RESEND_API_KEY:
         print(f'  ⚠ send_email: RESEND_API_KEY not set — skipping email to {to}', flush=True)
@@ -1388,17 +1405,24 @@ def _trigger_business_line_routing(phone: str, last_msg: str, bid: Optional[str]
                 return
             store.set_conversation_business_line(phone, bid, line)
 
-            # Auto-assign team based on lead zone
+            # Auto-assign team based on lead zone + user based on business line
             lead = store.get_lead_by_phone(phone, bid)
             lead_zone = (lead or {}).get('zone') or ''
+            users = store.get_users_by_business_line(bid or '', line)
+
+            assigned_name = ', '.join(u['name'] for u in users if u.get('name')) or None
+
+            team_id = None
             if lead_zone and bid:
                 team = store.get_team_by_zone(bid, lead_zone)
                 if team:
-                    store.assign_conversation_team(phone, bid, team['id'])
-                    print(f'  📋 Assigned team {team["name"]} for zone {lead_zone}', flush=True)
+                    team_id = team['id']
+                    print(f'  📋 Team: {team["name"]} (zone: {lead_zone})', flush=True)
 
-            # Notify users assigned to this line
-            users = store.get_users_by_business_line(bid or '', line)
+            store.assign_conversation(phone, bid, assigned_name=assigned_name, team_id=team_id)
+            if assigned_name:
+                print(f'  👤 Assigned to: {assigned_name} → {line}', flush=True)
+
             client_name = (lead or {}).get('name') or phone.replace('whatsapp:', '')
             biz_slug = (business or {}).get('slug', 'agent')
             panel_url = f'https://agent.{biz_slug}.com/conversations'

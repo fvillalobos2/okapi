@@ -1588,10 +1588,9 @@ def get_users_by_business_line(business_id: str, line: str) -> list:
     """Return active users assigned to the given business line."""
     b = _bid(business_id) or business_id
     try:
-        r = _sb().table('users').select('id,name,phone,email,notification_pref') \
-            .eq('business_id', b).eq('active', True) \
-            .contains('product_interests', [line]).execute()
-        return r.data or []
+        r = _sb().table('users').select('id,name,phone,email,notification_pref,product_interests') \
+            .eq('business_id', b).eq('active', True).execute()
+        return [u for u in (r.data or []) if line in (u.get('product_interests') or [])]
     except Exception as e:
         print(f'  ⚠ get_users_by_business_line: {e}')
         return []
@@ -1615,16 +1614,29 @@ def get_team_by_zone(business_id: str, zone: str) -> Optional[dict]:
         return None
 
 
-def assign_conversation_team(phone: str, business_id: Optional[str], team_id: str) -> None:
+def assign_conversation(phone: str, business_id: Optional[str],
+                        assigned_name: Optional[str] = None,
+                        team_id: Optional[str] = None) -> None:
+    """Set assigned_to and/or team_id on both conversation and lead."""
     phone = _normalize_phone(phone)
     b = _bid(business_id)
-    if not b:
+    if not b or (not assigned_name and not team_id):
         return
     try:
-        _sb().table('conversations').update({'team_id': team_id}) \
-            .eq('phone', phone).eq('business_id', b).execute()
+        conv_update = {}
+        if assigned_name:
+            conv_update['assigned_to'] = assigned_name
+        if team_id:
+            conv_update['team_id'] = team_id
+        if conv_update:
+            _sb().table('conversations').update(conv_update) \
+                .eq('phone', phone).eq('business_id', b).execute()
+        # Update team on lead (UUID FK) — only if we have a valid team_id
+        if team_id:
+            _sb().table('leads').update({'team_id': team_id}) \
+                .eq('phone', phone).eq('business_id', b).execute()
     except Exception as e:
-        print(f'  ⚠ assign_conversation_team: {e}')
+        print(f'  ⚠ assign_conversation: {e}')
 
 
 def enrich_lead(phone: str, business_id: Optional[str], updates: dict) -> None:
@@ -1635,8 +1647,8 @@ def enrich_lead(phone: str, business_id: Optional[str], updates: dict) -> None:
         return
     try:
         r = _sb().table('leads').select('id,name,last_name,email,company,zone,product_interest,ai_enriched') \
-            .eq('phone', phone).eq('business_id', b).maybeSingle().execute()
-        lead = r.data
+            .eq('phone', phone).eq('business_id', b).limit(1).execute()
+        lead = r.data[0] if r.data else None
         if not lead:
             return
 
