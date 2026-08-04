@@ -549,14 +549,16 @@ def ask_claude(phone: str, user_message: str, business: Optional[dict] = None,
         _saludo = 'tardes'
     else:
         _saludo = 'noches'
-    biz_name = (business or {}).get('name') or 'Acuarium'
+    # Use short_name from settings if available, fall back to full name
+    settings = (business or {}).get('settings') or {}
+    biz_name = settings.get('short_name') or (business or {}).get('name') or 'Acuarium'
     _greeting_prefill = f'Buenas {_saludo}, {biz_name}, con gusto.'
 
     greeting_note = (
         'La conversación ya está en curso — NO repitas el saludo inicial, respondé directamente.'
         if not is_first else
-        'Es el PRIMER mensaje. NO escribas ningún saludo — ve directo a la pregunta de calificación. '
-        'El saludo se agrega automáticamente antes de tu respuesta.'
+        'Es el PRIMER mensaje. NO escribas ningún saludo ni bienvenida — '
+        've directo a la pregunta de calificación. El saludo ya se antepone automáticamente.'
     )
 
     system = (
@@ -576,8 +578,14 @@ def ask_claude(phone: str, user_message: str, business: Optional[dict] = None,
         system=system,
         messages=messages,
     )
+    import re as _re
     text = response.content[0].text
     if is_first:
+        # Strip any greeting Claude may have added despite instructions (human_mode prompt conflict)
+        text = _re.sub(
+            r'^(Buenas?\s+(?:d[ií]as|tardes|noches)[,\s][^\n]*?con gusto\.?\s*)',
+            '', text, flags=_re.IGNORECASE
+        ).strip()
         text = _greeting_prefill + ' ' + text
     return text
 
