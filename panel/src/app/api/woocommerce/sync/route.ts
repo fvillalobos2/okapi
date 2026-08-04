@@ -63,6 +63,26 @@ export async function POST() {
     return NextResponse.json({ error: String(e) }, { status: 502 })
   }
 
+  // Ensure a "WooCommerce" category exists for this business
+  let categoryId: string
+  const { data: existingCat } = await supabaseAdmin()
+    .from('product_categories')
+    .select('id')
+    .eq('business_id', BUSINESS_ID)
+    .eq('name', 'WooCommerce')
+    .maybeSingle()
+
+  if (existingCat) {
+    categoryId = existingCat.id
+  } else {
+    const { data: newCat } = await supabaseAdmin()
+      .from('product_categories')
+      .insert({ business_id: BUSINESS_ID, name: 'WooCommerce', description: 'Productos sincronizados desde WooCommerce' })
+      .select('id')
+      .single()
+    categoryId = newCat!.id
+  }
+
   let created = 0
   let updated = 0
 
@@ -90,6 +110,7 @@ export async function POST() {
       active: p.status === 'publish' && p.stock_status !== 'outofstock',
       image_url: imageUrl,
       woo_product_id: p.id,
+      category_id: categoryId,
       updated_at: new Date().toISOString(),
     }
 
