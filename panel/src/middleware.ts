@@ -58,7 +58,7 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
   if (pathname.startsWith('/_next') || pathname === '/favicon.ico') return NextResponse.next()
 
-  const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/api/auth')
+  const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/api/auth') || pathname === '/api/health'
   const host = req.headers.get('host') ?? ''
   const business = await getBusinessByHost(host)
 
