@@ -28,6 +28,11 @@ def _get_conv_lock(key: str) -> threading.Lock:
             _conv_locks[key] = threading.Lock()
         return _conv_locks[key]
 
+# Message debounce buffer — merges rapid messages before processing
+_msg_buffer: dict = {}          # conv_key → {'messages': [str], 'timer': Timer}
+_msg_buffer_lock = threading.Lock()
+MSG_DEBOUNCE_SECS = 2.5
+
 def biz_now(business: Optional[dict] = None) -> datetime:
     tz_name = (business or {}).get('timezone', 'America/Costa_Rica')
     try:
@@ -105,6 +110,7 @@ AGENT_BASE_URL   = os.getenv('AGENT_BASE_URL',
 
 ADMIN_PASSWORD       = os.getenv('ADMIN_PASSWORD', '')
 ADMIN_WA             = os.getenv('ADMIN_WA', '')       # Admin WhatsApp for system alerts
+RESEND_API_KEY       = os.getenv('RESEND_API_KEY', '')
 CRON_SECRET          = os.getenv('CRON_SECRET', '')
 PENDING_TTL_H        = int(os.getenv('PENDING_TTL_H', '48'))
 DEFAULT_BUSINESS_SLUG = os.getenv('DEFAULT_BUSINESS_SLUG', '')  # Legacy /webhook compat
@@ -154,6 +160,82 @@ def _load_prompt():
 
 _FILE_PROMPT = _load_prompt()
 
+def classify_business_line(business: Optional[dict], history: list, configs: list) -> Optional[str]:
+    """
+    Classify conversation into a business line.
+    Step 1: keyword match against WooCommerce-linked category products (deterministic, no AI).
+    Step 2: Claude Haiku with per-line descriptions (semantic fallback).
+    Returns the matched line name or None if unclear.
+    """
+    if not configs or not history:
+        return None
+
+    # Normalize: accept both legacy string[] and new dict[] format
+    normalized = []
+    for item in configs:
+        if isinstance(item, str):
+            normalized.append({'name': item, 'description': '', 'woocommerce_linked': False})
+        elif isinstance(item, dict) and item.get('name'):
+            normalized.append(item)
+    if not normalized:
+        return None
+
+    line_names = [c['name'] for c in normalized]
+
+    # Build flattened conversation text from recent messages
+    recent = history[-8:]
+    conv_parts = [m['content'][:400] for m in recent if m.get('content')]
+    conv_lower = ' '.join(conv_parts).lower()
+
+    # ── Step 1: WooCommerce keyword check ─────────────────────────────────────
+    woo_config = next((c for c in normalized if c.get('woocommerce_linked')), None)
+    if woo_config:
+        bid = (business or {}).get('id')
+        try:
+            cats = store.get_categories_keywords(bid)
+            retail_cat = next((c for c in cats if c.get('name', '').lower() == woo_config['name'].lower()), None)
+            if retail_cat:
+                keywords = [k for k in (retail_cat.get('product_keywords') or []) if k]
+                if any(k.lower() in conv_lower for k in keywords):
+                    print(f'  🏷 Business line matched via WooCommerce keywords → {woo_config["name"]}', flush=True)
+                    return woo_config['name']
+        except Exception as e:
+            print(f'  ⚠ classify_business_line woo check: {e}', flush=True)
+
+    # ── Step 2: Claude Haiku with descriptions ─────────────────────────────────
+    conv_text = '\n'.join(
+        f"{m['role'].upper()}: {m['content'][:200]}"
+        for m in recent if m.get('content')
+    )
+    lines_str = '\n'.join(
+        f'- {c["name"]}: {c["description"]}' if c.get('description') else f'- {c["name"]}'
+        for c in normalized
+    )
+    try:
+        r = claude_client.messages.create(
+            model='claude-haiku-4-5-20251001',
+            max_tokens=30,
+            messages=[{
+                'role': 'user',
+                'content': (
+                    f'Clasifica esta conversación de WhatsApp en UNA de estas líneas de negocio:\n{lines_str}\n\n'
+                    f'Conversación:\n{conv_text}\n\n'
+                    'Responde ÚNICAMENTE con el nombre exacto de la línea (tal como aparece arriba). '
+                    'Si no hay suficiente contexto todavía, responde "desconocido".'
+                ),
+            }],
+        )
+        result = r.content[0].text.strip()
+        for name in line_names:
+            if name.lower() == result.lower():
+                print(f'  🏷 Business line classified by Haiku → {name}', flush=True)
+                return name
+        return None
+    except Exception as e:
+        print(f'  ⚠ classify_business_line haiku: {e}', flush=True)
+        return None
+
+
 def detect_product_interest(business_id: Optional[str], *texts: str) -> Optional[str]:
     """Scan texts for category keywords. Returns matched category name or None."""
     categories = store.get_categories_keywords(business_id)
@@ -185,6 +267,10 @@ def get_system_prompt(business: Optional[dict] = None, product_interest: Optiona
             "- No uses emojis en ningún mensaje. Cero emojis.\n"
             "- Escribe como un humano real en WhatsApp: texto plano, natural, conversacional.\n"
             "- Sin asteriscos, sin markdown, sin negritas, sin listas con guiones.\n"
+            "- Una sola pregunta por mensaje. Si necesitás más información, la pedís en el siguiente turno.\n"
+            "- PRIMER MENSAJE — saludo obligatorio: usá el nombre de la empresa seguido de 'con gusto'. "
+            "Formato exacto: '[Buenos días/Buenas tardes/Buenas noches], [Nombre empresa], con gusto.' "
+            "No respondas 'Hola' ni omitas el nombre de la empresa.\n"
             "- Si alguien consulta algo que no está en tu catálogo, describe un producto que no "
             "reconocés, o pide algo fuera de lo normal, no cotices ni confirmes nada — primero "
             "preguntá con precisión qué necesita exactamente antes de continuar.\n\n"
@@ -948,6 +1034,35 @@ def alert_admin(message: str, sender: Optional[str] = None):
         send_whatsapp(ADMIN_WA if ADMIN_WA.startswith('whatsapp:') else f'whatsapp:{ADMIN_WA}',
                       message, sender)
 
+
+def send_email(to: str, subject: str, html: str, from_addr: str = 'noreply@projectokapi.com') -> bool:
+    """Send email via Resend API. Returns True on success."""
+    if not RESEND_API_KEY:
+        print(f'  ⚠ send_email: RESEND_API_KEY not set — skipping email to {to}', flush=True)
+        return False
+    try:
+        payload = json.dumps({
+            'from': f'Okapi Agent <{from_addr}>',
+            'to': [to],
+            'subject': subject,
+            'html': html,
+        }).encode()
+        req = urllib.request.Request(
+            'https://api.resend.com/emails',
+            data=payload,
+            headers={
+                'Authorization': f'Bearer {RESEND_API_KEY}',
+                'Content-Type': 'application/json',
+            },
+            method='POST',
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            print(f'  ✉ Email sent to {to} ({resp.status})', flush=True)
+            return resp.status in (200, 201)
+    except Exception as e:
+        print(f'  ⚠ send_email to {to}: {e}', flush=True)
+        return False
+
 # ─── MAINTENANCE ─────────────────────────────────────────────────────────────
 
 def cleanup_expired_entries(business: Optional[dict] = None):
@@ -1252,9 +1367,126 @@ _CANCEL_DENY = {
 }
 
 
+def _trigger_business_line_routing(phone: str, last_msg: str, bid: Optional[str],
+                                    business: Optional[dict], sender: Optional[str]) -> None:
+    """Classify conversation into a business line and notify assigned users (background thread)."""
+    import threading
+
+    def _run():
+        try:
+            configs = store.get_business_line_configs(bid)
+            if not configs:
+                return  # Feature not configured for this business
+            current = store.get_conversation_business_line(phone, bid)
+            if current:
+                return  # Already classified
+            history = store.get_history(phone, bid)
+            if len(history) < 2:
+                return  # Need at least one exchange before classifying
+            line = classify_business_line(business, history, configs)
+            if not line:
+                return
+            store.set_conversation_business_line(phone, bid, line)
+
+            # Auto-assign team based on lead zone
+            lead = store.get_lead_by_phone(phone, bid)
+            lead_zone = (lead or {}).get('zone') or ''
+            if lead_zone and bid:
+                team = store.get_team_by_zone(bid, lead_zone)
+                if team:
+                    store.assign_conversation_team(phone, bid, team['id'])
+                    print(f'  📋 Assigned team {team["name"]} for zone {lead_zone}', flush=True)
+
+            # Notify users assigned to this line
+            users = store.get_users_by_business_line(bid or '', line)
+            client_name = (lead or {}).get('name') or phone.replace('whatsapp:', '')
+            biz_slug = (business or {}).get('slug', 'agent')
+            panel_url = f'https://agent.{biz_slug}.com/conversations'
+            for u in users:
+                pref = (u.get('notification_pref') or 'none').lower()
+                notif_text = (
+                    f'🔔 *Nuevo lead — {line}*\n\n'
+                    f'Cliente: {client_name}\n'
+                    f'Mensaje: {last_msg[:120]}'
+                )
+                if pref == 'whatsapp':
+                    u_phone = (u.get('phone') or '').strip()
+                    if u_phone:
+                        if not u_phone.startswith('+'):
+                            u_phone = f'+{u_phone}'
+                        send_whatsapp(u_phone, notif_text, sender, business)
+                        print(f'  📣 [WA] Notified {u.get("name")} ({u_phone}) → {line}', flush=True)
+                elif pref == 'email':
+                    u_email = (u.get('email') or '').strip()
+                    if u_email:
+                        html = (
+                            f'<p>Hola {u.get("name", "")}.</p>'
+                            f'<p>Se detectó un nuevo lead en la línea <strong>{line}</strong>.</p>'
+                            f'<table style="border-collapse:collapse;font-size:14px">'
+                            f'<tr><td style="padding:4px 12px 4px 0;color:#666">Cliente</td><td>{client_name}</td></tr>'
+                            f'<tr><td style="padding:4px 12px 4px 0;color:#666">Teléfono</td><td>{phone}</td></tr>'
+                            f'<tr><td style="padding:4px 12px 4px 0;color:#666">Mensaje</td><td>{last_msg[:200]}</td></tr>'
+                            f'</table>'
+                            f'<p><a href="{panel_url}" style="background:#7c3aed;color:#fff;padding:8px 16px;border-radius:6px;text-decoration:none;font-size:13px">Ver conversación →</a></p>'
+                        )
+                        send_email(u_email, f'🔔 Nuevo lead — {line} ({client_name})', html)
+                        print(f'  📣 [email] Notified {u.get("name")} ({u_email}) → {line}', flush=True)
+        except Exception as e:
+            print(f'  ⚠ _trigger_business_line_routing: {e}', flush=True)
+
+    threading.Thread(target=_run, daemon=True).start()
+
+
+def _trigger_lead_enrichment(phone: str, bid: Optional[str]) -> None:
+    """Extract contact info from conversation and fill null lead fields (background thread)."""
+    import threading, json, re
+
+    def _run():
+        try:
+            history = store.get_history(phone, bid)
+            # Only customer messages, recent ones
+            customer_msgs = [
+                m['content'][:400] for m in history[-12:]
+                if m.get('role') == 'user' and m.get('content')
+            ]
+            if not customer_msgs:
+                return
+
+            conv_text = '\n'.join(customer_msgs)
+
+            r = claude_client.messages.create(
+                model='claude-haiku-4-5-20251001',
+                max_tokens=150,
+                messages=[{
+                    'role': 'user',
+                    'content': (
+                        'Extrae información de contacto de estos mensajes de WhatsApp.\n'
+                        'Responde SOLO con JSON válido. Usa null si no se menciona.\n'
+                        'Solo incluye lo que el cliente diga EXPLÍCITAMENTE.\n\n'
+                        'Formato exacto:\n'
+                        '{"name":null,"last_name":null,"email":null,"company":null,"zone":null}\n\n'
+                        f'Mensajes:\n{conv_text}'
+                    ),
+                }],
+            )
+            text = r.content[0].text.strip()
+            match = re.search(r'\{[^{}]+\}', text, re.DOTALL)
+            if not match:
+                return
+            data = json.loads(match.group())
+            extracted = {k: v for k, v in data.items() if v and isinstance(v, str)}
+            if extracted:
+                store.enrich_lead(phone, bid, extracted)
+        except Exception as e:
+            print(f'  ⚠ _trigger_lead_enrichment: {e}', flush=True)
+
+    threading.Thread(target=_run, daemon=True).start()
+
+
 def handle_inbound(from_number: str, body: str,
                    business: Optional[dict] = None,
-                   referral: Optional[dict] = None) -> str:
+                   referral: Optional[dict] = None,
+                   append_reply: bool = True) -> str:
     """
     Core message router. Returns the TwiML response body string.
     Works for any business registered in the platform.
@@ -1559,9 +1791,17 @@ def handle_inbound(from_number: str, body: str,
                          "We'll send you the payment link to confirm your reservation "
                          'as soon as possible. 🏖️' + after_hours_note('en'))
 
-    store.append_message(from_number, 'assistant', reply, bid)
+    if append_reply:
+        store.append_message(from_number, 'assistant', reply, bid)
     update_lead_contact_info(from_number, bid)
     print(f'  → {from_number}: {reply[:80]}')
+
+    # Business line classification — only if business has lines configured and not yet classified
+    _trigger_business_line_routing(from_number, body, bid, business, sender)
+
+    # Auto-enrich lead fields from conversation (name, email, company, etc.)
+    _trigger_lead_enrichment(from_number, bid)
+
     return reply
 
 # ─── WEBHOOKS ────────────────────────────────────────────────────────────────
@@ -1658,7 +1898,7 @@ def webhook_tenant(slug: str):
             lock = _get_conv_lock(conv_key)
             with lock:
                 try:
-                    reply = handle_inbound(from_number, body, biz_copy, referral=referral)
+                    reply = handle_inbound(from_number, body, biz_copy, referral=referral, append_reply=False)
                     if reply:
                         clean_reply, img_urls = extract_image_markers(reply, biz_copy)
                         clean_reply, pdf_entries = extract_pdf_markers(clean_reply, biz_copy)
@@ -1771,14 +2011,20 @@ def webhook_meta():
         biz_copy = business
         conv_key = f"{biz_copy.get('id')}:{from_number}"
 
-        def _process_and_send():
-            lock = _get_conv_lock(conv_key)
+        def _flush(ck: str, fn: str, biz: dict):
+            with _msg_buffer_lock:
+                entry = _msg_buffer.pop(ck, None)
+            if not entry:
+                return
+            combined = '\n'.join(entry['messages'])
+            print(f'  ⏱ Debounce flush [{biz.get("slug")}] {fn}: {len(entry["messages"])} msg(s)', flush=True)
+            lock = _get_conv_lock(ck)
             with lock:
                 try:
-                    reply = handle_inbound(from_number, body, biz_copy)
+                    reply = handle_inbound(fn, combined, biz, append_reply=False)
                     if reply:
-                        clean_reply, img_urls = extract_image_markers(reply, biz_copy)
-                        clean_reply, pdf_entries = extract_pdf_markers(clean_reply, biz_copy)
+                        clean_reply, img_urls = extract_image_markers(reply, biz)
+                        clean_reply, pdf_entries = extract_pdf_markers(clean_reply, biz)
                         text = clean_reply or reply
                         send_at = datetime.now(timezone.utc) + timedelta(seconds=human_delay(reply))
                         payload = {
@@ -1786,13 +2032,22 @@ def webhook_meta():
                             'img_urls': img_urls,
                             'pdf_entries': [[u, f] for u, f in pdf_entries],
                         }
-                        store.enqueue_message(biz_copy.get('id'), from_number, payload, send_at)
+                        store.enqueue_message(biz.get('id'), fn, payload, send_at)
                 except Exception as exc:
                     import traceback
-                    print(f'  ✗ Thread error [meta/{biz_copy.get("slug")}]: {exc}', flush=True)
+                    print(f'  ✗ Thread error [meta/{biz.get("slug")}]: {exc}', flush=True)
                     traceback.print_exc()
 
-        threading.Thread(target=_process_and_send, daemon=True).start()
+        with _msg_buffer_lock:
+            if conv_key in _msg_buffer:
+                _msg_buffer[conv_key]['timer'].cancel()
+                _msg_buffer[conv_key]['messages'].append(body)
+            else:
+                _msg_buffer[conv_key] = {'messages': [body]}
+            t = threading.Timer(MSG_DEBOUNCE_SECS, _flush, args=[conv_key, from_number, biz_copy])
+            t.daemon = True
+            _msg_buffer[conv_key]['timer'] = t
+            t.start()
         return '', 200
 
     reply = handle_inbound(from_number, body, business)

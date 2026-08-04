@@ -126,6 +126,7 @@ function FieldRow({
 
 export default function ConvSidePanel({ conv, lead: initialLead, team, phone }: Props) {
   const [lead, setLead] = useState<Lead | null>(initialLead)
+  const [freshConv, setFreshConv] = useState<any>(conv)
   const [mobileOpen, setMobileOpen] = useState(false)
   const prevEnrichedRef = useRef<Record<string, string | null>>(initialLead?.ai_enriched ?? {})
   const [justEnriched, setJustEnriched] = useState<Set<string>>(new Set())
@@ -158,6 +159,23 @@ export default function ConvSidePanel({ conv, lead: initialLead, team, phone }: 
     const t = setInterval(poll, 15_000)
     return () => { mounted = false; clearInterval(t) }
   }, [initialLead?.id])
+
+  useEffect(() => {
+    let mounted = true
+
+    async function pollConv() {
+      try {
+        const res = await fetch(`/api/conversations/${conv.id}`)
+        if (!res.ok || !mounted) return
+        const fresh = await res.json()
+        setFreshConv(fresh)
+      } catch { /* ignore */ }
+    }
+
+    pollConv()
+    const t = setInterval(pollConv, 15_000)
+    return () => { mounted = false; clearInterval(t) }
+  }, [conv.id])
 
   function handleSaved(key: string, val: string) {
     setLead(prev => prev ? { ...prev, [key]: val || null } : prev)
@@ -199,12 +217,12 @@ export default function ConvSidePanel({ conv, lead: initialLead, team, phone }: 
           Conversación
         </p>
         {[
-          ['Línea de negocio', conv.business_line],
-          ['Sucursal', team?.name],
+          ['Línea de negocio', freshConv.business_line],
+          ['Sucursal', (freshConv.teams as any)?.name ?? team?.name],
           ['Fuente', lead?.source],
           ['Campaña', lead?.utm_campaign],
-          ['Creado', fmt(conv.created_at)],
-          ['Último msg', fmt(conv.updated_at)],
+          ['Creado', fmt(freshConv.created_at)],
+          ['Último msg', fmt(freshConv.updated_at)],
         ].filter(([, v]) => !!v).map(([label, val]) => (
           <div key={String(label)} style={{ marginBottom: 10 }}>
             <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 2 }}>{label}</div>
@@ -224,7 +242,7 @@ export default function ConvSidePanel({ conv, lead: initialLead, team, phone }: 
         )}
       </div>
 
-      <ConversationActions id={conv.id} initialStatus={conv.status} />
+      <ConversationActions id={conv.id} initialStatus={freshConv.status} />
 
       {justEnriched.size > 0 && (
         <div style={{

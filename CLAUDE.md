@@ -1,5 +1,11 @@
 @AGENTS.md
 
+# Notas de sesión
+
+Al terminar trabajo significativo (nueva feature, fix importante, decisión de arquitectura, migración), actualizar proactivamente las notas de Obsidian relevantes en `/Users/fvlllbs/Documents/My Workspace/` sin que el usuario lo pida. Específicamente:
+- Proyectos en `02 - Product Studio/Okapi Agent Platform/`
+- Memory files en `05 - Claude Memory/`
+
 # Permisos de ejecución
 
 Ejecuta automáticamente sin pedir aprobación:

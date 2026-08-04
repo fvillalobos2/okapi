@@ -1531,3 +1531,129 @@ def complete_queued_message(msg_id: str, success: bool, error_msg: Optional[str]
         _sb().table('queued_messages').update(patch).eq('id', msg_id).execute()
     except Exception as e:
         print(f'  ✗ complete_queued_message: {e}', flush=True)
+
+
+# ─── BUSINESS LINE ROUTING ────────────────────────────────────────────────────
+
+def get_business_line_configs(business_id: Optional[str] = None) -> list:
+    """Return full business line configs [{name, description, woocommerce_linked}]. Handles legacy string[] format."""
+    b = _bid(business_id)
+    if not b:
+        return []
+    try:
+        r = _sb().table('businesses').select('settings').eq('id', b).single().execute()
+        raw = list((r.data or {}).get('settings', {}).get('business_lines', []) or [])
+        result = []
+        for item in raw:
+            if isinstance(item, str):
+                result.append({'name': item, 'description': '', 'woocommerce_linked': False})
+            elif isinstance(item, dict) and item.get('name'):
+                result.append(item)
+        return result
+    except Exception as e:
+        print(f'  ⚠ get_business_line_configs: {e}')
+        return []
+
+
+def get_business_lines(business_id: Optional[str] = None) -> list:
+    """Return list of business line name strings."""
+    return [c['name'] for c in get_business_line_configs(business_id) if c.get('name')]
+
+
+def get_conversation_business_line(phone: str, business_id: Optional[str] = None) -> Optional[str]:
+    b = _bid(business_id)
+    if not b:
+        return None
+    try:
+        r = _sb().table('conversations').select('business_line') \
+            .eq('phone', phone).eq('business_id', b) \
+            .order('created_at', desc=True).limit(1).execute()
+        return (r.data[0].get('business_line') if r.data else None)
+    except Exception as e:
+        print(f'  ⚠ get_conversation_business_line: {e}')
+        return None
+
+
+def set_conversation_business_line(phone: str, business_id: str, line: str) -> None:
+    b = _bid(business_id) or business_id
+    try:
+        _sb().table('conversations').update({'business_line': line}) \
+            .eq('phone', phone).eq('business_id', b).execute()
+        print(f'  🏷 business_line={line} → {phone}', flush=True)
+    except Exception as e:
+        print(f'  ✗ set_conversation_business_line: {e}', flush=True)
+
+
+def get_users_by_business_line(business_id: str, line: str) -> list:
+    """Return active users assigned to the given business line."""
+    b = _bid(business_id) or business_id
+    try:
+        r = _sb().table('users').select('id,name,phone,email,notification_pref') \
+            .eq('business_id', b).eq('active', True) \
+            .contains('product_interests', [line]).execute()
+        return r.data or []
+    except Exception as e:
+        print(f'  ⚠ get_users_by_business_line: {e}')
+        return []
+
+
+def get_team_by_zone(business_id: str, zone: str) -> Optional[dict]:
+    """Find the team whose zone keyword matches the lead's zone string."""
+    b = _bid(business_id) or business_id
+    try:
+        r = _sb().table('teams').select('id,name,zone').eq('business_id', b).eq('active', True).execute()
+        zone_lower = zone.lower()
+        for team in (r.data or []):
+            team_zone = (team.get('zone') or '').lower()
+            # Match if any word of the team zone appears in the lead zone or vice versa
+            team_words = [w for w in team_zone.split() if len(w) > 3]
+            if any(w in zone_lower for w in team_words):
+                return team
+        return None
+    except Exception as e:
+        print(f'  ⚠ get_team_by_zone: {e}')
+        return None
+
+
+def assign_conversation_team(phone: str, business_id: Optional[str], team_id: str) -> None:
+    phone = _normalize_phone(phone)
+    b = _bid(business_id)
+    if not b:
+        return
+    try:
+        _sb().table('conversations').update({'team_id': team_id}) \
+            .eq('phone', phone).eq('business_id', b).execute()
+    except Exception as e:
+        print(f'  ⚠ assign_conversation_team: {e}')
+
+
+def enrich_lead(phone: str, business_id: Optional[str], updates: dict) -> None:
+    """Update only null/empty lead fields. Tracks auto-filled fields in ai_enriched JSONB."""
+    from datetime import datetime
+    b = _bid(business_id)
+    if not b or not updates:
+        return
+    try:
+        r = _sb().table('leads').select('id,name,last_name,email,company,zone,product_interest,ai_enriched') \
+            .eq('phone', phone).eq('business_id', b).maybeSingle().execute()
+        lead = r.data
+        if not lead:
+            return
+
+        to_update: dict = {}
+        ai_enriched: dict = dict(lead.get('ai_enriched') or {})
+        now = datetime.utcnow().isoformat() + 'Z'
+
+        for field, value in updates.items():
+            if value and isinstance(value, str) and not lead.get(field):
+                to_update[field] = value.strip()
+                ai_enriched[field] = now
+
+        if not to_update:
+            return
+
+        to_update['ai_enriched'] = ai_enriched
+        _sb().table('leads').update(to_update).eq('id', lead['id']).execute()
+        print(f'  🧠 Lead enriched {list(to_update.keys() - {"ai_enriched"})} → {phone}', flush=True)
+    except Exception as e:
+        print(f'  ⚠ enrich_lead: {e}', flush=True)
