@@ -67,6 +67,11 @@ const MODULE_CATALOG: ModuleConfig[] = [
     description: 'Sistema de cotización con proveedores locales, comisión configurable y cobro vía Tilopay. Exclusivo para negocios que actúan de intermediarios.',
     fields: [{ key: 'provider', label: 'Pasarela de pago', placeholder: 'tilopay' }],
   },
+  {
+    key: 'woocommerce',
+    label: 'WooCommerce',
+    description: 'Sincroniza el catálogo de productos desde una tienda WooCommerce. Los productos importados quedan disponibles para el agente de IA automáticamente.',
+  },
 ]
 
 type ModuleState = Record<string, { enabled: boolean; [key: string]: unknown }>

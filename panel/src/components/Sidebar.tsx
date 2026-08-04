@@ -135,6 +135,13 @@ const MODULE_NAV: { module: string; section: string; href: string; label: string
     label: 'Pipeline',
     icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="1" y="3" width="4" height="10" rx="1"/><rect x="6" y="3" width="4" height="7" rx="1"/><rect x="11" y="3" width="4" height="5" rx="1"/></svg>,
   },
+  {
+    module: 'woocommerce',
+    section: 'Catálogo',
+    href: '/woocommerce',
+    label: 'WooCommerce',
+    icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M1 3h14l-1.5 8H2.5L1 3z"/><circle cx="6" cy="14" r="1"/><circle cx="11" cy="14" r="1"/><path d="M4 7h8"/></svg>,
+  },
 ]
 
 function buildNav(modules: Modules): NavGroup[] {
