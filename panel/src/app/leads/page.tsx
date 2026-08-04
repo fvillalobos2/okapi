@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { supabaseAdmin } from '@/lib/supabase'
+import { getBusinessId } from '@/lib/getBusinessId'
 import { Suspense } from 'react'
 import { LeadFilters } from '@/components/LeadFilters'
 
@@ -21,10 +22,12 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
   const params = await searchParams
   const statusFilter = params.status ?? ''
   const teamFilter = params.team ?? ''
+  const bid = await getBusinessId()
 
   let q = supabaseAdmin()
     .from('leads')
     .select('*, teams(name,zone)')
+    .eq('business_id', bid)
     .order('last_active_at', { ascending: false })
     .limit(500)
 
