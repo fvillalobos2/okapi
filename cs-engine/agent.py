@@ -550,7 +550,7 @@ def ask_claude(phone: str, user_message: str, business: Optional[dict] = None,
     else:
         _saludo = 'noches'
     biz_name = (business or {}).get('name') or 'Acuarium'
-    _greeting_prefill = f'Buenas {_saludo}, {biz_name}, con gusto. '
+    _greeting_prefill = f'Buenas {_saludo}, {biz_name}, con gusto.'
 
     greeting_note = (
         'La conversación ya está en curso — NO repitas el saludo inicial, respondé directamente.'
@@ -581,7 +581,7 @@ def ask_claude(phone: str, user_message: str, business: Optional[dict] = None,
     )
     text = response.content[0].text
     if is_first:
-        text = _greeting_prefill + text
+        text = _greeting_prefill + ' ' + text
     return text
 
 _CRC_KEYWORDS = ('colones', 'colon', '₡', ' crc')
