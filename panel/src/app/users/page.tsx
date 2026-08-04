@@ -42,6 +42,7 @@ const inp = { width: '100%', padding: '7px 10px', fontSize: 13, border: '1px sol
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [teams, setTeams] = useState<Team[]>([])
+  const [businessLines, setBusinessLines] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [editing, setEditing] = useState<(typeof EMPTY & { id?: string }) | null>(null)
@@ -49,12 +50,14 @@ export default function UsersPage() {
   const { can: perms } = useCurrentUser()
 
   async function load() {
-    const [ur, tr] = await Promise.all([
+    const [ur, tr, br] = await Promise.all([
       fetch('/api/users').then(r => r.json()),
       fetch('/api/teams').then(r => r.json()),
+      fetch('/api/business').then(r => r.json()),
     ])
     setUsers(ur ?? [])
     setTeams(tr ?? [])
+    setBusinessLines((br?.settings?.business_lines as string[]) ?? [])
     setLoading(false)
   }
 
@@ -211,15 +214,41 @@ export default function UsersPage() {
             </div>
 
             <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>
-                Productos / servicios asignados <span style={{ fontWeight: 400 }}>(separados por coma)</span>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 8 }}>
+                Líneas de negocio asignadas
               </label>
-              <input
-                style={inp}
-                placeholder="Piscinas, Spas, Jacuzzis, Mantenimiento"
-                value={piStr}
-                onChange={e => setEditing(f => f && ({ ...f, product_interests: e.target.value as any }))}
-              />
+              {businessLines.length > 0 ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {businessLines.map(line => {
+                    const selected = (editing?.product_interests ?? []).includes(line)
+                    return (
+                      <button
+                        key={line}
+                        type="button"
+                        onClick={() => setEditing(f => {
+                          if (!f) return f
+                          const cur = f.product_interests ?? []
+                          return { ...f, product_interests: selected ? cur.filter(x => x !== line) : [...cur, line] }
+                        })}
+                        style={{
+                          padding: '5px 14px', borderRadius: 20, fontSize: 13, cursor: 'pointer',
+                          border: `1.5px solid ${selected ? 'var(--accent)' : 'var(--border)'}`,
+                          background: selected ? 'var(--accent-light)' : 'transparent',
+                          color: selected ? 'var(--accent)' : 'var(--muted)',
+                          fontWeight: selected ? 600 : 400,
+                          transition: 'all .15s',
+                        }}
+                      >
+                        {selected && <span style={{ marginRight: 5 }}>✓</span>}{line}
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p style={{ fontSize: 12, color: 'var(--muted)' }}>
+                  Configura las líneas de negocio en <a href="/settings" style={{ color: 'var(--accent)' }}>Configuración</a> para asignarlas aquí.
+                </p>
+              )}
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

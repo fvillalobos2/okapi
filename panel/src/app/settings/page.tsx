@@ -469,6 +469,22 @@ export default function SettingsPage() {
       </Section>
 
       {/* Agent behaviour */}
+      <Section title="Líneas de negocio">
+        <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12, lineHeight: 1.5 }}>
+          Define las áreas de negocio de tu empresa. Se usan para asignar conversaciones a usuarios y para que el agente clasifique clientes automáticamente. Una por línea.
+        </p>
+        <textarea
+          rows={6}
+          style={{ width: '100%', padding: '8px 10px', fontSize: 13, border: '1px solid var(--border)', borderRadius: 6, background: '#fff', color: 'var(--text)', outline: 'none', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6, boxSizing: 'border-box' }}
+          placeholder={'Retail\nConstrucción\nServicio técnico & mantenimiento\nDistribución\nServicio exterior'}
+          value={((data.settings?.business_lines as string[]) ?? []).join('\n')}
+          onChange={e => {
+            const lines = e.target.value.split('\n').map(s => s.trim()).filter(Boolean)
+            setSetting('business_lines', lines)
+          }}
+        />
+      </Section>
+
       <Section title="Comportamiento del agente">
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
           <div>
