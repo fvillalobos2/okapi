@@ -26,7 +26,7 @@ async function fetchWooProducts(storeUrl: string, key: string, secret: string): 
   const perPage = 100
 
   while (true) {
-    const url = `${storeUrl}/wp-json/wc/v3/products?per_page=${perPage}&page=${page}&status=publish`
+    const url = `${storeUrl}/products?per_page=${perPage}&page=${page}&status=publish`
     const res = await fetch(url, { headers })
     if (!res.ok) {
       const text = await res.text()
