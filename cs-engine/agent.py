@@ -555,7 +555,8 @@ def ask_claude(phone: str, user_message: str, business: Optional[dict] = None,
     greeting_note = (
         'La conversación ya está en curso — NO repitas el saludo inicial, respondé directamente.'
         if not is_first else
-        f'Es el PRIMER mensaje. Tu respuesta YA empieza con "{_greeting_prefill}" — completá con la pregunta de calificación.'
+        'Es el PRIMER mensaje. NO escribas ningún saludo — ve directo a la pregunta de calificación. '
+        'El saludo se agrega automáticamente antes de tu respuesta.'
     )
 
     system = (
@@ -568,10 +569,6 @@ def ask_claude(phone: str, user_message: str, business: Optional[dict] = None,
         + f'Al confirmar el teléfono, usa este número en lugar de pedirle que lo escriba. '
         + f'Ejemplo: "¿Es {clean_phone} el mejor número para contactarte?"'
     )
-
-    # Prefill assistant turn on first message — forces model to start with the correct greeting
-    if is_first:
-        messages.append({'role': 'assistant', 'content': _greeting_prefill})
 
     response = claude_client.messages.create(
         model='claude-sonnet-4-6',
