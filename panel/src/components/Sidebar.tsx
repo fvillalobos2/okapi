@@ -276,7 +276,12 @@ export default function Sidebar() {
         {/* Footer */}
         <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#16A34A', boxShadow: '0 0 0 2px #DCFCE7', flexShrink: 0 }} />
-          <span style={{ fontSize: 11, color: 'var(--muted)', flex: 1 }}>Sistema activo</span>
+          <span style={{ fontSize: 11, color: 'var(--muted)', flex: 1 }}>
+            Sistema activo
+            {process.env.NEXT_PUBLIC_BUILD_SHA && process.env.NEXT_PUBLIC_BUILD_SHA !== 'local' && (
+              <span style={{ marginLeft: 6, opacity: 0.5 }}>· {process.env.NEXT_PUBLIC_BUILD_SHA}</span>
+            )}
+          </span>
           <button
             onClick={() => router.push('/select-user')}
             title="Cambiar usuario"
