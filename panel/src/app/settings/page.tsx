@@ -110,6 +110,7 @@ function Field({
 
 export default function SettingsPage() {
   const [data, setData] = useState<Partial<BusinessData>>({})
+  const [businessLinesText, setBusinessLinesText] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
@@ -120,6 +121,7 @@ export default function SettingsPage() {
     const res = await fetch('/api/business')
     const d = await res.json()
     setData(d)
+    setBusinessLinesText(((d?.settings?.business_lines as string[]) ?? []).join('\n'))
   }, [])
 
   useEffect(() => { load() }, [load])
@@ -477,10 +479,12 @@ export default function SettingsPage() {
           rows={6}
           style={{ width: '100%', padding: '8px 10px', fontSize: 13, border: '1px solid var(--border)', borderRadius: 6, background: '#fff', color: 'var(--text)', outline: 'none', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6, boxSizing: 'border-box' }}
           placeholder={'Retail\nConstrucción\nServicio técnico & mantenimiento\nDistribución\nServicio exterior'}
-          value={((data.settings?.business_lines as string[]) ?? []).join('\n')}
+          value={businessLinesText}
           onChange={e => {
+            setBusinessLinesText(e.target.value)
+            setSaved(false)
             const lines = e.target.value.split('\n').map(s => s.trim()).filter(Boolean)
-            setSetting('business_lines', lines)
+            setData(prev => ({ ...prev, settings: { ...(prev.settings ?? {}), business_lines: lines } }))
           }}
         />
       </Section>
