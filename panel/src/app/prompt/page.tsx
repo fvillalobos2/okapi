@@ -47,7 +47,7 @@ export default function PromptPage() {
         <div>
           <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-.3px' }}>Agente IA — Configuración global</h1>
           <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>
-            Prompt base del agente PureSpas · Las instrucciones por producto se configuran en <a href="/prices" style={{ color: 'var(--accent)' }}>Productos</a>
+            Prompt base del agente · Las instrucciones por producto se configuran en <a href="/prices" style={{ color: 'var(--accent)' }}>Productos</a>
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
