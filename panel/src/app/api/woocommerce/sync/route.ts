@@ -65,7 +65,7 @@ export async function POST() {
   let products: WooProduct[]
   try {
     ;[wooCategories, products] = await Promise.all([
-      fetchAll<WooCategory>(`${store_url}/categories?per_page=100`, headers),
+      fetchAll<WooCategory>(`${store_url}/products/categories?per_page=100`, headers),
       fetchAll<WooProduct>(`${store_url}/products?per_page=100&status=publish`, headers),
     ])
   } catch (e) {
