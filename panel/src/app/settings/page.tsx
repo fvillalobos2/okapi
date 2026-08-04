@@ -127,7 +127,8 @@ export default function SettingsPage() {
   const load = useCallback(async () => {
     const res = await fetch('/api/business')
     const d = await res.json()
-    setData(d)
+    // Clear encrypted fields — they're stored encrypted and must not be re-submitted unless changed
+    setData({ ...d, meta_access_token: '', twilio_auth_token: '' })
     const rawLines = (d?.settings?.business_lines ?? []) as (string | BusinessLineConfig)[]
     setLineConfigs(rawLines.map(item =>
       typeof item === 'string' ? { name: item, description: '', woocommerce_linked: false } : item
@@ -167,17 +168,18 @@ export default function SettingsPage() {
         whatsapp_number: data.whatsapp_number,
         twilio_sender: data.twilio_sender,
         twilio_account_sid: data.twilio_account_sid,
-        twilio_auth_token: data.twilio_auth_token,
         agent_url: data.agent_url,
         panel_url: data.panel_url,
         admin_whatsapp: data.admin_whatsapp,
         accent_color: data.accent_color,
         logo_url: data.logo_url,
         meta_phone_number_id: data.meta_phone_number_id,
-        meta_access_token: data.meta_access_token,
         meta_app_secret: data.meta_app_secret,
         meta_verify_token: data.meta_verify_token,
         settings: data.settings ?? {},
+        // Only include encrypted fields if user explicitly typed a new value
+        ...(data.twilio_auth_token ? { twilio_auth_token: data.twilio_auth_token } : {}),
+        ...(data.meta_access_token ? { meta_access_token: data.meta_access_token } : {}),
         ...(data.admin_password ? { admin_password: data.admin_password } : {}),
       }
       const res = await fetch('/api/business', {
@@ -267,7 +269,8 @@ export default function SettingsPage() {
           placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" mono />
         <Field label="Auth Token" value={data.twilio_auth_token ?? ''}
           onChange={v => set('twilio_auth_token', v)}
-          type="password" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" mono />
+          type="password" placeholder="Dejá vacío para no cambiar" mono
+          hint="Solo completar si querés actualizar el token." />
         <Field label="Número WhatsApp (formato Twilio)"
           value={data.twilio_sender ?? ''}
           onChange={v => set('twilio_sender', v)}
@@ -299,8 +302,8 @@ export default function SettingsPage() {
         <Field label="Access Token"
           value={data.meta_access_token ?? ''}
           onChange={v => set('meta_access_token', v)}
-          type="password" placeholder="EAAxxxxxxxxx..." mono
-          hint="Token permanente de System User. Nunca expira si se generó con 'Never'." />
+          type="password" placeholder="Dejá vacío para no cambiar" mono
+          hint="Solo completar si querés actualizar el token. El token activo se mantiene si dejás este campo vacío." />
         <Field label="App Secret"
           value={data.meta_app_secret ?? ''}
           onChange={v => set('meta_app_secret', v)}
