@@ -1059,7 +1059,7 @@ def alert_admin(message: str, sender: Optional[str] = None):
                       message, sender)
 
 
-def send_email(to: str, subject: str, html: str, from_addr: str = 'onboarding@resend.dev') -> bool:
+def send_email(to: str, subject: str, html: str, from_addr: str = 'Acuarium Agent <notifications@projectokapi.com>') -> bool:
     """Send email via Resend API. Returns True on success."""
     if not RESEND_API_KEY:
         print(f'  ⚠ send_email: RESEND_API_KEY not set — skipping email to {to}', flush=True)
