@@ -1615,23 +1615,23 @@ def get_team_by_zone(business_id: str, zone: str) -> Optional[dict]:
 
 
 def assign_conversation(phone: str, business_id: Optional[str],
+                        assigned_user_id: Optional[str] = None,
                         assigned_name: Optional[str] = None,
                         team_id: Optional[str] = None) -> None:
-    """Set assigned_to and/or team_id on both conversation and lead."""
+    """Set assigned_to (UUID) and/or team_id on conversation and lead."""
     phone = _normalize_phone(phone)
     b = _bid(business_id)
-    if not b or (not assigned_name and not team_id):
+    if not b or (not assigned_user_id and not team_id):
         return
     try:
         conv_update = {}
-        if assigned_name:
-            conv_update['assigned_to'] = assigned_name
+        if assigned_user_id:
+            conv_update['assigned_to'] = assigned_user_id  # UUID FK to users.id
         if team_id:
             conv_update['team_id'] = team_id
         if conv_update:
             _sb().table('conversations').update(conv_update) \
                 .eq('phone', phone).eq('business_id', b).execute()
-        # Update team on lead (UUID FK) — only if we have a valid team_id
         if team_id:
             _sb().table('leads').update({'team_id': team_id}) \
                 .eq('phone', phone).eq('business_id', b).execute()

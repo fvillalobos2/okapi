@@ -8,7 +8,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   const { data: conv, error } = await supabaseAdmin()
     .from('conversations')
-    .select('id, status, messages, updated_at, created_at, phone, lead_id, team_id, ai_enabled, business_line, teams(name)')
+    .select('id, status, messages, updated_at, created_at, phone, lead_id, team_id, ai_enabled, business_line, assigned_to, teams(name), users:assigned_to(name)')
     .eq('id', id)
     .eq('business_id', bid)
     .single()

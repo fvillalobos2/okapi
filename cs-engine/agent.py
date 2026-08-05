@@ -1417,7 +1417,10 @@ def _trigger_business_line_routing(phone: str, last_msg: str, bid: Optional[str]
             lead_zone = (lead or {}).get('zone') or ''
             users = store.get_users_by_business_line(bid or '', line)
 
-            assigned_name = ', '.join(u['name'] for u in users if u.get('name')) or None
+            # Pick first user with an id for assignment (UUID FK)
+            primary_user = next((u for u in users if u.get('id')), None)
+            assigned_user_id = primary_user['id'] if primary_user else None
+            assigned_name = primary_user.get('name') if primary_user else None
 
             team_id = None
             if lead_zone and bid:
@@ -1426,9 +1429,9 @@ def _trigger_business_line_routing(phone: str, last_msg: str, bid: Optional[str]
                     team_id = team['id']
                     print(f'  📋 Team: {team["name"]} (zone: {lead_zone})', flush=True)
 
-            store.assign_conversation(phone, bid, assigned_name=assigned_name, team_id=team_id)
+            store.assign_conversation(phone, bid, assigned_user_id=assigned_user_id, team_id=team_id)
             if assigned_name:
-                print(f'  👤 Assigned to: {assigned_name} → {line}', flush=True)
+                print(f'  👤 Assigned to: {assigned_name} ({assigned_user_id}) → {line}', flush=True)
 
             client_name = (lead or {}).get('name') or phone.replace('whatsapp:', '')
             biz_slug = (business or {}).get('slug', 'agent')
