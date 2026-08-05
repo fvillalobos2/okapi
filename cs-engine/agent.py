@@ -1450,15 +1450,26 @@ def _trigger_business_line_routing(phone: str, last_msg: str, bid: Optional[str]
                 elif pref == 'email':
                     u_email = (u.get('email') or '').strip()
                     if u_email:
+                        lead_id = (lead or {}).get('id') or ''
+                        biz_slug = (business or {}).get('slug', 'agent')
+                        conv_url = f'https://agent.{biz_slug}.com/conversations'
+                        lead_url = f'https://agent.{biz_slug}.com/leads/{lead_id}' if lead_id else conv_url
+                        zone_str = (lead or {}).get('zone') or '—'
                         html = (
-                            f'<p>Hola {u.get("name", "")}.</p>'
-                            f'<p>Se detectó un nuevo lead en la línea <strong>{line}</strong>.</p>'
-                            f'<table style="border-collapse:collapse;font-size:14px">'
-                            f'<tr><td style="padding:4px 12px 4px 0;color:#666">Cliente</td><td>{client_name}</td></tr>'
-                            f'<tr><td style="padding:4px 12px 4px 0;color:#666">Teléfono</td><td>{phone}</td></tr>'
-                            f'<tr><td style="padding:4px 12px 4px 0;color:#666">Mensaje</td><td>{last_msg[:200]}</td></tr>'
+                            f'<div style="font-family:sans-serif;max-width:520px;color:#111">'
+                            f'<p style="margin:0 0 16px">Hola {u.get("name", "")}.</p>'
+                            f'<p style="margin:0 0 16px">Nuevo lead detectado en la línea <strong style="color:#7c3aed">{line}</strong>.</p>'
+                            f'<table style="border-collapse:collapse;font-size:14px;width:100%;margin-bottom:20px">'
+                            f'<tr style="border-bottom:1px solid #eee"><td style="padding:8px 16px 8px 0;color:#666;white-space:nowrap">Cliente</td><td style="padding:8px 0"><strong>{client_name}</strong></td></tr>'
+                            f'<tr style="border-bottom:1px solid #eee"><td style="padding:8px 16px 8px 0;color:#666">Teléfono</td><td style="padding:8px 0">{phone.replace("whatsapp:","")}</td></tr>'
+                            f'<tr style="border-bottom:1px solid #eee"><td style="padding:8px 16px 8px 0;color:#666">Zona</td><td style="padding:8px 0">{zone_str}</td></tr>'
+                            f'<tr><td style="padding:8px 16px 8px 0;color:#666;vertical-align:top">Mensaje</td><td style="padding:8px 0;color:#444">{last_msg[:200]}</td></tr>'
                             f'</table>'
-                            f'<p><a href="{panel_url}" style="background:#7c3aed;color:#fff;padding:8px 16px;border-radius:6px;text-decoration:none;font-size:13px">Ver conversación →</a></p>'
+                            f'<div style="display:flex;gap:10px">'
+                            f'<a href="{conv_url}" style="background:#7c3aed;color:#fff;padding:9px 18px;border-radius:7px;text-decoration:none;font-size:13px;font-weight:600">Ver conversación →</a>'
+                            f'<a href="{lead_url}" style="background:#f3f0ff;color:#7c3aed;padding:9px 18px;border-radius:7px;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #ddd6fe">Ver ficha del lead →</a>'
+                            f'</div>'
+                            f'</div>'
                         )
                         send_email(u_email, f'🔔 Nuevo lead — {line} ({client_name})', html)
                         print(f'  📣 [email] Notified {u.get("name")} ({u_email}) → {line}', flush=True)
