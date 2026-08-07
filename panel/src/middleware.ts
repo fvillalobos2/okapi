@@ -59,6 +59,7 @@ export async function middleware(req: NextRequest) {
   if (pathname.startsWith('/_next') || pathname === '/favicon.ico') return NextResponse.next()
 
   const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/api/auth') || pathname === '/api/health'
+  const isPublicRoute = pathname.startsWith('/book') || pathname.startsWith('/api/public')
   const host = req.headers.get('host') ?? ''
   const business = await getBusinessByHost(host)
 
@@ -66,7 +67,7 @@ export async function middleware(req: NextRequest) {
   const requestHeaders = new Headers(req.headers)
   if (business) requestHeaders.set('x-business-id', business.id)
 
-  if (isAuthRoute) {
+  if (isAuthRoute || isPublicRoute) {
     return NextResponse.next({ request: { headers: requestHeaders } })
   }
 
