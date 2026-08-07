@@ -75,7 +75,7 @@ export default function AppointmentsPage() {
   const [loading, setLoading]           = useState(true)
   const [dateFilter, setDateFilter]     = useState(todayStr())
   const [statusFilter, setStatusFilter] = useState('')
-  const [view, setView]                 = useState<'table' | 'week'>('table')
+  const [view, setView]                 = useState<'table' | 'week'>('week')
   const [weekStart, setWeekStart]       = useState<Date>(() => getWeekStart(new Date()))
 
   const dialogRef = useRef<HTMLDialogElement>(null)
