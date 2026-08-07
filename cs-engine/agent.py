@@ -2592,6 +2592,24 @@ def health():
             'ts': datetime.utcnow().isoformat()}
 
 
+@app.route('/api/simulate', methods=['POST'])
+def simulate():
+    """Internal test endpoint — simulate an inbound WhatsApp message without Twilio."""
+    if not _check_admin_auth():
+        return jsonify({'error': 'Unauthorized'}), 401
+    data  = request.get_json(silent=True) or {}
+    slug  = data.get('slug', '')
+    phone = data.get('phone', '+50600000001')
+    body  = data.get('message', '')
+    if not slug or not body:
+        return jsonify({'error': 'slug and message required'}), 400
+    business = store.get_business_by_slug(slug)
+    if not business:
+        return jsonify({'error': f'Business "{slug}" not found'}), 404
+    reply = handle_inbound(phone, body, business)
+    return jsonify({'reply': reply, 'slug': slug, 'phone': phone})
+
+
 # ─── PERSISTENT QUEUE WORKER ─────────────────────────────────────────────────
 
 def _run_queue_worker():
