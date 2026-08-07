@@ -13,13 +13,14 @@ type Doctor = {
   booking_rules?: Record<string, any>
   med_services?: Service[]
 }
-type DaySchedule  = { enabled: boolean; start_time: string; end_time: string }
+type DaySchedule  = { enabled: boolean; start_time: string; end_time: string; location_id: string }
 type BookingRules = { min_advance_hours: string; max_advance_days: string; buffer_minutes: string; max_per_day: string }
+type Location     = { id: string; name: string; address: string; maps_url: string; phone: string }
 
 const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 const DEFAULT_SCHEDULE: DaySchedule[] = DAYS.map((_, i) => ({
   enabled: i >= 1 && i <= 5,
-  start_time: '08:00', end_time: '17:00',
+  start_time: '08:00', end_time: '17:00', location_id: '',
 }))
 
 const EMPTY_DOCTOR = {
@@ -87,6 +88,9 @@ export default function DoctorsPage() {
   const [schedule, setSchedule]     = useState<DaySchedule[]>(DEFAULT_SCHEDULE)
   const [schedSaving, setSchedSaving] = useState(false)
   const [bookingRules, setBookingRules] = useState<BookingRules>({ min_advance_hours: '', max_advance_days: '', buffer_minutes: '', max_per_day: '' })
+  const [locations, setLocations]       = useState<Location[]>([])
+  const [editingLoc, setEditingLoc]     = useState<Partial<Location> & { isNew?: boolean } | null>(null)
+  const [savingLoc, setSavingLoc]       = useState(false)
 
   async function load() {
     const [docs, biz] = await Promise.all([
@@ -186,15 +190,19 @@ export default function DoctorsPage() {
   }
 
   async function openSchedule(d: Doctor) {
-    setScheduleDoctor(d)
-    const [availData, docData] = await Promise.all([
+    setScheduleDoctor(d); setEditingLoc(null)
+    const [availData, locsData] = await Promise.all([
       fetch(`/api/availability?doctor_id=${d.id}`).then(r => r.json()),
-      fetch(`/api/doctors?id=${d.id}`).then(r => r.json()),
+      fetch(`/api/doctors/locations?doctor_id=${d.id}`).then(r => r.json()),
     ])
     const existing = availData.schedule ?? []
+    const locs: Location[] = locsData ?? []
+    setLocations(locs)
     setSchedule(DEFAULT_SCHEDULE.map((def, i) => {
       const row = existing.find((e: any) => e.day_of_week === i)
-      return row ? { enabled: true, start_time: row.start_time.slice(0, 5), end_time: row.end_time.slice(0, 5) } : { ...def, enabled: false }
+      return row
+        ? { enabled: true, start_time: row.start_time.slice(0, 5), end_time: row.end_time.slice(0, 5), location_id: row.location_id ?? '' }
+        : { ...def, enabled: false }
     }))
     // Load booking rules from the doctor record (already in doctors list)
     const rules = d.booking_rules ?? {}
@@ -210,7 +218,7 @@ export default function DoctorsPage() {
   async function saveSchedule() {
     if (!scheduleDoctor) return
     setSchedSaving(true)
-    const schedRows = schedule.map((d, i) => ({ day_of_week: i, start_time: d.start_time, end_time: d.end_time, enabled: d.enabled })).filter(r => r.enabled)
+    const schedRows = schedule.map((d, i) => ({ day_of_week: i, start_time: d.start_time, end_time: d.end_time, enabled: d.enabled, location_id: d.location_id || null })).filter(r => r.enabled)
     const rules: Record<string, number> = {}
     if (bookingRules.min_advance_hours !== '') rules.min_advance_hours = Number(bookingRules.min_advance_hours)
     if (bookingRules.max_advance_days  !== '') rules.max_advance_days  = Number(bookingRules.max_advance_days)
@@ -221,6 +229,27 @@ export default function DoctorsPage() {
       fetch('/api/doctors', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: scheduleDoctor.id, booking_rules: rules }) }),
     ])
     setSchedSaving(false); closeSchedule(); load()
+  }
+
+  async function saveLocation() {
+    if (!editingLoc || !scheduleDoctor) return
+    setSavingLoc(true)
+    if (editingLoc.isNew) {
+      const { isNew, ...body } = editingLoc
+      const res  = await fetch('/api/doctors/locations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, doctor_id: scheduleDoctor.id }) })
+      const data = await res.json()
+      setLocations(l => [...l, data])
+    } else {
+      await fetch('/api/doctors/locations', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editingLoc) })
+      setLocations(l => l.map(x => x.id === editingLoc.id ? { ...x, ...editingLoc } as Location : x))
+    }
+    setSavingLoc(false); setEditingLoc(null)
+  }
+
+  async function deleteLocation(id: string) {
+    await fetch('/api/doctors/locations', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    setLocations(l => l.filter(x => x.id !== id))
+    setSchedule(s => s.map(d => d.location_id === id ? { ...d, location_id: '' } : d))
   }
 
   const currentPhoto = photoPreview || editing?.photo_url || null
@@ -402,7 +431,7 @@ export default function DoctorsPage() {
       )}
 
       {/* ── Schedule dialog ───────────────────────────────────────────────── */}
-      <dialog ref={schedDialogRef} style={{ border: 'none', borderRadius: 12, padding: 0, width: 440, maxWidth: '95vw', boxShadow: '0 20px 60px rgba(0,0,0,.18)' }}>
+      <dialog ref={schedDialogRef} style={{ border: 'none', borderRadius: 12, padding: 0, width: 560, maxWidth: '95vw', boxShadow: '0 20px 60px rgba(0,0,0,.18)' }}>
         <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Horario semanal</h2>
@@ -419,20 +448,92 @@ export default function DoctorsPage() {
             </button>
           </div>
         )}
-        <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 10, maxHeight: '70vh', overflowY: 'auto' }}>
+
+          {/* ── Consultorios ── */}
+          <div style={{ marginBottom: 4 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.06em', margin: 0 }}>Consultorios</p>
+              <button className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}
+                onClick={() => setEditingLoc({ isNew: true, name: '', address: '', maps_url: '', phone: '' })}>
+                + Agregar
+              </button>
+            </div>
+
+            {locations.length === 0 && !editingLoc && (
+              <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 4px' }}>Sin consultorios — el horario no tendrá ubicación asignada.</p>
+            )}
+
+            {locations.map(loc => (
+              <div key={loc.id} style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', marginBottom: 6, fontSize: 13, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, color: 'var(--text)' }}>📍 {loc.name}</div>
+                  {loc.address && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>{loc.address}</div>}
+                  {loc.maps_url && <a href={loc.maps_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#2563eb' }}>Ver mapa</a>}
+                </div>
+                <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                  <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}
+                    onClick={() => setEditingLoc({ ...loc })}>Editar</button>
+                  <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: '#ef4444' }}
+                    onClick={() => deleteLocation(loc.id)}>×</button>
+                </div>
+              </div>
+            ))}
+
+            {editingLoc && (
+              <div style={{ border: '1.5px solid #bfdbfe', borderRadius: 8, padding: 12, background: '#f8faff', display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 6 }}>
+                <Field label="Nombre del consultorio">
+                  <input style={inp} placeholder="Consultorio Central" value={editingLoc.name ?? ''}
+                    onChange={e => setEditingLoc(l => l && ({ ...l, name: e.target.value }))} />
+                </Field>
+                <Field label="Dirección">
+                  <input style={inp} placeholder="Av. Principal 123, Piso 2" value={editingLoc.address ?? ''}
+                    onChange={e => setEditingLoc(l => l && ({ ...l, address: e.target.value }))} />
+                </Field>
+                <Field label="Link de Google Maps / Waze">
+                  <input style={inp} placeholder="https://maps.google.com/..." value={editingLoc.maps_url ?? ''}
+                    onChange={e => setEditingLoc(l => l && ({ ...l, maps_url: e.target.value }))} />
+                </Field>
+                <Field label="Teléfono del consultorio">
+                  <input style={inp} placeholder="+593 99 000 0000" value={editingLoc.phone ?? ''}
+                    onChange={e => setEditingLoc(l => l && ({ ...l, phone: e.target.value }))} />
+                </Field>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setEditingLoc(null)}>Cancelar</button>
+                  <button className="btn btn-primary btn-sm" onClick={saveLocation} disabled={savingLoc || !editingLoc.name?.trim()}>
+                    {savingLoc ? 'Guardando...' : 'Guardar'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14, marginBottom: -4 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.06em', margin: '0 0 10px' }}>Horario semanal</p>
+          </div>
+
           {DAYS.map((day, i) => (
-            <div key={i} style={{ display: 'grid', gridTemplateColumns: '110px 1fr 1fr', gap: 10, alignItems: 'center' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, cursor: 'pointer' }}>
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '90px 80px 80px 1fr', gap: 8, alignItems: 'center' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
                 <input type="checkbox" checked={schedule[i]?.enabled ?? false}
                   onChange={e => setSchedule(s => s.map((d, idx) => idx === i ? { ...d, enabled: e.target.checked } : d))} />
                 {day}
               </label>
-              <input type="time" style={{ ...inp, opacity: schedule[i]?.enabled ? 1 : .35 }} disabled={!schedule[i]?.enabled}
+              <input type="time" style={{ ...inp, padding: '6px 8px', opacity: schedule[i]?.enabled ? 1 : .35 }} disabled={!schedule[i]?.enabled}
                 value={schedule[i]?.start_time ?? '08:00'}
                 onChange={e => setSchedule(s => s.map((d, idx) => idx === i ? { ...d, start_time: e.target.value } : d))} />
-              <input type="time" style={{ ...inp, opacity: schedule[i]?.enabled ? 1 : .35 }} disabled={!schedule[i]?.enabled}
+              <input type="time" style={{ ...inp, padding: '6px 8px', opacity: schedule[i]?.enabled ? 1 : .35 }} disabled={!schedule[i]?.enabled}
                 value={schedule[i]?.end_time ?? '17:00'}
                 onChange={e => setSchedule(s => s.map((d, idx) => idx === i ? { ...d, end_time: e.target.value } : d))} />
+              <select
+                style={{ ...inp, padding: '6px 8px', opacity: schedule[i]?.enabled && locations.length > 0 ? 1 : .35, fontSize: 12 }}
+                disabled={!schedule[i]?.enabled || locations.length === 0}
+                value={schedule[i]?.location_id ?? ''}
+                onChange={e => setSchedule(s => s.map((d, idx) => idx === i ? { ...d, location_id: e.target.value } : d))}
+              >
+                <option value="">{locations.length === 0 ? 'Sin consultorio' : 'Consultorio...'}</option>
+                {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+              </select>
             </div>
           ))}
           {/* Booking rules */}

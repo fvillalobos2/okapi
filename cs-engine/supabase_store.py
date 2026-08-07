@@ -1198,7 +1198,7 @@ def get_appointments_needing_reminders(business_id: str, min_minutes: int, max_m
         status_list  = statuses or ['requested', 'confirmed']
         # Fetch all non-terminal appointments in the next max_minutes
         r = _sb().table('appointments') \
-            .select('id,business_id,date,start_time,status,reminder_24h_sent_at,reminder_2h_sent_at,patient_confirmed_at,patient_note,patients(name,phone),doctors(name,specialty),med_services(name,duration_minutes)') \
+            .select('id,business_id,date,start_time,status,reminder_24h_sent_at,reminder_2h_sent_at,patient_confirmed_at,patient_note,patients(name,phone),doctors(name,specialty),med_services(name,duration_minutes),doctor_locations(name,address,maps_url)') \
             .eq('business_id', business_id) \
             .in_('status', status_list) \
             .execute()
@@ -1214,6 +1214,18 @@ def get_appointments_needing_reminders(business_id: str, min_minutes: int, max_m
         return results
     except Exception as e:
         print(f'  ⚠ get_appointments_needing_reminders: {e}')
+        return []
+
+def get_doctor_locations(doctor_id: str) -> list:
+    """Return active locations for a doctor, ordered by sort_order."""
+    try:
+        r = _sb().table('doctor_locations') \
+            .select('id,name,address,maps_url,phone') \
+            .eq('doctor_id', doctor_id).eq('active', True) \
+            .order('sort_order').execute()
+        return r.data or []
+    except Exception as e:
+        print(f'  ⚠ get_doctor_locations: {e}')
         return []
 
 def mark_reminder_sent(appointment_id: str, reminder_type: str) -> bool:

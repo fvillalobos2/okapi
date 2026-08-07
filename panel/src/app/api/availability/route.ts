@@ -20,8 +20,9 @@ export async function PUT(req: Request) {
 
   await supabaseAdmin().from('doctor_availability').delete().eq('doctor_id', doctor_id)
   if (schedule && schedule.length > 0) {
-    const rows = schedule.map((s: { day_of_week: number; start_time: string; end_time: string }) => ({
+    const rows = schedule.map((s: { day_of_week: number; start_time: string; end_time: string; location_id?: string | null }) => ({
       doctor_id, day_of_week: s.day_of_week, start_time: s.start_time, end_time: s.end_time,
+      location_id: s.location_id || null,
     }))
     const { error } = await supabaseAdmin().from('doctor_availability').insert(rows)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

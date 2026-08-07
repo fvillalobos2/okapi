@@ -52,7 +52,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
 
   const dow = new Date(date + 'T12:00:00').getDay()
   const { data: schedule } = await supabaseAdmin()
-    .from('doctor_availability').select('start_time,end_time')
+    .from('doctor_availability').select('start_time,end_time,location_id,doctor_locations(id,name,address,maps_url,phone)')
     .eq('doctor_id', doctorId).eq('day_of_week', dow).single()
   if (!schedule) return NextResponse.json({ slots: [] })
 
@@ -77,5 +77,6 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     })
   }
 
-  return NextResponse.json({ slots })
+  const location = (schedule as any).doctor_locations ?? null
+  return NextResponse.json({ slots, location })
 }

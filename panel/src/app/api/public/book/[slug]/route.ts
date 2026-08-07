@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 export async function POST(req: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const body = await req.json()
-  const { doctor_id, service_id, date, time, name, phone, note } = body
+  const { doctor_id, service_id, date, time, name, phone, note, location_id } = body
 
   if (!doctor_id || !date || !time || !name || !phone) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -45,6 +45,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
       doctor_id, service_id: service_id || null,
       date, start_time: time, end_time: endTime,
       status: 'confirmed', patient_note: note || null,
+      location_id: location_id || null,
       confirmed_at: new Date().toISOString(),
     }).select().single()
 

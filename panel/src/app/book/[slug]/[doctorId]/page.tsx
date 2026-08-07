@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 
 type Service  = { id: string; name: string; description: string | null; duration_minutes: number; price: number | null }
+type Location = { id: string; name: string; address: string | null; maps_url: string | null; phone: string | null }
 type Doctor   = {
   id: string; name: string; specialty: string | null; bio: string | null; photo_url: string | null
   license_number: string | null; experience_years: number | null; education: string | null
@@ -162,12 +163,13 @@ export default function BookingPage() {
   const [slots, setSlots]                 = useState<string[]>([])
   const [slotsLoading, setSlotsLoading]   = useState(false)
   const [selectedSlot, setSelectedSlot]   = useState<string | null>(null)
+  const [slotLocation, setSlotLocation]   = useState<Location | null>(null)
 
   const [name, setName]         = useState('')
   const [phone, setPhone]       = useState('')
   const [note, setNote]         = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [confirmation, setConfirmation] = useState<{ date: string; time: string; doctor: string } | null>(null)
+  const [confirmation, setConfirmation] = useState<{ date: string; time: string; doctor: string; location: Location | null } | null>(null)
   const [bioExpanded, setBioExpanded] = useState(false)
 
   useEffect(() => {
@@ -187,16 +189,16 @@ export default function BookingPage() {
     setSlotsLoading(true); setSlots([]); setSelectedSlot(null)
     const res = await fetch(`/api/public/slots/${slug}/${doctorId}?date=${date}&duration=${service.duration_minutes}`)
     const d   = await res.json()
-    setSlots(d.slots ?? []); setSlotsLoading(false)
+    setSlots(d.slots ?? []); setSlotLocation(d.location ?? null); setSlotsLoading(false)
   }
 
   function handleServiceSelect(s: Service) {
-    setSelectedService(s); setSelectedDate(null); setSelectedSlot(null)
+    setSelectedService(s); setSelectedDate(null); setSelectedSlot(null); setSlotLocation(null)
     setStep('date')
   }
 
   function handleDateSelect(date: string) {
-    setSelectedDate(date); setStep('slots')
+    setSelectedDate(date); setStep('slots'); setSlotLocation(null)
     if (selectedService) loadSlots(date, selectedService)
   }
 
@@ -207,11 +209,11 @@ export default function BookingPage() {
     const res = await fetch(`/api/public/book/${slug}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ doctor_id: doctorId, service_id: selectedService.id, date: selectedDate, time: selectedSlot, name, phone, note }),
+      body: JSON.stringify({ doctor_id: doctorId, service_id: selectedService.id, date: selectedDate, time: selectedSlot, name, phone, note, location_id: slotLocation?.id ?? null }),
     })
     const data = await res.json()
     setSubmitting(false)
-    if (data.ok) { setConfirmation({ date: selectedDate, time: selectedSlot, doctor: doctor!.name }); setStep('done') }
+    if (data.ok) { setConfirmation({ date: selectedDate, time: selectedSlot, doctor: doctor!.name, location: slotLocation }); setStep('done') }
     else alert(data.error ?? 'Error al agendar')
   }
 
@@ -339,10 +341,22 @@ export default function BookingPage() {
           <div className="book-section" style={{ background: '#fff', borderRadius: 16, padding: 32, textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,.06)' }}>
             <div style={{ width: 64, height: 64, background: '#dcfce7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, margin: '0 auto 16px' }}>✓</div>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', margin: '0 0 8px' }}>¡Cita confirmada!</h2>
-            <p style={{ color: '#6b7280', fontSize: 14, lineHeight: 1.7, margin: '0 0 20px' }}>
+            <p style={{ color: '#6b7280', fontSize: 14, lineHeight: 1.7, margin: '0 0 16px' }}>
               <strong style={{ color: '#111827' }}>{fmtDate(confirmation.date)}</strong><br />
               {fmt12(confirmation.time)} · {confirmation.doctor}
             </p>
+            {confirmation.location && (
+              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '12px 16px', marginBottom: 12, textAlign: 'left' }}>
+                <div style={{ fontWeight: 600, fontSize: 13, color: '#1e40af', marginBottom: 4 }}>📍 {confirmation.location.name}</div>
+                {confirmation.location.address && <div style={{ fontSize: 12, color: '#3b82f6' }}>{confirmation.location.address}</div>}
+                {confirmation.location.maps_url && (
+                  <a href={confirmation.location.maps_url} target="_blank" rel="noopener noreferrer"
+                    style={{ fontSize: 12, color: '#2563eb', fontWeight: 600, display: 'inline-block', marginTop: 4 }}>
+                    Ver en mapa →
+                  </a>
+                )}
+              </div>
+            )}
             <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '12px 16px', fontSize: 13, color: '#15803d' }}>
               📲 Recibirás un recordatorio por WhatsApp
             </div>
@@ -414,6 +428,16 @@ export default function BookingPage() {
                     </button>
                   </div>
                 ) : (
+                  <>
+                  {slotLocation && (
+                    <div style={{ marginBottom: 14, padding: '10px 14px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, fontSize: 13 }}>
+                      <div style={{ fontWeight: 600, color: '#1e40af' }}>📍 {slotLocation.name}</div>
+                      {slotLocation.address && <div style={{ color: '#3b82f6', marginTop: 2 }}>{slotLocation.address}</div>}
+                      {slotLocation.maps_url && (
+                        <a href={slotLocation.maps_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#2563eb', fontWeight: 600, display: 'inline-block', marginTop: 4 }}>Ver en mapa →</a>
+                      )}
+                    </div>
+                  )}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                     {slots.map(sl => {
                       const sel = selectedSlot === sl
@@ -431,6 +455,7 @@ export default function BookingPage() {
                       )
                     })}
                   </div>
+                  </>
                 )}
               </Section>
             )}
@@ -455,9 +480,10 @@ export default function BookingPage() {
                   </Field>
 
                   {/* Summary chip */}
-                  <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#374151', lineHeight: 1.6 }}>
+                  <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#374151', lineHeight: 1.7 }}>
                     <div style={{ fontWeight: 600, color: '#111827', marginBottom: 2 }}>{selectedService?.name}</div>
                     <div style={{ color: '#6b7280' }}>{fmtDate(selectedDate!)} · {fmt12(selectedSlot!)}</div>
+                    {slotLocation && <div style={{ color: '#2563eb', fontWeight: 500 }}>📍 {slotLocation.name}{slotLocation.address ? ` — ${slotLocation.address}` : ''}</div>}
                   </div>
 
                   <button type="submit" disabled={submitting || !name.trim() || !phone.trim()} style={{

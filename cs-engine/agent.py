@@ -1602,7 +1602,12 @@ def _build_medical_context(phone: str, business: dict) -> str:
             svcs = [s for s in (doc.get('med_services') or []) if s.get('active')]
             svc_str = ', '.join(f"{s['name']} ({s['duration_minutes']} min)" for s in svcs) or 'sin servicios definidos'
             spec = f" — {doc['specialty']}" if doc.get('specialty') else ''
-            lines.append(f"  • {doc['name']}{spec} | ID: {doc['id']} | Servicios: {svc_str}")
+            locs = store.get_doctor_locations(doc['id'])
+            if locs:
+                loc_str = ', '.join(f"{l['name']}" + (f" ({l['address']})" if l.get('address') else '') for l in locs)
+            else:
+                loc_str = 'sin consultorio definido'
+            lines.append(f"  • {doc['name']}{spec} | ID: {doc['id']} | Servicios: {svc_str} | Consultorios: {loc_str}")
 
     lines.append('\nPara consultar slots disponibles en una fecha: el sistema te los provee si los pedís con [CHECK_SLOTS: doctor_id=xxx|date=YYYY-MM-DD|duration=30]')
     lines.append('Para confirmar una cita: usá [BOOK_APPOINTMENT: doctor_id=xxx|service_id=xxx|date=YYYY-MM-DD|time=HH:MM|name=Nombre Paciente|note=motivo]')
@@ -2643,27 +2648,46 @@ def _send_appointment_reminder(appt: dict, reminder_type: str, business: dict, c
     if not phone:
         return
 
+    location  = appt.get('doctor_locations') or {}
+    loc_name  = location.get('name', '')
+    loc_addr  = location.get('address', '')
+    loc_maps  = location.get('maps_url', '')
+
     cfg = cfg or {}
     custom_msg = cfg.get('message_es') or ''
     if custom_msg:
-        # Supports placeholders: {name}, {doctor}, {service}, {date}, {time}, {clinic}
+        # Supports placeholders: {name}, {doctor}, {service}, {date}, {time}, {clinic}, {location}
+        loc_label = loc_name or ''
+        if loc_addr:
+            loc_label = f'{loc_name} — {loc_addr}' if loc_name else loc_addr
         try:
             msg = custom_msg.format(
                 name=name, doctor=doc_name, service=svc_name,
                 date=date_fmt, time=time_fmt, clinic=biz_name,
+                location=loc_label,
             )
         except (KeyError, ValueError):
             msg = custom_msg  # use as-is if format fails
     else:
         intro = 'mañana' if reminder_type == '24h' else 'en unas horas'
         svc_line = f'\nServicio: {svc_name}' if svc_name else ''
+        if loc_name or loc_addr:
+            loc_display = loc_name
+            if loc_addr:
+                loc_display = f'{loc_name} — {loc_addr}' if loc_name else loc_addr
+            if loc_maps:
+                loc_display += f'\n📍 {loc_maps}'
+            loc_line = f'\n📍 {loc_display}'
+        else:
+            loc_line = ''
         msg = (
             f'📅 *Recordatorio de cita — {biz_name}*\n\n'
             f'Hola {name}, te recordamos que tenés cita {intro}:\n\n'
             f'📆 {date_fmt}\n'
             f'🕐 {time_fmt}\n'
             f'👨‍⚕️ {doc_name}'
-            f'{svc_line}\n\n'
+            f'{svc_line}'
+            f'{loc_line}\n\n'
             f'Respondé *SÍ* para confirmar tu asistencia o *NO* si no podés asistir.'
         )
     wa_phone = f'whatsapp:{phone}' if not phone.startswith('whatsapp:') else phone
