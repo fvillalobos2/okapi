@@ -1605,6 +1605,7 @@ def _build_medical_context(phone: str, business: dict) -> str:
 
     lines.append('\nPara consultar slots disponibles en una fecha: el sistema te los provee si los pedís con [CHECK_SLOTS: doctor_id=xxx|date=YYYY-MM-DD|duration=30]')
     lines.append('Para confirmar una cita: usá [BOOK_APPOINTMENT: doctor_id=xxx|service_id=xxx|date=YYYY-MM-DD|time=HH:MM|name=Nombre Paciente|note=motivo]')
+    lines.append('Para compartir el link de reserva online de un doctor: usá [BOOKING_LINK: doctor_id=xxx] — el sistema lo reemplaza con la URL real.')
     lines.append('Nunca inventes un horario disponible — siempre verificá con [CHECK_SLOTS] antes de ofrecer un slot.')
 
     return '\n'.join(lines)
@@ -1620,9 +1621,24 @@ def _parse_medical_marker(reply: str, marker: str) -> Optional[dict]:
         return None
 
 def _handle_medical_reply(reply: str, phone: str, business: dict) -> str:
-    """Process CHECK_SLOTS and BOOK_APPOINTMENT markers from Claude's reply."""
+    """Process CHECK_SLOTS, BOOK_APPOINTMENT and BOOKING_LINK markers from Claude's reply."""
     bid = business.get('id')
     clean = phone.replace('whatsapp:', '').strip()
+
+    # BOOKING_LINK — replace with the actual public booking URL for that doctor
+    link_params = _parse_medical_marker(reply, 'BOOKING_LINK')
+    if link_params:
+        doctor_id  = link_params.get('doctor_id', '')
+        marker_str = re.search(r'\[BOOKING_LINK:[^\]]+\]', reply).group(0)
+        panel_url  = (business.get('panel_url') or '').rstrip('/')
+        slug       = business.get('slug', '')
+        if panel_url and slug and doctor_id:
+            booking_url = f'{panel_url}/book/{slug}/{doctor_id}'
+        elif slug and doctor_id:
+            booking_url = f'https://panel.projectokapi.com/book/{slug}/{doctor_id}'
+        else:
+            booking_url = ''
+        reply = reply.replace(marker_str, booking_url)
 
     # CHECK_SLOTS
     slots_params = _parse_medical_marker(reply, 'CHECK_SLOTS')
