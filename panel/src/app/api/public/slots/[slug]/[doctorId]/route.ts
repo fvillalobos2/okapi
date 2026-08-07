@@ -51,10 +51,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   if (daysAhead > maxAdvanceDays) return NextResponse.json({ slots: [] })
 
   const dow = new Date(date + 'T12:00:00').getDay()
-  const { data: schedule } = await supabaseAdmin()
+  const locationId = searchParams.get('location_id')
+  let scheduleQuery = supabaseAdmin()
     .from('doctor_availability').select('start_time,end_time,location_id,doctor_locations(id,name,address,maps_url,phone)')
-    .eq('doctor_id', doctorId).eq('day_of_week', dow).single()
-  if (!schedule) return NextResponse.json({ slots: [] })
+    .eq('doctor_id', doctorId).eq('day_of_week', dow)
+  if (locationId) scheduleQuery = scheduleQuery.eq('location_id', locationId)
+  const { data: schedule } = await scheduleQuery.single()
+  if (!schedule) return NextResponse.json({ slots: [], location: null })
 
   const { data: booked } = await supabaseAdmin()
     .from('appointments').select('start_time,end_time')

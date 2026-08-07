@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 
 type Service  = { id: string; name: string; description: string | null; duration_minutes: number; price: number | null }
-type Location = { id: string; name: string; address: string | null; maps_url: string | null; phone: string | null }
+type Location = { id: string; name: string; address: string | null; maps_url: string | null; phone: string | null; available_days?: number[] }
 type Doctor   = {
   id: string; name: string; specialty: string | null; bio: string | null; photo_url: string | null
   license_number: string | null; experience_years: number | null; education: string | null
@@ -12,7 +12,7 @@ type Doctor   = {
   med_services: Service[]
 }
 type Business = { id: string; name: string }
-type Step     = 'service' | 'date' | 'slots' | 'form' | 'done'
+type Step     = 'service' | 'location' | 'date' | 'slots' | 'form' | 'done'
 
 const DAYS_SHORT  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
 const MONTHS_LONG = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
@@ -32,12 +32,11 @@ function initials(name: string) {
   return name.split(' ').slice(0,2).map(n => n[0]).join('').toUpperCase()
 }
 
-// ── Step progress labels ─────────────────────────────────────────────────────
-const STEP_ORDER: Step[] = ['service','date','slots','form']
-const STEP_LABELS: Record<Step, string> = { service: 'Servicio', date: 'Fecha', slots: 'Hora', form: 'Datos', done: 'Listo' }
+const STEP_LABELS: Record<Step, string> = {
+  service: 'Servicio', location: 'Consultorio', date: 'Fecha', slots: 'Hora', form: 'Datos', done: 'Listo',
+}
 
-function StepBar({ step, singleService }: { step: Step; singleService: boolean }) {
-  const steps = singleService ? STEP_ORDER.slice(1) : STEP_ORDER
+function StepBar({ steps, step }: { steps: Step[]; step: Step }) {
   const idx = steps.indexOf(step)
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 28 }}>
@@ -50,7 +49,7 @@ function StepBar({ step, singleService }: { step: Step; singleService: boolean }
               <div style={{
                 width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 12, fontWeight: 700, transition: 'all .2s',
-                background: done ? '#2563eb' : current ? '#2563eb' : '#e5e7eb',
+                background: done || current ? '#2563eb' : '#e5e7eb',
                 color: done || current ? '#fff' : '#9ca3af',
               }}>
                 {done ? '✓' : i + 1}
@@ -70,7 +69,11 @@ function StepBar({ step, singleService }: { step: Step; singleService: boolean }
 }
 
 // ── Mini calendar ────────────────────────────────────────────────────────────
-function Calendar({ selected, onSelect }: { selected: string | null; onSelect: (d: string) => void }) {
+function Calendar({ selected, onSelect, enabledDays }: {
+  selected: string | null
+  onSelect: (d: string) => void
+  enabledDays?: Set<number>
+}) {
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
@@ -99,16 +102,19 @@ function Calendar({ selected, onSelect }: { selected: string | null; onSelect: (
         {cells.map((day, i) => {
           if (!day) return <div key={`e${i}`} />
           const ds  = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+          const dow = new Date(ds + 'T12:00:00').getDay()
           const past = ds < todayStr
+          const unavailable = enabledDays !== undefined && !enabledDays.has(dow)
+          const disabled = past || unavailable
           const sel  = ds === selected
           const isToday = ds === todayStr
           return (
-            <button key={ds} disabled={past} onClick={() => onSelect(ds)} style={{
+            <button key={ds} disabled={disabled} onClick={() => onSelect(ds)} style={{
               border: sel ? '2px solid #2563eb' : isToday ? '1px solid #bfdbfe' : '1px solid transparent',
               width: '100%', aspectRatio: '1', borderRadius: 8, fontSize: 14,
-              background: sel ? '#2563eb' : isToday ? '#eff6ff' : 'transparent',
-              color: past ? '#d1d5db' : sel ? '#fff' : isToday ? '#2563eb' : '#111827',
-              cursor: past ? 'not-allowed' : 'pointer',
+              background: sel ? '#2563eb' : isToday && !disabled ? '#eff6ff' : 'transparent',
+              color: disabled ? '#d1d5db' : sel ? '#fff' : isToday ? '#2563eb' : '#111827',
+              cursor: disabled ? 'not-allowed' : 'pointer',
               fontWeight: sel || isToday ? 700 : 400,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'all .12s',
@@ -118,6 +124,11 @@ function Calendar({ selected, onSelect }: { selected: string | null; onSelect: (
           )
         })}
       </div>
+      {enabledDays !== undefined && enabledDays.size > 0 && (
+        <div style={{ marginTop: 12, fontSize: 11, color: '#9ca3af', textAlign: 'center' }}>
+          Disponible: {Array.from(enabledDays).sort().map(d => DAYS_SHORT[d]).join(' · ')}
+        </div>
+      )}
     </div>
   )
 }
@@ -157,13 +168,15 @@ export default function BookingPage() {
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState<string | null>(null)
 
-  const [step, setStep]                   = useState<Step>('service')
-  const [selectedService, setSelectedService] = useState<Service | null>(null)
-  const [selectedDate, setSelectedDate]   = useState<string | null>(null)
-  const [slots, setSlots]                 = useState<string[]>([])
-  const [slotsLoading, setSlotsLoading]   = useState(false)
-  const [selectedSlot, setSelectedSlot]   = useState<string | null>(null)
-  const [slotLocation, setSlotLocation]   = useState<Location | null>(null)
+  const [locations, setLocations]             = useState<Location[]>([])
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
+
+  const [step, setStep]                           = useState<Step>('service')
+  const [selectedService, setSelectedService]     = useState<Service | null>(null)
+  const [selectedDate, setSelectedDate]           = useState<string | null>(null)
+  const [slots, setSlots]                         = useState<string[]>([])
+  const [slotsLoading, setSlotsLoading]           = useState(false)
+  const [selectedSlot, setSelectedSlot]           = useState<string | null>(null)
 
   const [name, setName]         = useState('')
   const [phone, setPhone]       = useState('')
@@ -173,33 +186,64 @@ export default function BookingPage() {
   const [bioExpanded, setBioExpanded] = useState(false)
 
   useEffect(() => {
-    fetch(`/api/public/doctor/${slug}/${doctorId}`)
-      .then(r => r.json())
-      .then(d => {
-        if (d.error) { setError(d.error); return }
-        setDoctor(d.doctor); setBusiness(d.business)
-        const active = d.doctor.med_services.filter(Boolean)
-        if (active.length === 1) { setSelectedService(active[0]); setStep('date') }
-      })
-      .catch(() => setError('No se pudo cargar la información'))
-      .finally(() => setLoading(false))
+    Promise.all([
+      fetch(`/api/public/doctor/${slug}/${doctorId}`).then(r => r.json()),
+      fetch(`/api/public/locations/${slug}/${doctorId}`).then(r => r.json()),
+    ]).then(([docData, locData]) => {
+      if (docData.error) { setError(docData.error); return }
+      setDoctor(docData.doctor); setBusiness(docData.business)
+      const locs: Location[] = locData.locations ?? []
+      setLocations(locs)
+
+      const activeServices = docData.doctor.med_services.filter(Boolean)
+      const singleSvc = activeServices.length === 1
+      const singleLoc = locs.length <= 1
+
+      if (singleSvc) setSelectedService(activeServices[0])
+      if (singleLoc && locs.length === 1) setSelectedLocation(locs[0])
+
+      // Determine first step
+      if (singleSvc && singleLoc) setStep('date')
+      else if (singleSvc) setStep('location')
+      else setStep('service')
+    })
+    .catch(() => setError('No se pudo cargar la información'))
+    .finally(() => setLoading(false))
   }, [slug, doctorId])
 
-  async function loadSlots(date: string, service: Service) {
+  // Computed
+  const singleService = (doctor?.med_services.length ?? 0) === 1
+  const singleLocation = locations.length <= 1
+  const enabledDays = selectedLocation?.available_days ? new Set(selectedLocation.available_days) : undefined
+
+  const stepOrder: Step[] = [
+    ...(!singleService ? ['service' as Step] : []),
+    ...(!singleLocation ? ['location' as Step] : []),
+    'date', 'slots', 'form',
+  ]
+  function stepNum(s: Step) { return stepOrder.indexOf(s) + 1 }
+
+  async function loadSlots(date: string, service: Service, location: Location | null) {
     setSlotsLoading(true); setSlots([]); setSelectedSlot(null)
-    const res = await fetch(`/api/public/slots/${slug}/${doctorId}?date=${date}&duration=${service.duration_minutes}`)
+    const locParam = location ? `&location_id=${location.id}` : ''
+    const res = await fetch(`/api/public/slots/${slug}/${doctorId}?date=${date}&duration=${service.duration_minutes}${locParam}`)
     const d   = await res.json()
-    setSlots(d.slots ?? []); setSlotLocation(d.location ?? null); setSlotsLoading(false)
+    setSlots(d.slots ?? []); setSlotsLoading(false)
   }
 
   function handleServiceSelect(s: Service) {
-    setSelectedService(s); setSelectedDate(null); setSelectedSlot(null); setSlotLocation(null)
+    setSelectedService(s); setSelectedDate(null); setSelectedSlot(null)
+    setStep(singleLocation ? 'date' : 'location')
+  }
+
+  function handleLocationSelect(loc: Location) {
+    setSelectedLocation(loc); setSelectedDate(null); setSelectedSlot(null)
     setStep('date')
   }
 
   function handleDateSelect(date: string) {
-    setSelectedDate(date); setStep('slots'); setSlotLocation(null)
-    if (selectedService) loadSlots(date, selectedService)
+    setSelectedDate(date); setStep('slots')
+    if (selectedService) loadSlots(date, selectedService, selectedLocation)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -209,12 +253,20 @@ export default function BookingPage() {
     const res = await fetch(`/api/public/book/${slug}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ doctor_id: doctorId, service_id: selectedService.id, date: selectedDate, time: selectedSlot, name, phone, note, location_id: slotLocation?.id ?? null }),
+      body: JSON.stringify({
+        doctor_id: doctorId, service_id: selectedService.id,
+        date: selectedDate, time: selectedSlot, name, phone, note,
+        location_id: selectedLocation?.id ?? null,
+      }),
     })
     const data = await res.json()
     setSubmitting(false)
-    if (data.ok) { setConfirmation({ date: selectedDate, time: selectedSlot, doctor: doctor!.name, location: slotLocation }); setStep('done') }
-    else alert(data.error ?? 'Error al agendar')
+    if (data.ok) {
+      setConfirmation({ date: selectedDate, time: selectedSlot, doctor: doctor!.name, location: selectedLocation })
+      setStep('done')
+    } else {
+      alert(data.error ?? 'Error al agendar')
+    }
   }
 
   if (loading) return (
@@ -235,7 +287,6 @@ export default function BookingPage() {
   )
 
   if (!doctor || !business) return null
-  const singleService = doctor.med_services.length === 1
 
   return (
     <div style={{ position: 'fixed', inset: 0, overflowY: 'auto', background: '#f3f4f6' }}>
@@ -284,7 +335,6 @@ export default function BookingPage() {
             </div>
           </div>
 
-          {/* Bio */}
           {doctor.bio && (
             <div style={{ marginTop: 14 }}>
               <p style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.6, margin: 0,
@@ -303,7 +353,6 @@ export default function BookingPage() {
             </div>
           )}
 
-          {/* Extra info rows */}
           {(doctor.education || doctor.certifications || doctor.languages?.length) && (
             <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: 8 }}>
               {doctor.education && (
@@ -327,7 +376,6 @@ export default function BookingPage() {
             </div>
           )}
 
-          {/* Consultation fee */}
           {doctor.consultation_fee && (
             <div style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '6px 12px', fontSize: 13 }}>
               <span style={{ color: '#15803d', fontWeight: 700 }}>${Number(doctor.consultation_fee).toLocaleString()}</span>
@@ -366,12 +414,12 @@ export default function BookingPage() {
         {/* ── Steps ── */}
         {step !== 'done' && (
           <>
-            <StepBar step={step} singleService={singleService} />
+            <StepBar steps={stepOrder} step={step} />
 
             {/* SERVICE */}
             {!singleService && (
               <Section
-                number={1} label="Servicio" active={step === 'service'}
+                number={stepNum('service')} label="Servicio" active={step === 'service'}
                 summary={selectedService ? selectedService.name : null}
                 onEdit={selectedService ? () => setStep('service') : undefined}
               >
@@ -382,8 +430,7 @@ export default function BookingPage() {
                       <button key={s.id} onClick={() => handleServiceSelect(s)} style={{
                         textAlign: 'left', cursor: 'pointer', padding: '14px 16px', borderRadius: 12,
                         border: sel ? '2px solid #2563eb' : '1.5px solid #e5e7eb',
-                        background: sel ? '#eff6ff' : '#fff',
-                        transition: 'all .12s',
+                        background: sel ? '#eff6ff' : '#fff', transition: 'all .12s',
                       }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                           <span style={{ fontWeight: 600, fontSize: 14, color: sel ? '#1d4ed8' : '#111827' }}>{s.name}</span>
@@ -399,21 +446,53 @@ export default function BookingPage() {
               </Section>
             )}
 
+            {/* LOCATION */}
+            {!singleLocation && (step === 'location' || step === 'date' || step === 'slots' || step === 'form') && (
+              <Section
+                number={stepNum('location')} label="Consultorio" active={step === 'location'}
+                summary={selectedLocation ? selectedLocation.name : null}
+                onEdit={selectedLocation ? () => { setStep('location'); setSelectedDate(null); setSelectedSlot(null) } : undefined}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {locations.map(loc => {
+                    const sel = selectedLocation?.id === loc.id
+                    return (
+                      <button key={loc.id} onClick={() => handleLocationSelect(loc)} style={{
+                        textAlign: 'left', cursor: 'pointer', padding: '14px 16px', borderRadius: 12,
+                        border: sel ? '2px solid #2563eb' : '1.5px solid #e5e7eb',
+                        background: sel ? '#eff6ff' : '#fff', transition: 'all .12s',
+                      }}>
+                        <div style={{ fontWeight: 600, fontSize: 14, color: sel ? '#1d4ed8' : '#111827', marginBottom: loc.address ? 4 : 0 }}>
+                          📍 {loc.name}
+                        </div>
+                        {loc.address && <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.4 }}>{loc.address}</div>}
+                        {loc.available_days && loc.available_days.length > 0 && (
+                          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
+                            {loc.available_days.map(d => DAYS_SHORT[d]).join(' · ')}
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </Section>
+            )}
+
             {/* DATE */}
             {(step === 'date' || step === 'slots' || step === 'form') && (
               <Section
-                number={singleService ? 1 : 2} label="Fecha" active={step === 'date'}
+                number={stepNum('date')} label="Fecha" active={step === 'date'}
                 summary={selectedDate ? fmtDate(selectedDate) : null}
                 onEdit={() => { setStep('date'); setSelectedSlot(null) }}
               >
-                <Calendar selected={selectedDate} onSelect={handleDateSelect} />
+                <Calendar selected={selectedDate} onSelect={handleDateSelect} enabledDays={enabledDays} />
               </Section>
             )}
 
             {/* SLOTS */}
             {(step === 'slots' || step === 'form') && (
               <Section
-                number={singleService ? 2 : 3} label="Horario" active={step === 'slots'}
+                number={stepNum('slots')} label="Horario" active={step === 'slots'}
                 summary={selectedSlot ? fmt12(selectedSlot) : null}
                 onEdit={() => setStep('slots')}
               >
@@ -428,16 +507,6 @@ export default function BookingPage() {
                     </button>
                   </div>
                 ) : (
-                  <>
-                  {slotLocation && (
-                    <div style={{ marginBottom: 14, padding: '10px 14px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, fontSize: 13 }}>
-                      <div style={{ fontWeight: 600, color: '#1e40af' }}>📍 {slotLocation.name}</div>
-                      {slotLocation.address && <div style={{ color: '#3b82f6', marginTop: 2 }}>{slotLocation.address}</div>}
-                      {slotLocation.maps_url && (
-                        <a href={slotLocation.maps_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#2563eb', fontWeight: 600, display: 'inline-block', marginTop: 4 }}>Ver en mapa →</a>
-                      )}
-                    </div>
-                  )}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                     {slots.map(sl => {
                       const sel = selectedSlot === sl
@@ -455,14 +524,13 @@ export default function BookingPage() {
                       )
                     })}
                   </div>
-                  </>
                 )}
               </Section>
             )}
 
             {/* FORM */}
             {step === 'form' && (
-              <Section number={singleService ? 3 : 4} label="Tus datos" active>
+              <Section number={stepNum('form')} label="Tus datos" active>
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <Field label="Nombre completo" required>
                     <input value={name} onChange={e => setName(e.target.value)} required placeholder="Ej. María Rodríguez"
@@ -479,11 +547,15 @@ export default function BookingPage() {
                       onFocus={e => (e.target.style.borderColor='#2563eb')} onBlur={e => (e.target.style.borderColor='#e5e7eb')} />
                   </Field>
 
-                  {/* Summary chip */}
+                  {/* Summary */}
                   <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#374151', lineHeight: 1.7 }}>
                     <div style={{ fontWeight: 600, color: '#111827', marginBottom: 2 }}>{selectedService?.name}</div>
                     <div style={{ color: '#6b7280' }}>{fmtDate(selectedDate!)} · {fmt12(selectedSlot!)}</div>
-                    {slotLocation && <div style={{ color: '#2563eb', fontWeight: 500 }}>📍 {slotLocation.name}{slotLocation.address ? ` — ${slotLocation.address}` : ''}</div>}
+                    {selectedLocation && (
+                      <div style={{ color: '#2563eb', fontWeight: 500 }}>
+                        📍 {selectedLocation.name}{selectedLocation.address ? ` — ${selectedLocation.address}` : ''}
+                      </div>
+                    )}
                   </div>
 
                   <button type="submit" disabled={submitting || !name.trim() || !phone.trim()} style={{
