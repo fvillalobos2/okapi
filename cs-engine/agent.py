@@ -1885,6 +1885,16 @@ def handle_inbound(from_number: str, body: str,
 
     _body_lower = body.lower().strip()
 
+    # Medical reminder YES/NO response (before cancellation flow, after reset)
+    _biz_modules = (business or {}).get('modules', {})
+    if _biz_modules.get('reminders', {}).get('enabled') and _biz_modules.get('medical', {}).get('enabled'):
+        _reminder_reply = _handle_medical_reminder_response(_body_lower, from_number, business)
+        if _reminder_reply:
+            store.append_message(from_number, 'user', body, bid)
+            send_whatsapp(from_number, _reminder_reply, sender)
+            store.append_message(from_number, 'assistant', _reminder_reply, bid)
+            return ''
+
     # Cancellation flow — Step A: confirm pending cancellation
     if _body_lower in _CANCEL_CONFIRM:
         _pc = store.get_pending_cancellation(from_number, bid)
@@ -2597,6 +2607,133 @@ def reachable_leads():
     within_hours = int(request.args.get('within_hours', 23))
     leads = store.get_reachable_leads(business_id, within_hours)
     return jsonify(leads), 200
+
+
+# ─── MEDAGENT REMINDERS CRON ─────────────────────────────────────────────────
+
+_REMINDER_YES = {'si', 'sí', 'yes', 'confirmo', 'confirmar', 'asisto', 'ahi estare', 'ahí estaré', 'ok', 'claro'}
+_REMINDER_NO  = {'no', 'cancelar', 'cancelo', 'no puedo', 'no voy', 'no asistiré', 'no asistire'}
+
+def _fmt_reminder_date(date_str: str) -> str:
+    """Return 'Martes 8 de agosto' from '2026-08-08'."""
+    DAYS_ES  = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']
+    MONTHS_ES = ['enero','febrero','marzo','abril','mayo','junio',
+                 'julio','agosto','septiembre','octubre','noviembre','diciembre']
+    try:
+        from datetime import date as _d
+        d = _d.fromisoformat(date_str)
+        return f'{DAYS_ES[d.weekday()]} {d.day} de {MONTHS_ES[d.month - 1]}'
+    except Exception:
+        return date_str
+
+def _send_appointment_reminder(appt: dict, reminder_type: str, business: dict):
+    """Send a WhatsApp reminder for an appointment."""
+    patient   = appt.get('patients') or {}
+    doctor    = appt.get('doctors') or {}
+    service   = appt.get('med_services') or {}
+    phone     = patient.get('phone', '')
+    name      = patient.get('name') or 'paciente'
+    doc_name  = doctor.get('name', '')
+    svc_name  = service.get('name', '')
+    date_fmt  = _fmt_reminder_date(appt.get('date', ''))
+    time_fmt  = appt.get('start_time', '')[:5]
+    biz_name  = business.get('name', 'la clínica')
+
+    if not phone:
+        return
+
+    intro = 'mañana' if reminder_type == '24h' else 'en unas horas'
+    svc_line = f'\nServicio: {svc_name}' if svc_name else ''
+    msg = (
+        f'📅 *Recordatorio de cita — {biz_name}*\n\n'
+        f'Hola {name}, te recordamos que tenés cita {intro}:\n\n'
+        f'📆 {date_fmt}\n'
+        f'🕐 {time_fmt}\n'
+        f'👨‍⚕️ {doc_name}'
+        f'{svc_line}\n\n'
+        f'Respondé *SÍ* para confirmar tu asistencia o *NO* si no podés asistir.'
+    )
+    wa_phone = f'whatsapp:{phone}' if not phone.startswith('whatsapp:') else phone
+    send_whatsapp(wa_phone, msg, business.get('twilio_sender'), business)
+    store.mark_reminder_sent(appt['id'], reminder_type)
+    print(f'  📲 Reminder {reminder_type} sent → {phone} (appt {appt["id"][:8]}…)', flush=True)
+
+
+def _handle_medical_reminder_response(body_lower: str, phone: str, business: dict) -> Optional[str]:
+    """If patient is replying to a reminder (YES/NO), update appointment and return response message."""
+    bid = business.get('id')
+    is_yes = body_lower in _REMINDER_YES or any(w in body_lower.split() for w in _REMINDER_YES)
+    is_no  = body_lower in _REMINDER_NO  or any(w in body_lower.split() for w in _REMINDER_NO)
+    if not (is_yes or is_no):
+        return None
+
+    clean = phone.replace('whatsapp:', '').strip()
+    appt = store.get_next_pending_appointment_for_patient(clean, bid)
+    if not appt:
+        return None
+
+    appt_id = appt['id']
+    if is_yes:
+        store._sb().table('appointments').update({
+            'status': 'confirmed',
+            'patient_confirmed_at': datetime.now(timezone.utc).isoformat(),
+            'confirmed_at': datetime.now(timezone.utc).isoformat(),
+        }).eq('id', appt_id).execute()
+        doc = (appt.get('doctors') or {}).get('name', '')
+        date_fmt = _fmt_reminder_date(appt.get('date', ''))
+        time_str = appt.get('start_time', '')[:5]
+        return (
+            f'✅ ¡Perfecto! Tu cita quedó confirmada.\n\n'
+            f'📆 {date_fmt} a las {time_str}\n'
+            f'👨‍⚕️ {doc}\n\n'
+            f'Te esperamos. Si necesitás hacer algún cambio, escribinos.'
+        )
+    else:
+        store._sb().table('appointments').update({
+            'status': 'cancelled',
+            'cancelled_at': datetime.now(timezone.utc).isoformat(),
+        }).eq('id', appt_id).execute()
+        return (
+            '❌ Entendido, cancelamos tu cita. Cuando quieras reagendar, escribinos y con gusto te buscamos un nuevo horario.'
+        )
+
+
+@app.route('/api/cron/reminders', methods=['POST'])
+def cron_reminders():
+    """Hourly cron — send 24h and 2h appointment reminders for all medical businesses."""
+    err = _require_api_key()
+    if err:
+        return err
+
+    businesses = store.get_all_businesses()
+    total_sent = 0
+
+    for biz in businesses:
+        modules       = biz.get('modules') or {}
+        reminders_cfg = modules.get('reminders') or {}
+        if not reminders_cfg.get('enabled'):
+            continue
+        # Reminders only make sense for medical businesses (have appointments table)
+        med = modules.get('medical') or {}
+        if not med.get('enabled'):
+            continue
+
+        bid = biz['id']
+
+        # 24h window: 23h30m → 24h30m from now (1410–1470 min)
+        for appt in store.get_appointments_needing_reminders(bid, 1380, 1500):
+            if not appt.get('reminder_24h_sent_at'):
+                _send_appointment_reminder(appt, '24h', biz)
+                total_sent += 1
+
+        # 2h window: 90m → 150m from now
+        for appt in store.get_appointments_needing_reminders(bid, 90, 150):
+            if not appt.get('reminder_2h_sent_at'):
+                _send_appointment_reminder(appt, '2h', biz)
+                total_sent += 1
+
+    print(f'  ✅ cron_reminders: {total_sent} reminders sent across {len(businesses)} businesses', flush=True)
+    return jsonify({'ok': True, 'sent': total_sent}), 200
 
 
 # ─── HEALTH ──────────────────────────────────────────────────────────────────

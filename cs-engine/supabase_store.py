@@ -1185,6 +1185,65 @@ def get_patient_appointments(patient_id: str, limit: int = 5) -> list:
         print(f'  ⚠ get_patient_appointments: {e}')
         return []
 
+def get_appointments_needing_reminders(business_id: str, min_minutes: int, max_minutes: int) -> list:
+    """Return upcoming appointments whose datetime falls between min_minutes and max_minutes from now (UTC).
+    Only returns those where the corresponding reminder has not been sent yet.
+    min/max_minutes determines which reminder window: 120±30 for 2h, 1440±30 for 24h."""
+    try:
+        from datetime import date as _date, time as _time
+        now = datetime.utcnow()
+        window_start = (now + timedelta(minutes=min_minutes)).isoformat()
+        window_end   = (now + timedelta(minutes=max_minutes)).isoformat()
+        # Fetch all non-terminal appointments in the next max_minutes
+        r = _sb().table('appointments') \
+            .select('id,business_id,date,start_time,status,reminder_24h_sent_at,reminder_2h_sent_at,patient_note,patients(name,phone),doctors(name,specialty),med_services(name,duration_minutes)') \
+            .eq('business_id', business_id) \
+            .in_('status', ['requested', 'confirmed']) \
+            .execute()
+        results = []
+        for appt in (r.data or []):
+            try:
+                appt_dt_str = f"{appt['date']}T{appt['start_time'][:5]}:00"
+                appt_dt = datetime.fromisoformat(appt_dt_str)
+                if window_start <= appt_dt_str <= window_end:
+                    results.append(appt)
+            except Exception:
+                pass
+        return results
+    except Exception as e:
+        print(f'  ⚠ get_appointments_needing_reminders: {e}')
+        return []
+
+def mark_reminder_sent(appointment_id: str, reminder_type: str) -> bool:
+    """Mark reminder_24h_sent_at or reminder_2h_sent_at as sent now."""
+    col = 'reminder_24h_sent_at' if reminder_type == '24h' else 'reminder_2h_sent_at'
+    try:
+        _sb().table('appointments').update({col: datetime.utcnow().isoformat()}).eq('id', appointment_id).execute()
+        return True
+    except Exception as e:
+        print(f'  ⚠ mark_reminder_sent: {e}')
+        return False
+
+def get_next_pending_appointment_for_patient(phone: str, business_id: str) -> Optional[dict]:
+    """Return the next confirmed/requested appointment for this patient (by phone), if any."""
+    norm = _normalize_phone(phone)
+    try:
+        today = datetime.utcnow().date().isoformat()
+        patient = _sb().table('patients').select('id').eq('business_id', business_id).eq('phone', norm).limit(1).execute()
+        if not patient.data:
+            return None
+        pid = patient.data[0]['id']
+        r = _sb().table('appointments') \
+            .select('id,date,start_time,status,doctors(name),med_services(name)') \
+            .eq('business_id', business_id).eq('patient_id', pid) \
+            .in_('status', ['requested', 'confirmed']) \
+            .gte('date', today) \
+            .order('date').order('start_time').limit(1).execute()
+        return r.data[0] if r.data else None
+    except Exception as e:
+        print(f'  ⚠ get_next_pending_appointment_for_patient: {e}')
+        return None
+
 
 # ─── CLEANUP ─────────────────────────────────────────────────────────────────
 

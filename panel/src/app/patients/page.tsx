@@ -6,6 +6,11 @@ type Appointment = { id: string; date: string; start_time: string; status: strin
 type Patient = {
   id: string; name: string | null; phone: string; email: string | null
   date_of_birth: string | null; notes: string | null; created_at: string
+  blood_type: string | null
+  allergies: string | null
+  current_medications: string | null
+  pathological_history: string | null
+  non_pathological_history: string | null
   appointments?: Appointment[]
 }
 
@@ -100,7 +105,7 @@ export default function PatientsPage() {
         </div>
       )}
 
-      <dialog ref={dialogRef} style={{ border: 'none', borderRadius: 12, padding: 0, width: 520, maxWidth: '95vw', boxShadow: '0 20px 60px rgba(0,0,0,.18)' }}>
+      <dialog ref={dialogRef} style={{ border: 'none', borderRadius: 12, padding: 0, width: 600, maxWidth: '95vw', boxShadow: '0 20px 60px rgba(0,0,0,.18)' }}>
         <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 style={{ fontSize: 16, fontWeight: 700 }}>Perfil de paciente</h2>
           <button onClick={close} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--muted)', lineHeight: 1 }}>×</button>
@@ -138,6 +143,34 @@ export default function PatientsPage() {
                 value={editing.notes ?? ''}
                 onChange={e => setEditing(f => f && ({ ...f, notes: e.target.value }))}
               />
+            </div>
+
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', display: 'block', marginBottom: 10, letterSpacing: '.6px' }}>ANTECEDENTES CLÍNICOS</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Tipo de sangre</label>
+                    <input style={inp} value={editing.blood_type ?? ''} placeholder="A+, O-, etc." onChange={e => setEditing(f => f && ({ ...f, blood_type: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Alergias</label>
+                    <textarea style={{ ...inp, height: 54, resize: 'vertical' }} placeholder="Latex, penicilina, AINES..." value={editing.allergies ?? ''} onChange={e => setEditing(f => f && ({ ...f, allergies: e.target.value }))} />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Medicamentos actuales</label>
+                  <textarea style={{ ...inp, height: 54, resize: 'vertical' }} placeholder="Metformina 500mg, Enalapril 10mg..." value={editing.current_medications ?? ''} onChange={e => setEditing(f => f && ({ ...f, current_medications: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Antecedentes patológicos</label>
+                  <textarea style={{ ...inp, height: 54, resize: 'vertical' }} placeholder="Diabetes tipo 2, HTA..." value={editing.pathological_history ?? ''} onChange={e => setEditing(f => f && ({ ...f, pathological_history: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Antecedentes no patológicos</label>
+                  <textarea style={{ ...inp, height: 54, resize: 'vertical' }} placeholder="Tabaquismo, sedentarismo..." value={editing.non_pathological_history ?? ''} onChange={e => setEditing(f => f && ({ ...f, non_pathological_history: e.target.value }))} />
+                </div>
+              </div>
             </div>
 
             {editing.appointments && editing.appointments.length > 0 && (
