@@ -16,9 +16,14 @@ export async function GET(req: Request) {
     .order('date', { ascending: true })
     .order('start_time', { ascending: true })
 
+  const date_from = searchParams.get('date_from')
+  const date_to   = searchParams.get('date_to')
+
   if (doctor_id) query = query.eq('doctor_id', doctor_id)
-  if (date) query = query.eq('date', date)
-  if (status) query = query.eq('status', status)
+  if (date)      query = query.eq('date', date)
+  if (date_from) query = query.gte('date', date_from)
+  if (date_to)   query = query.lte('date', date_to)
+  if (status)    query = query.eq('status', status)
 
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
