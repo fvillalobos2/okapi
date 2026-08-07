@@ -3,6 +3,8 @@
 import { useState } from 'react'
 
 export default function LoginPage() {
+  const [mode, setMode] = useState<'user' | 'admin'>('user')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -12,10 +14,11 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
     try {
+      const body = mode === 'user' ? { email: email.trim(), password } : { password }
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify(body),
       })
       if (res.ok) {
         window.location.href = '/'
@@ -28,6 +31,13 @@ export default function LoginPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const inp = {
+    width: '100%', padding: '9px 12px',
+    background: 'var(--bg)', border: '1px solid var(--border)',
+    borderRadius: 7, color: 'var(--text)', fontSize: 14,
+    outline: 'none', marginBottom: 12, boxSizing: 'border-box' as const,
   }
 
   return (
@@ -44,7 +54,6 @@ export default function LoginPage() {
         width: '100%',
         maxWidth: 360,
       }}>
-        {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
           <div style={{
             width: 36, height: 36, background: 'var(--accent)', borderRadius: 8,
@@ -58,6 +67,23 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit}>
+          {mode === 'user' && (
+            <>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                autoFocus
+                required
+                placeholder="nombre@empresa.com"
+                style={inp}
+              />
+            </>
+          )}
+
           <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>
             Contraseña
           </label>
@@ -65,15 +91,10 @@ export default function LoginPage() {
             type="password"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            autoFocus
+            autoFocus={mode === 'admin'}
             required
             placeholder="••••••••"
-            style={{
-              width: '100%', padding: '9px 12px',
-              background: 'var(--bg)', border: '1px solid var(--border)',
-              borderRadius: 7, color: 'var(--text)', fontSize: 14,
-              outline: 'none', marginBottom: 12,
-            }}
+            style={inp}
           />
 
           {error && (
@@ -94,6 +115,15 @@ export default function LoginPage() {
             {loading ? 'Entrando…' : 'Entrar'}
           </button>
         </form>
+
+        <div style={{ textAlign: 'center', marginTop: 16 }}>
+          <button
+            onClick={() => { setMode(m => m === 'user' ? 'admin' : 'user'); setError('') }}
+            style={{ background: 'none', border: 'none', fontSize: 12, color: 'var(--muted)', cursor: 'pointer', textDecoration: 'underline' }}
+          >
+            {mode === 'user' ? 'Entrar con contraseña de administrador' : 'Entrar con mi usuario'}
+          </button>
+        </div>
       </div>
     </div>
   )

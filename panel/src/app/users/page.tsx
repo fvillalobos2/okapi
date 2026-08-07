@@ -28,13 +28,13 @@ const NOTIF_LABEL: Record<string, string> = {
 type User = {
   id: string; name: string; email: string; role: string; team_id: string | null
   active: boolean; phone?: string; notification_pref?: string; product_interests?: string[]
-  teams?: { name: string } | null
+  password_hash?: string | null; teams?: { name: string } | null
 }
 type Team = { id: string; name: string }
 
-const EMPTY: Omit<User, 'id' | 'teams'> = {
+const EMPTY: Omit<User, 'id' | 'teams'> & { password?: string } = {
   name: '', email: '', role: 'agent', team_id: null, active: true,
-  phone: '', notification_pref: 'none', product_interests: [],
+  phone: '', notification_pref: 'none', product_interests: [], password: '',
 }
 
 const inp = { width: '100%', padding: '7px 10px', fontSize: 13, border: '1px solid var(--border)', borderRadius: 6, background: '#fff', color: 'var(--text)', outline: 'none' }
@@ -45,7 +45,7 @@ export default function UsersPage() {
   const [businessLines, setBusinessLines] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [editing, setEditing] = useState<(typeof EMPTY & { id?: string }) | null>(null)
+  const [editing, setEditing] = useState<(typeof EMPTY & { id?: string; password?: string }) | null>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
   const { can: perms } = useCurrentUser()
 
@@ -75,6 +75,7 @@ export default function UsersPage() {
       team_id: u.team_id, active: u.active,
       phone: u.phone ?? '', notification_pref: u.notification_pref ?? 'none',
       product_interests: u.product_interests ?? [],
+      password: '',
     })
     dialogRef.current?.showModal()
   }
@@ -138,7 +139,12 @@ export default function UsersPage() {
               ) : users.map(u => (
                 <tr key={u.id}>
                   <td style={{ fontWeight: 500 }}>{u.name}</td>
-                  <td style={{ color: 'var(--muted)', fontSize: 12 }}>{u.email}</td>
+                  <td style={{ color: 'var(--muted)', fontSize: 12 }}>
+                    {u.email}
+                    {!u.password_hash && (
+                      <span style={{ marginLeft: 6, fontSize: 10, color: '#f59e0b', fontWeight: 600 }}>sin contraseña</span>
+                    )}
+                  </td>
                   <td style={{ color: 'var(--muted)', fontSize: 12 }}>{u.phone || '—'}</td>
                   <td style={{ fontSize: 12 }}>
                     <span style={{ color: u.notification_pref && u.notification_pref !== 'none' ? 'var(--success)' : 'var(--muted)' }}>
@@ -252,6 +258,20 @@ export default function UsersPage() {
               )}
             </div>
 
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>
+                {editing.id ? 'Nueva contraseña' : 'Contraseña *'}
+                {editing.id && <span style={{ fontWeight: 400, marginLeft: 4 }}>(dejar vacío para no cambiar)</span>}
+              </label>
+              <input
+                style={inp}
+                type="password"
+                placeholder="••••••••"
+                value={editing.password ?? ''}
+                onChange={e => setEditing(f => f && ({ ...f, password: e.target.value }))}
+              />
+            </div>
+
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <input type="checkbox" id="active-chk" checked={editing.active} onChange={e => setEditing(f => f && ({ ...f, active: e.target.checked }))} />
               <label htmlFor="active-chk" style={{ fontSize: 13, cursor: 'pointer' }}>Usuario activo</label>
@@ -269,7 +289,7 @@ export default function UsersPage() {
                 className="btn btn-primary"
                 style={{ padding: '7px 20px' }}
                 onClick={save}
-                disabled={saving || !editing.name.trim() || !editing.email.trim()}
+                disabled={saving || !editing.name.trim() || !editing.email.trim() || (!editing.id && !editing.password?.trim())}
               >
                 {saving ? 'Guardando...' : 'Guardar'}
               </button>

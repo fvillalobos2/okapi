@@ -8,13 +8,40 @@ async function sha256(s: string) {
 }
 
 export async function POST(req: Request) {
-  const { password } = await req.json()
+  const { email, password } = await req.json()
   const businessId = (await headers()).get('x-business-id')
 
   if (!businessId) {
     return NextResponse.json({ error: 'Negocio no encontrado para este dominio' }, { status: 404 })
   }
 
+  // Individual user login (email + password)
+  if (email) {
+    const { data: user } = await supabaseAdmin()
+      .from('users')
+      .select('id, password_hash, active')
+      .eq('business_id', businessId)
+      .eq('email', email.trim().toLowerCase())
+      .eq('active', true)
+      .single()
+
+    if (!user || !user.password_hash) {
+      return NextResponse.json({ error: 'Usuario o contraseña incorrectos' }, { status: 401 })
+    }
+
+    const hash = await sha256(`${businessId}:${user.id}:${password}`)
+    if (hash !== user.password_hash) {
+      return NextResponse.json({ error: 'Usuario o contraseña incorrectos' }, { status: 401 })
+    }
+
+    const authHash = await sha256(`${businessId}:${password}`)
+    const res = NextResponse.json({ ok: true })
+    res.cookies.set('okapi_auth', authHash, { httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 30, path: '/' })
+    res.cookies.set('okapi_user', user.id, { httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 30, path: '/' })
+    return res
+  }
+
+  // Business-level password (admin / legacy)
   const { data: biz } = await supabaseAdmin()
     .from('businesses')
     .select('admin_password')
@@ -28,11 +55,6 @@ export async function POST(req: Request) {
 
   const hash = await sha256(`${businessId}:${password}`)
   const res = NextResponse.json({ ok: true })
-  res.cookies.set('okapi_auth', hash, {
-    httpOnly: true,
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 30,
-    path: '/',
-  })
+  res.cookies.set('okapi_auth', hash, { httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 30, path: '/' })
   return res
 }
