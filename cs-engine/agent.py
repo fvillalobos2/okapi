@@ -187,7 +187,7 @@ def classify_business_line(business: Optional[dict], history: list, configs: lis
     conv_parts = [m['content'][:400] for m in recent if m.get('content')]
     conv_lower = ' '.join(conv_parts).lower()
 
-    # ── Step 1: WooCommerce keyword check ─────────────────────────────────────
+    # ── Step 1: WooCommerce keyword check (client messages only) ──────────────
     woo_config = next((c for c in normalized if c.get('woocommerce_linked')), None)
     if woo_config:
         bid = (business or {}).get('id')
@@ -196,7 +196,14 @@ def classify_business_line(business: Optional[dict], history: list, configs: lis
             retail_cat = next((c for c in cats if c.get('name', '').lower() == woo_config['name'].lower()), None)
             if retail_cat:
                 keywords = [k for k in (retail_cat.get('product_keywords') or []) if k]
-                if any(k.lower() in conv_lower for k in keywords):
+                # Only match against client messages — agent responses contain words like
+                # "producto" that would false-positive against Retail keywords
+                client_parts = [
+                    m['content'][:400] for m in recent
+                    if m.get('content') and m.get('role') == 'user'
+                ]
+                client_lower = ' '.join(client_parts).lower()
+                if any(k.lower() in client_lower for k in keywords):
                     print(f'  🏷 Business line matched via WooCommerce keywords → {woo_config["name"]}', flush=True)
                     return woo_config['name']
         except Exception as e:
@@ -561,6 +568,10 @@ def ask_claude(phone: str, user_message: str, business: Optional[dict] = None,
         've directo a la pregunta de calificación. El saludo ya se antepone automáticamente.'
     )
 
+    _modules_ask = (business or {}).get('modules', {})
+    _medical_enabled = _modules_ask.get('medical', {}).get('enabled', False)
+    _medical_ctx = _build_medical_context(phone, business) if (_medical_enabled and business) else ''
+
     system = (
         get_system_prompt(business, product_interest)
         + f'\n\n## Contexto actual\n'
@@ -570,6 +581,7 @@ def ask_claude(phone: str, user_message: str, business: Optional[dict] = None,
         + f'Esta conversación viene del número: {clean_phone}\n'
         + f'Al confirmar el teléfono, usa este número en lugar de pedirle que lo escriba. '
         + f'Ejemplo: "¿Es {clean_phone} el mejor número para contactarte?"'
+        + _medical_ctx
     )
 
     response = claude_client.messages.create(
@@ -1060,29 +1072,27 @@ def alert_admin(message: str, sender: Optional[str] = None):
 
 
 def send_email(to: str, subject: str, html: str, from_addr: str = 'Acuarium Agent <notifications@projectokapi.com>') -> bool:
-    """Send email via Resend API. Returns True on success."""
+    """Send email via Resend API using requests library."""
     if not RESEND_API_KEY:
         print(f'  ⚠ send_email: RESEND_API_KEY not set — skipping email to {to}', flush=True)
         return False
     try:
-        payload = json.dumps({
-            'from': f'Okapi Agent <{from_addr}>',
-            'to': [to],
-            'subject': subject,
-            'html': html,
-        }).encode()
-        req = urllib.request.Request(
+        import requests as _req
+        resp = _req.post(
             'https://api.resend.com/emails',
-            data=payload,
             headers={
                 'Authorization': f'Bearer {RESEND_API_KEY}',
                 'Content-Type': 'application/json',
+                'User-Agent': 'Mozilla/5.0',
             },
-            method='POST',
+            json={'from': from_addr, 'to': [to], 'subject': subject, 'html': html},
+            timeout=15,
         )
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            print(f'  ✉ Email sent to {to} ({resp.status})', flush=True)
-            return resp.status in (200, 201)
+        if resp.status_code in (200, 201):
+            print(f'  ✉ Email sent to {to} ({resp.status_code})', flush=True)
+            return True
+        print(f'  ⚠ send_email to {to}: HTTP {resp.status_code} | {resp.text[:200]}', flush=True)
+        return False
     except Exception as e:
         print(f'  ⚠ send_email to {to}: {e}', flush=True)
         return False
@@ -1528,6 +1538,163 @@ def _trigger_lead_enrichment(phone: str, bid: Optional[str]) -> None:
     threading.Thread(target=_run, daemon=True).start()
 
 
+# ─── MEDAGENT ────────────────────────────────────────────────────────────────
+
+def _get_available_slots(doctor_id: str, date_str: str, duration: int, business_id: str) -> list[str]:
+    """Return list of HH:MM available slots for a doctor on a given date."""
+    from datetime import date as _date, time as _time, timedelta as _td
+    try:
+        d = _date.fromisoformat(date_str)
+        dow = d.weekday() + 1  # Mon=1..Sun=0 (our table: 0=Sun,1=Mon)
+        if dow == 7: dow = 0
+        schedule = store.get_doctor_schedule(doctor_id)
+        day_row = next((s for s in schedule if s['day_of_week'] == dow), None)
+        if not day_row:
+            return []
+        start = _time.fromisoformat(day_row['start_time'][:5])
+        end   = _time.fromisoformat(day_row['end_time'][:5])
+        booked = store.get_appointments_for_doctor(doctor_id, date_str)
+        booked_ranges = [
+            (_time.fromisoformat(a['start_time'][:5]), _time.fromisoformat(a['end_time'][:5]))
+            for a in booked
+        ]
+        slots, cur = [], datetime.combine(d, start)
+        end_dt = datetime.combine(d, end)
+        step = _td(minutes=duration)
+        while cur + step <= end_dt:
+            s = cur.time()
+            e = (cur + step).time()
+            if not any(s < be and e > bs for bs, be in booked_ranges):
+                slots.append(s.strftime('%H:%M'))
+            cur += step
+        return slots
+    except Exception as ex:
+        print(f'  ⚠ _get_available_slots: {ex}')
+        return []
+
+def _build_medical_context(phone: str, business: dict) -> str:
+    """Build context block injected into system prompt for medical businesses."""
+    bid = business.get('id')
+    clean = phone.replace('whatsapp:', '').strip()
+    patient = store.get_or_create_patient(clean, bid)
+    doctors = store.get_doctors(bid)
+
+    lines = ['\n\n## Contexto médico']
+
+    # Patient info
+    if patient:
+        if patient.get('name'):
+            lines.append(f"Paciente conocido: {patient['name']} (teléfono: {clean}). No le pidas el nombre de nuevo.")
+        else:
+            lines.append(f"Paciente nuevo — teléfono: {clean}. Necesitás pedir su nombre.")
+        if patient.get('notes'):
+            lines.append(f"Notas internas: {patient['notes']}")
+        past = store.get_patient_appointments(patient['id'])
+        if past:
+            appt_lines = [f"  - {a['date']} {a['start_time'][:5]} con {(a.get('doctors') or {}).get('name','?')} ({a['status']})" for a in past]
+            lines.append("Citas anteriores:\n" + '\n'.join(appt_lines))
+
+    # Doctors and services
+    if doctors:
+        lines.append('\nDoctores disponibles:')
+        for doc in doctors:
+            svcs = [s for s in (doc.get('med_services') or []) if s.get('active')]
+            svc_str = ', '.join(f"{s['name']} ({s['duration_minutes']} min)" for s in svcs) or 'sin servicios definidos'
+            spec = f" — {doc['specialty']}" if doc.get('specialty') else ''
+            lines.append(f"  • {doc['name']}{spec} | ID: {doc['id']} | Servicios: {svc_str}")
+
+    lines.append('\nPara consultar slots disponibles en una fecha: el sistema te los provee si los pedís con [CHECK_SLOTS: doctor_id=xxx|date=YYYY-MM-DD|duration=30]')
+    lines.append('Para confirmar una cita: usá [BOOK_APPOINTMENT: doctor_id=xxx|service_id=xxx|date=YYYY-MM-DD|time=HH:MM|name=Nombre Paciente|note=motivo]')
+    lines.append('Nunca inventes un horario disponible — siempre verificá con [CHECK_SLOTS] antes de ofrecer un slot.')
+
+    return '\n'.join(lines)
+
+def _parse_medical_marker(reply: str, marker: str) -> Optional[dict]:
+    """Extract key=value pairs from [MARKER: key=val|key2=val2] pattern."""
+    m = re.search(rf'\[{marker}:\s*([^\]]+)\]', reply)
+    if not m:
+        return None
+    try:
+        return dict(pair.split('=', 1) for pair in m.group(1).split('|') if '=' in pair)
+    except Exception:
+        return None
+
+def _handle_medical_reply(reply: str, phone: str, business: dict) -> str:
+    """Process CHECK_SLOTS and BOOK_APPOINTMENT markers from Claude's reply."""
+    bid = business.get('id')
+    clean = phone.replace('whatsapp:', '').strip()
+
+    # CHECK_SLOTS
+    slots_params = _parse_medical_marker(reply, 'CHECK_SLOTS')
+    if slots_params:
+        doctor_id = slots_params.get('doctor_id', '')
+        date_str  = slots_params.get('date', '')
+        duration  = int(slots_params.get('duration', 30))
+        slots = _get_available_slots(doctor_id, date_str, duration, bid)
+        marker_str = re.search(r'\[CHECK_SLOTS:[^\]]+\]', reply).group(0)
+        if slots:
+            slots_text = ', '.join(slots[:8])  # max 8 slots
+            return reply.replace(marker_str, f'[slots disponibles: {slots_text}]')
+        else:
+            return reply.replace(marker_str, '[no hay slots disponibles para esa fecha]')
+
+    # BOOK_APPOINTMENT
+    book_params = _parse_medical_marker(reply, 'BOOK_APPOINTMENT')
+    if book_params:
+        doctor_id  = book_params.get('doctor_id', '')
+        service_id = book_params.get('service_id') or None
+        date_str   = book_params.get('date', '')
+        time_str   = book_params.get('time', '')
+        name       = book_params.get('name', '')
+        note       = book_params.get('note', '')
+        marker_str = re.search(r'\[BOOK_APPOINTMENT:[^\]]+\]', reply).group(0)
+
+        patient = store.get_or_create_patient(clean, bid)
+        if patient and name and not patient.get('name'):
+            store.update_patient(patient['id'], {'name': name})
+            patient['name'] = name
+
+        if not (doctor_id and date_str and time_str and patient):
+            return reply.replace(marker_str, '')
+
+        # Compute end_time from service duration (default 30 min)
+        try:
+            from datetime import time as _t, timedelta as _td
+            doctors = store.get_doctors(bid)
+            doc = next((d for d in doctors if d['id'] == doctor_id), None)
+            duration = 30
+            if doc and service_id:
+                svc = next((s for s in (doc.get('med_services') or []) if s['id'] == service_id), None)
+                if svc:
+                    duration = svc.get('duration_minutes', 30)
+            start = _t.fromisoformat(time_str)
+            from datetime import datetime as _dt
+            end_dt = (_dt.combine(_dt.today(), start) + _td(minutes=duration)).time()
+            end_str = end_dt.strftime('%H:%M')
+        except Exception:
+            end_str = time_str
+
+        appt = store.create_appointment({
+            'business_id': bid,
+            'patient_id':  patient['id'],
+            'doctor_id':   doctor_id,
+            'service_id':  service_id,
+            'date':        date_str,
+            'start_time':  time_str,
+            'end_time':    end_str,
+            'status':      'confirmed',
+            'patient_note': note,
+            'confirmed_at': datetime.now(timezone.utc).isoformat(),
+        })
+        if appt:
+            print(f'  📅 Appointment booked: {date_str} {time_str} doctor={doctor_id} patient={patient["id"]}')
+            return reply.replace(marker_str, '')
+        else:
+            return reply.replace(marker_str, '')
+
+    return reply
+
+
 def handle_inbound(from_number: str, body: str,
                    business: Optional[dict] = None,
                    referral: Optional[dict] = None,
@@ -1815,6 +1982,10 @@ def handle_inbound(from_number: str, body: str,
 
     reply = ask_claude(from_number, body, business, ad_product_interest=ad_product_interest, is_first=_is_first_msg)
 
+    # Medical booking markers
+    if _modules.get('medical', {}).get('enabled', False):
+        reply = _handle_medical_reply(reply, from_number, business)
+
     # AI handoff — model signals it can't help, disable AI for this conversation
     reply, handoff_requested = extract_handoff_marker(reply)
     if handoff_requested:
@@ -1994,6 +2165,82 @@ def webhook_meta_verify():
     return 'Forbidden', 403
 
 
+def _transcribe_whatsapp_audio(media_id: str, phone_number_id: str) -> str:
+    """Download WhatsApp audio and transcribe with OpenAI Whisper. Returns transcription or ''."""
+    openai_key = os.getenv('OPENAI_API_KEY', '')
+    if not media_id or not openai_key:
+        return ''
+    try:
+        import tempfile, os as _os
+        token = META_ACCESS_TOKEN
+
+        # Step 1: Get download URL from Meta
+        meta_url_req = urllib.request.Request(
+            f'https://graph.facebook.com/v19.0/{media_id}',
+            headers={'Authorization': f'Bearer {token}'},
+        )
+        with urllib.request.urlopen(meta_url_req, timeout=10) as r:
+            media_info = json.loads(r.read())
+        download_url = media_info.get('url')
+        if not download_url:
+            return ''
+
+        # Step 2: Download audio file
+        audio_req = urllib.request.Request(
+            download_url,
+            headers={'Authorization': f'Bearer {token}'},
+        )
+        with urllib.request.urlopen(audio_req, timeout=30) as r:
+            audio_data = r.read()
+            content_type = r.headers.get('Content-Type', 'audio/ogg')
+
+        ext = '.ogg'
+        if 'mp4' in content_type or 'mpeg' in content_type:
+            ext = '.mp4'
+
+        # Step 3: Transcribe with OpenAI Whisper
+        with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
+            tmp.write(audio_data)
+            tmp_path = tmp.name
+
+        try:
+            boundary = b'----WFBoundary'
+            filename = f'audio{ext}'.encode()
+            body = (
+                b'--' + boundary + b'\r\n'
+                b'Content-Disposition: form-data; name="model"\r\n\r\n'
+                b'whisper-1\r\n'
+                b'--' + boundary + b'\r\n'
+                b'Content-Disposition: form-data; name="language"\r\n\r\n'
+                b'es\r\n'
+                b'--' + boundary + b'\r\n'
+                b'Content-Disposition: form-data; name="file"; filename="' + filename + b'"\r\n'
+                b'Content-Type: audio/ogg\r\n\r\n' +
+                audio_data +
+                b'\r\n--' + boundary + b'--\r\n'
+            )
+            whisper_req = urllib.request.Request(
+                'https://api.openai.com/v1/audio/transcriptions',
+                data=body,
+                headers={
+                    'Authorization': f'Bearer {openai_key}',
+                    'Content-Type': f'multipart/form-data; boundary={boundary.decode()}',
+                },
+                method='POST',
+            )
+            with urllib.request.urlopen(whisper_req, timeout=30) as r:
+                result = json.loads(r.read())
+            transcript = result.get('text', '').strip()
+            print(f'  🎙 Audio transcribed ({len(audio_data)} bytes): {transcript[:80]}', flush=True)
+            return transcript
+        finally:
+            _os.unlink(tmp_path)
+
+    except Exception as e:
+        print(f'  ⚠ _transcribe_whatsapp_audio: {e}', flush=True)
+        return ''
+
+
 @app.route('/webhook/meta', methods=['POST'])
 @limiter.limit('120 per minute')
 def webhook_meta():
@@ -2033,10 +2280,17 @@ def webhook_meta():
         if not msgs:
             return '', 200
         msg  = msgs[0]
-        if msg.get('type') != 'text':
-            return '', 200  # ignore non-text for now
+        msg_type    = msg.get('type', '')
         from_number = '+' + msg['from']
-        body        = msg['text']['body'].strip()
+        body        = ''
+
+        if msg_type == 'text':
+            body = msg['text']['body'].strip()
+        elif msg_type == 'audio':
+            body = _transcribe_whatsapp_audio(msg.get('audio', {}).get('id', ''), phone_num_id)
+        else:
+            return '', 200  # ignore image/video/document/etc for now
+
         if not body:
             return '', 200
     except (KeyError, IndexError):
@@ -2069,6 +2323,9 @@ def webhook_meta():
                 try:
                     reply = handle_inbound(fn, combined, biz, append_reply=False)
                     if reply:
+                        # Write reply to history immediately so the next debounce flush
+                        # sees the updated context (queue worker handles sending only)
+                        store.append_message(fn, 'assistant', reply, biz.get('id'))
                         clean_reply, img_urls = extract_image_markers(reply, biz)
                         clean_reply, pdf_entries = extract_pdf_markers(clean_reply, biz)
                         text = clean_reply or reply
@@ -2077,6 +2334,7 @@ def webhook_meta():
                             'body': text,
                             'img_urls': img_urls,
                             'pdf_entries': [[u, f] for u, f in pdf_entries],
+                            'history_written': True,
                         }
                         store.enqueue_message(biz.get('id'), fn, payload, send_at)
                 except Exception as exc:
@@ -2354,8 +2612,10 @@ def _run_queue_worker():
                     sender = payload.get('sender')
                     wam_id = send_whatsapp(msg['to_number'], text, sender, business)
                     if wam_id:
-                        store.append_message(msg['to_number'], 'assistant', text,
-                                             msg['business_id'], wam_id=wam_id)
+                        # Only append to history if debounce flush hasn't already done it
+                        if not payload.get('history_written'):
+                            store.append_message(msg['to_number'], 'assistant', text,
+                                                 msg['business_id'], wam_id=wam_id)
                         store.upsert_message_status(wam_id, msg['to_number'], 'sent', msg['business_id'])
                     for url in payload.get('img_urls', []):
                         send_whatsapp(msg['to_number'], '', sender, business, delay=0.5, media_url=url)

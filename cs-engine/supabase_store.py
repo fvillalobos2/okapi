@@ -1119,6 +1119,73 @@ def get_business_documents(business_id: Optional[str] = None) -> list:
         return []
 
 
+# ─── MEDAGENT ────────────────────────────────────────────────────────────────
+
+def get_or_create_patient(phone: str, business_id: str) -> Optional[dict]:
+    norm = _normalize_phone(phone)
+    try:
+        r = _sb().table('patients').select('*').eq('business_id', business_id).eq('phone', norm).limit(1).execute()
+        if r.data:
+            return r.data[0]
+        ins = _sb().table('patients').insert({'business_id': business_id, 'phone': norm}).execute()
+        return ins.data[0] if ins.data else None
+    except Exception as e:
+        print(f'  ⚠ get_or_create_patient: {e}')
+        return None
+
+def update_patient(patient_id: str, data: dict) -> bool:
+    try:
+        _sb().table('patients').update(data).eq('id', patient_id).execute()
+        return True
+    except Exception as e:
+        print(f'  ⚠ update_patient: {e}')
+        return False
+
+def get_doctors(business_id: str) -> list:
+    try:
+        r = _sb().table('doctors').select('id,name,specialty,bio,med_services(id,name,duration_minutes,price,active)') \
+            .eq('business_id', business_id).eq('active', True).order('name').execute()
+        return r.data or []
+    except Exception as e:
+        print(f'  ⚠ get_doctors: {e}')
+        return []
+
+def get_doctor_schedule(doctor_id: str) -> list:
+    try:
+        r = _sb().table('doctor_availability').select('*').eq('doctor_id', doctor_id).order('day_of_week').execute()
+        return r.data or []
+    except Exception as e:
+        print(f'  ⚠ get_doctor_schedule: {e}')
+        return []
+
+def get_appointments_for_doctor(doctor_id: str, date: str) -> list:
+    try:
+        r = _sb().table('appointments').select('start_time,end_time,status') \
+            .eq('doctor_id', doctor_id).eq('date', date) \
+            .in_('status', ['requested', 'confirmed']).execute()
+        return r.data or []
+    except Exception as e:
+        print(f'  ⚠ get_appointments_for_doctor: {e}')
+        return []
+
+def create_appointment(data: dict) -> Optional[dict]:
+    try:
+        r = _sb().table('appointments').insert(data).execute()
+        return r.data[0] if r.data else None
+    except Exception as e:
+        print(f'  ⚠ create_appointment: {e}')
+        return None
+
+def get_patient_appointments(patient_id: str, limit: int = 5) -> list:
+    try:
+        r = _sb().table('appointments').select('date,start_time,status,doctors(name),med_services(name)') \
+            .eq('patient_id', patient_id).order('date', desc=True).limit(limit).execute()
+        return r.data or []
+    except Exception as e:
+        print(f'  ⚠ get_patient_appointments: {e}')
+        return []
+
+
 # ─── CLEANUP ─────────────────────────────────────────────────────────────────
 
 def cleanup_expired_entries(business_id: Optional[str] = None, ttl_hours: int = 48):
