@@ -122,6 +122,27 @@ const MODULE_NAV: { module: string; section: string; href: string; label: string
     icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>,
   },
   {
+    module: 'medical',
+    section: 'MedAgent',
+    href: '/appointments',
+    label: 'Citas',
+    icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 1v4M11 1v4M2 7h12"/><path d="M8 10v2M7 11h2"/></svg>,
+  },
+  {
+    module: 'medical',
+    section: 'MedAgent',
+    href: '/doctors',
+    label: 'Doctores',
+    icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-5 6-5s6 1.7 6 5"/><path d="M11 10v3M9.5 11.5h3"/></svg>,
+  },
+  {
+    module: 'medical',
+    section: 'MedAgent',
+    href: '/patients',
+    label: 'Pacientes',
+    icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="6" cy="5" r="3"/><path d="M1 14c0-3 2-5 5-5"/><path d="M11 9h4M13 7v4"/></svg>,
+  },
+  {
     module: 'broadcast',
     section: 'Marketing',
     href: '/broadcasts',

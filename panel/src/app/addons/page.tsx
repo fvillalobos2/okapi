@@ -72,6 +72,16 @@ const MODULE_CATALOG: ModuleConfig[] = [
     label: 'WooCommerce',
     description: 'Sincroniza el catálogo de productos desde una tienda WooCommerce. Los productos importados quedan disponibles para el agente de IA automáticamente.',
   },
+  {
+    key: 'medical',
+    label: 'MedAgent — Médico',
+    description: 'Habilita el agente de citas médicas. Un doctor, un calendario propio, perfiles de paciente, booking desde WhatsApp y recordatorios automáticos.',
+  },
+  {
+    key: 'clinic',
+    label: 'MedAgent — Clínica',
+    description: 'Extiende el modo Médico para múltiples doctores. Cada doctor tiene su propio calendario, especialidad y agenda. Incluye rol de recepcionista y routing por especialidad.',
+  },
 ]
 
 type ModuleState = Record<string, { enabled: boolean; [key: string]: unknown }>
