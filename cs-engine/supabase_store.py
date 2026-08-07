@@ -1185,20 +1185,22 @@ def get_patient_appointments(patient_id: str, limit: int = 5) -> list:
         print(f'  ⚠ get_patient_appointments: {e}')
         return []
 
-def get_appointments_needing_reminders(business_id: str, min_minutes: int, max_minutes: int) -> list:
+def get_appointments_needing_reminders(business_id: str, min_minutes: int, max_minutes: int, statuses: list = None) -> list:
     """Return upcoming appointments whose datetime falls between min_minutes and max_minutes from now (UTC).
     Only returns those where the corresponding reminder has not been sent yet.
-    min/max_minutes determines which reminder window: 120±30 for 2h, 1440±30 for 24h."""
+    min/max_minutes determines which reminder window: 120±30 for 2h, 1440±30 for 24h.
+    statuses: list of appointment statuses to include (default: ['requested', 'confirmed'])."""
     try:
         from datetime import date as _date, time as _time
         now = datetime.utcnow()
         window_start = (now + timedelta(minutes=min_minutes)).isoformat()
         window_end   = (now + timedelta(minutes=max_minutes)).isoformat()
+        status_list  = statuses or ['requested', 'confirmed']
         # Fetch all non-terminal appointments in the next max_minutes
         r = _sb().table('appointments') \
-            .select('id,business_id,date,start_time,status,reminder_24h_sent_at,reminder_2h_sent_at,patient_note,patients(name,phone),doctors(name,specialty),med_services(name,duration_minutes)') \
+            .select('id,business_id,date,start_time,status,reminder_24h_sent_at,reminder_2h_sent_at,patient_confirmed_at,patient_note,patients(name,phone),doctors(name,specialty),med_services(name,duration_minutes)') \
             .eq('business_id', business_id) \
-            .in_('status', ['requested', 'confirmed']) \
+            .in_('status', status_list) \
             .execute()
         results = []
         for appt in (r.data or []):

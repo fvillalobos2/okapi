@@ -2626,8 +2626,9 @@ def _fmt_reminder_date(date_str: str) -> str:
     except Exception:
         return date_str
 
-def _send_appointment_reminder(appt: dict, reminder_type: str, business: dict):
-    """Send a WhatsApp reminder for an appointment."""
+def _send_appointment_reminder(appt: dict, reminder_type: str, business: dict, cfg: dict = None):
+    """Send a WhatsApp reminder for an appointment.
+    cfg: the reminders config block from business.modules.reminders (optional)."""
     patient   = appt.get('patients') or {}
     doctor    = appt.get('doctors') or {}
     service   = appt.get('med_services') or {}
@@ -2642,17 +2643,29 @@ def _send_appointment_reminder(appt: dict, reminder_type: str, business: dict):
     if not phone:
         return
 
-    intro = 'mañana' if reminder_type == '24h' else 'en unas horas'
-    svc_line = f'\nServicio: {svc_name}' if svc_name else ''
-    msg = (
-        f'📅 *Recordatorio de cita — {biz_name}*\n\n'
-        f'Hola {name}, te recordamos que tenés cita {intro}:\n\n'
-        f'📆 {date_fmt}\n'
-        f'🕐 {time_fmt}\n'
-        f'👨‍⚕️ {doc_name}'
-        f'{svc_line}\n\n'
-        f'Respondé *SÍ* para confirmar tu asistencia o *NO* si no podés asistir.'
-    )
+    cfg = cfg or {}
+    custom_msg = cfg.get('message_es') or ''
+    if custom_msg:
+        # Supports placeholders: {name}, {doctor}, {service}, {date}, {time}, {clinic}
+        try:
+            msg = custom_msg.format(
+                name=name, doctor=doc_name, service=svc_name,
+                date=date_fmt, time=time_fmt, clinic=biz_name,
+            )
+        except (KeyError, ValueError):
+            msg = custom_msg  # use as-is if format fails
+    else:
+        intro = 'mañana' if reminder_type == '24h' else 'en unas horas'
+        svc_line = f'\nServicio: {svc_name}' if svc_name else ''
+        msg = (
+            f'📅 *Recordatorio de cita — {biz_name}*\n\n'
+            f'Hola {name}, te recordamos que tenés cita {intro}:\n\n'
+            f'📆 {date_fmt}\n'
+            f'🕐 {time_fmt}\n'
+            f'👨‍⚕️ {doc_name}'
+            f'{svc_line}\n\n'
+            f'Respondé *SÍ* para confirmar tu asistencia o *NO* si no podés asistir.'
+        )
     wa_phone = f'whatsapp:{phone}' if not phone.startswith('whatsapp:') else phone
     send_whatsapp(wa_phone, msg, business.get('twilio_sender'), business)
     store.mark_reminder_sent(appt['id'], reminder_type)
@@ -2700,7 +2713,15 @@ def _handle_medical_reminder_response(body_lower: str, phone: str, business: dic
 
 @app.route('/api/cron/reminders', methods=['POST'])
 def cron_reminders():
-    """Hourly cron — send 24h and 2h appointment reminders for all medical businesses."""
+    """Hourly cron — send appointment reminders for all businesses with reminders enabled.
+
+    Configurable rules per business (modules.reminders):
+      hours_before               [24, 2]      which reminder windows to send
+      send_window.from/to        0 / 24       local hour range — skip if outside
+      only_confirmed             false        only send to status=confirmed (vs confirmed+requested)
+      skip_2h_if_patient_confirmed true       skip short reminder if patient already confirmed
+      message_es                 null         custom template ({name},{doctor},{date},{time},{clinic})
+    """
     err = _require_api_key()
     if err:
         return err
@@ -2713,26 +2734,49 @@ def cron_reminders():
         reminders_cfg = modules.get('reminders') or {}
         if not reminders_cfg.get('enabled'):
             continue
-        # Reminders only make sense for medical businesses (have appointments table)
-        med = modules.get('medical') or {}
-        if not med.get('enabled'):
+        # Reminders currently require the medical module (appointments table)
+        if not (modules.get('medical') or {}).get('enabled'):
             continue
 
         bid = biz['id']
 
-        # 24h window: 23h30m → 24h30m from now (1410–1470 min)
-        for appt in store.get_appointments_needing_reminders(bid, 1380, 1500):
-            if not appt.get('reminder_24h_sent_at'):
-                _send_appointment_reminder(appt, '24h', biz)
+        # ── send_window: skip if outside business local hours ────────────────
+        now_biz  = biz_now(biz)
+        win      = reminders_cfg.get('send_window') or {}
+        win_from = int(win.get('from', 0))
+        win_to   = int(win.get('to', 24))
+        if not (win_from <= now_biz.hour < win_to):
+            print(f'  ⏭ [{biz["slug"]}] reminders skipped — outside send_window '
+                  f'({now_biz.hour}h, window {win_from}–{win_to}h)', flush=True)
+            continue
+
+        # ── configurable rules ───────────────────────────────────────────────
+        hours_before      = reminders_cfg.get('hours_before') or [24, 2]
+        only_confirmed    = reminders_cfg.get('only_confirmed', False)
+        skip_if_confirmed = reminders_cfg.get('skip_2h_if_patient_confirmed', True)
+        statuses          = ['confirmed'] if only_confirmed else ['confirmed', 'requested']
+
+        for h in hours_before:
+            h = int(h)
+            # Map to DB column: ≥12h → reminder_24h slot, <12h → reminder_2h slot
+            is_long       = h >= 12
+            reminder_key  = '24h' if is_long else '2h'
+            sent_col      = 'reminder_24h_sent_at' if is_long else 'reminder_2h_sent_at'
+            minutes       = h * 60
+            # ±30 min window so hourly cron never misses an appointment
+            min_m, max_m  = minutes - 30, minutes + 30
+
+            for appt in store.get_appointments_needing_reminders(bid, min_m, max_m, statuses=statuses):
+                if appt.get(sent_col):
+                    continue  # already sent this reminder window
+                # Skip short reminder if patient already confirmed their attendance
+                if not is_long and skip_if_confirmed and appt.get('patient_confirmed_at'):
+                    print(f'  ⏭ 2h reminder skipped — patient already confirmed (appt {appt["id"][:8]}…)', flush=True)
+                    continue
+                _send_appointment_reminder(appt, reminder_key, biz, cfg=reminders_cfg)
                 total_sent += 1
 
-        # 2h window: 90m → 150m from now
-        for appt in store.get_appointments_needing_reminders(bid, 90, 150):
-            if not appt.get('reminder_2h_sent_at'):
-                _send_appointment_reminder(appt, '2h', biz)
-                total_sent += 1
-
-    print(f'  ✅ cron_reminders: {total_sent} reminders sent across {len(businesses)} businesses', flush=True)
+    print(f'  ✅ cron_reminders: {total_sent} reminders sent', flush=True)
     return jsonify({'ok': True, 'sent': total_sent}), 200
 
 
