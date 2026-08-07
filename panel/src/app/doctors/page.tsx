@@ -27,16 +27,36 @@ export default function DoctorsPage() {
   const [scheduleDoctor, setScheduleDoctor] = useState<Doctor | null>(null)
   const [schedule, setSchedule] = useState<DaySchedule[]>(DEFAULT_SCHEDULE)
   const [schedSaving, setSchedSaving] = useState(false)
+  const [slug, setSlug] = useState('')
+  const [copiedId, setCopiedId] = useState<string | null>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
   const schedDialogRef = useRef<HTMLDialogElement>(null)
 
   async function load() {
-    const data = await fetch('/api/doctors').then(r => r.json())
-    setDoctors(data ?? [])
+    const [docs, biz] = await Promise.all([
+      fetch('/api/doctors').then(r => r.json()),
+      fetch('/api/business').then(r => r.json()),
+    ])
+    setDoctors(docs ?? [])
+    setSlug(biz?.slug ?? '')
     setLoading(false)
   }
 
   useEffect(() => { load() }, [])
+
+  function bookingUrl(doctorId: string) {
+    if (typeof window === 'undefined' || !slug) return ''
+    return `${window.location.origin}/book/${slug}/${doctorId}`
+  }
+
+  function copyLink(doctorId: string) {
+    const url = bookingUrl(doctorId)
+    if (!url) return
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(doctorId)
+      setTimeout(() => setCopiedId(null), 2000)
+    })
+  }
 
   function openCreate() { setEditing({ ...EMPTY }); dialogRef.current?.showModal() }
   function openEdit(d: Doctor) {
@@ -124,9 +144,17 @@ export default function DoctorsPage() {
                       {d.active ? 'Activo' : 'Inactivo'}
                     </span>
                   </td>
-                  <td style={{ display: 'flex', gap: 6 }}>
+                  <td style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                     <button className="btn btn-ghost btn-sm" onClick={() => openEdit(d)}>Editar</button>
                     <button className="btn btn-ghost btn-sm" onClick={() => openSchedule(d)}>Horario</button>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => copyLink(d.id)}
+                      title={bookingUrl(d.id)}
+                      style={{ color: copiedId === d.id ? '#16a34a' : undefined, minWidth: 90 }}
+                    >
+                      {copiedId === d.id ? '✓ Copiado' : 'Copiar link'}
+                    </button>
                     <button className="btn btn-ghost btn-sm" style={{ color: d.active ? 'var(--muted)' : 'var(--success)' }} onClick={() => toggleActive(d)}>
                       {d.active ? 'Desactivar' : 'Activar'}
                     </button>
@@ -183,6 +211,21 @@ export default function DoctorsPage() {
           </div>
           <button onClick={closeSchedule} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--muted)', lineHeight: 1 }}>×</button>
         </div>
+        {scheduleDoctor && bookingUrl(scheduleDoctor.id) && (
+          <div style={{ padding: '10px 24px', background: '#f8fafc', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 11, color: 'var(--muted)', flexShrink: 0 }}>Link de reserva:</span>
+            <span style={{ fontSize: 11, color: '#2563eb', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+              {bookingUrl(scheduleDoctor.id)}
+            </span>
+            <button
+              className="btn btn-ghost btn-sm"
+              style={{ flexShrink: 0, fontSize: 11, color: copiedId === scheduleDoctor.id ? '#16a34a' : undefined }}
+              onClick={() => copyLink(scheduleDoctor.id)}
+            >
+              {copiedId === scheduleDoctor.id ? '✓ Copiado' : 'Copiar'}
+            </button>
+          </div>
+        )}
         <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 10 }}>
           {DAYS.map((day, i) => (
             <div key={i} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 1fr', gap: 10, alignItems: 'center' }}>
