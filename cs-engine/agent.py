@@ -2734,8 +2734,9 @@ def cron_reminders():
         reminders_cfg = modules.get('reminders') or {}
         if not reminders_cfg.get('enabled'):
             continue
-        # Reminders currently require the medical module (appointments table)
-        if not (modules.get('medical') or {}).get('enabled'):
+        # Reminders require medical or calendar module (both use the appointments table)
+        _has_scheduling = (modules.get('medical') or {}).get('enabled') or (modules.get('calendar') or {}).get('enabled')
+        if not _has_scheduling:
             continue
 
         bid = biz['id']

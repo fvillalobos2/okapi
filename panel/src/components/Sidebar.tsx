@@ -121,6 +121,7 @@ const MODULE_NAV: { module: string; section: string; href: string; label: string
     label: 'Costos API',
     icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>,
   },
+  // medical module — specialization with medical-specific labels
   {
     module: 'medical',
     section: 'MedAgent',
@@ -149,6 +150,35 @@ const MODULE_NAV: { module: string; section: string; href: string; label: string
     label: 'Servicios',
     icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M8 2v12M4 6h8M3 10h10"/><circle cx="8" cy="8" r="6.5"/></svg>,
   },
+  // calendar module — generic scheduling for any service business
+  {
+    module: 'calendar',
+    section: 'Agenda',
+    href: '/appointments',
+    label: 'Reservas',
+    icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 1v4M11 1v4M2 7h12"/><path d="M8 10v2M7 11h2"/></svg>,
+  },
+  {
+    module: 'calendar',
+    section: 'Agenda',
+    href: '/doctors',
+    label: 'Profesionales',
+    icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-5 6-5s6 1.7 6 5"/><path d="M12 9v4M10 11h4"/></svg>,
+  },
+  {
+    module: 'calendar',
+    section: 'Agenda',
+    href: '/patients',
+    label: 'Clientes',
+    icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="6" cy="5" r="3"/><path d="M1 14c0-3 2-5 5-5"/><path d="M11 9h4M13 7v4"/></svg>,
+  },
+  {
+    module: 'calendar',
+    section: 'Agenda',
+    href: '/services',
+    label: 'Servicios',
+    icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M8 2v12M4 6h8M3 10h10"/><circle cx="8" cy="8" r="6.5"/></svg>,
+  },
   {
     module: 'broadcast',
     section: 'Marketing',
@@ -173,7 +203,13 @@ const MODULE_NAV: { module: string; section: string; href: string; label: string
 ]
 
 function buildNav(modules: Modules): NavGroup[] {
-  const active = MODULE_NAV.filter(m => modules[m.module]?.enabled)
+  const medicalOn = modules['medical']?.enabled ?? false
+
+  // calendar entries are suppressed when medical is active (medical is a superset)
+  const active = MODULE_NAV.filter(m => {
+    if (m.module === 'calendar' && medicalOn) return false
+    return modules[m.module]?.enabled
+  })
 
   const sections: Record<string, NavLink[]> = {}
   for (const item of active) {
