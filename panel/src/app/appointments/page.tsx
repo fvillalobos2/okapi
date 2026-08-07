@@ -289,22 +289,11 @@ export default function AppointmentsPage() {
       {/* Doctor filter — shown in both views */}
       {doctorList.length > 1 && (
         <div style={{ marginBottom: 10 }}>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            <button onClick={() => setDoctorFilter('')}
-              style={{ padding: '5px 14px', fontSize: 12, fontWeight: 600, border: '1.5px solid', borderRadius: 99, cursor: 'pointer', transition: 'all .12s',
-                borderColor: doctorFilter === '' ? '#2563eb' : 'var(--border)',
-                background: doctorFilter === '' ? '#2563eb' : '#fff',
-                color: doctorFilter === '' ? '#fff' : 'var(--text)',
-              }}>Todos</button>
-            {doctorList.map(d => (
-              <button key={d.id} onClick={() => setDoctorFilter(doctorFilter === d.id ? '' : d.id)}
-                style={{ padding: '5px 14px', fontSize: 12, fontWeight: 600, border: '1.5px solid', borderRadius: 99, cursor: 'pointer', transition: 'all .12s',
-                  borderColor: doctorFilter === d.id ? '#2563eb' : 'var(--border)',
-                  background: doctorFilter === d.id ? '#2563eb' : '#fff',
-                  color: doctorFilter === d.id ? '#fff' : 'var(--text)',
-                }}>{d.name}</button>
-            ))}
-          </div>
+          <select value={doctorFilter} onChange={e => setDoctorFilter(e.target.value)}
+            style={{ padding: '6px 10px', fontSize: 13, border: '1px solid var(--border)', borderRadius: 6, background: '#fff', color: doctorFilter ? 'var(--text)' : 'var(--muted)', outline: 'none', minWidth: 200 }}>
+            <option value="">Todos los doctores</option>
+            {doctorList.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+          </select>
         </div>
       )}
 
