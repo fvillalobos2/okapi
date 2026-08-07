@@ -10,9 +10,11 @@ type Doctor = {
   education: string | null; languages: string[] | null
   phone: string | null; email: string | null
   certifications: string | null; consultation_fee: number | null
+  booking_rules?: Record<string, any>
   med_services?: Service[]
 }
-type DaySchedule = { enabled: boolean; start_time: string; end_time: string }
+type DaySchedule  = { enabled: boolean; start_time: string; end_time: string }
+type BookingRules = { min_advance_hours: string; max_advance_days: string; buffer_minutes: string; max_per_day: string }
 
 const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 const DEFAULT_SCHEDULE: DaySchedule[] = DAYS.map((_, i) => ({
@@ -46,6 +48,20 @@ function Field({ label, required, children }: { label: string; required?: boolea
   )
 }
 
+function RuleField({ label, unit, hint, value, onChange }: { label: string; unit: string; hint: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div>
+      <label style={{ ...label12, marginBottom: 3 }}>{label}</label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <input type="number" min="0" placeholder="—" value={value} onChange={e => onChange(e.target.value)}
+          style={{ ...inp, width: 72, flexShrink: 0 }} />
+        <span style={{ fontSize: 12, color: 'var(--muted)', whiteSpace: 'nowrap' }}>{unit}</span>
+      </div>
+      <p style={{ fontSize: 11, color: 'var(--muted)', margin: '3px 0 0', lineHeight: 1.3 }}>{hint}</p>
+    </div>
+  )
+}
+
 function initials(name: string) {
   return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
 }
@@ -70,6 +86,7 @@ export default function DoctorsPage() {
   const [scheduleDoctor, setScheduleDoctor] = useState<Doctor | null>(null)
   const [schedule, setSchedule]     = useState<DaySchedule[]>(DEFAULT_SCHEDULE)
   const [schedSaving, setSchedSaving] = useState(false)
+  const [bookingRules, setBookingRules] = useState<BookingRules>({ min_advance_hours: '', max_advance_days: '', buffer_minutes: '', max_per_day: '' })
 
   async function load() {
     const [docs, biz] = await Promise.all([
@@ -170,26 +187,40 @@ export default function DoctorsPage() {
 
   async function openSchedule(d: Doctor) {
     setScheduleDoctor(d)
-    const data = await fetch(`/api/availability?doctor_id=${d.id}`).then(r => r.json())
-    const existing = data.schedule ?? []
+    const [availData, docData] = await Promise.all([
+      fetch(`/api/availability?doctor_id=${d.id}`).then(r => r.json()),
+      fetch(`/api/doctors?id=${d.id}`).then(r => r.json()),
+    ])
+    const existing = availData.schedule ?? []
     setSchedule(DEFAULT_SCHEDULE.map((def, i) => {
       const row = existing.find((e: any) => e.day_of_week === i)
       return row ? { enabled: true, start_time: row.start_time.slice(0, 5), end_time: row.end_time.slice(0, 5) } : { ...def, enabled: false }
     }))
+    // Load booking rules from the doctor record (already in doctors list)
+    const rules = d.booking_rules ?? {}
+    setBookingRules({
+      min_advance_hours: rules.min_advance_hours != null ? String(rules.min_advance_hours) : '',
+      max_advance_days:  rules.max_advance_days  != null ? String(rules.max_advance_days)  : '',
+      buffer_minutes:    rules.buffer_minutes     != null ? String(rules.buffer_minutes)    : '',
+      max_per_day:       rules.max_per_day        != null ? String(rules.max_per_day)       : '',
+    })
     schedDialogRef.current?.showModal()
   }
   function closeSchedule() { schedDialogRef.current?.close() }
   async function saveSchedule() {
     if (!scheduleDoctor) return
     setSchedSaving(true)
-    const rows = schedule.filter(d => d.enabled).map((d, _i) => {
-      const i = schedule.indexOf(d)
-      return { day_of_week: schedule.indexOf(d), start_time: d.start_time, end_time: d.end_time }
-    })
-    // rebuild with proper indices
     const schedRows = schedule.map((d, i) => ({ day_of_week: i, start_time: d.start_time, end_time: d.end_time, enabled: d.enabled })).filter(r => r.enabled)
-    await fetch('/api/availability', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ doctor_id: scheduleDoctor.id, schedule: schedRows }) })
-    setSchedSaving(false); closeSchedule()
+    const rules: Record<string, number> = {}
+    if (bookingRules.min_advance_hours !== '') rules.min_advance_hours = Number(bookingRules.min_advance_hours)
+    if (bookingRules.max_advance_days  !== '') rules.max_advance_days  = Number(bookingRules.max_advance_days)
+    if (bookingRules.buffer_minutes    !== '') rules.buffer_minutes    = Number(bookingRules.buffer_minutes)
+    if (bookingRules.max_per_day       !== '') rules.max_per_day       = Number(bookingRules.max_per_day)
+    await Promise.all([
+      fetch('/api/availability', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ doctor_id: scheduleDoctor.id, schedule: schedRows }) }),
+      fetch('/api/doctors', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: scheduleDoctor.id, booking_rules: rules }) }),
+    ])
+    setSchedSaving(false); closeSchedule(); load()
   }
 
   const currentPhoto = photoPreview || editing?.photo_url || null
@@ -404,10 +435,41 @@ export default function DoctorsPage() {
                 onChange={e => setSchedule(s => s.map((d, idx) => idx === i ? { ...d, end_time: e.target.value } : d))} />
             </div>
           ))}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 8 }}>
+          {/* Booking rules */}
+          <div style={{ borderTop: '1px solid var(--border)', marginTop: 16, paddingTop: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.06em', margin: '0 0 12px' }}>Reglas de reserva</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <RuleField
+                label="Anticipación mínima" unit="horas"
+                hint="Ej: 2 → no se puede agendar con menos de 2h"
+                value={bookingRules.min_advance_hours}
+                onChange={v => setBookingRules(r => ({ ...r, min_advance_hours: v }))}
+              />
+              <RuleField
+                label="Ventana máxima" unit="días"
+                hint="Ej: 30 → solo se ve disponibilidad 30 días adelante"
+                value={bookingRules.max_advance_days}
+                onChange={v => setBookingRules(r => ({ ...r, max_advance_days: v }))}
+              />
+              <RuleField
+                label="Buffer entre citas" unit="min"
+                hint="Ej: 15 → 15 min de descanso después de cada cita"
+                value={bookingRules.buffer_minutes}
+                onChange={v => setBookingRules(r => ({ ...r, buffer_minutes: v }))}
+              />
+              <RuleField
+                label="Máx. citas por día" unit="citas"
+                hint="Ej: 8 → no acepta más de 8 citas en un día"
+                value={bookingRules.max_per_day}
+                onChange={v => setBookingRules(r => ({ ...r, max_per_day: v }))}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 16 }}>
             <button className="btn btn-ghost" onClick={closeSchedule}>Cancelar</button>
             <button className="btn btn-primary" style={{ padding: '7px 20px' }} onClick={saveSchedule} disabled={schedSaving}>
-              {schedSaving ? 'Guardando...' : 'Guardar horario'}
+              {schedSaving ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
         </div>

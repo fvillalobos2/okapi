@@ -62,8 +62,10 @@ export default function AppointmentsPage() {
   const [loading, setLoading]           = useState(true)
   const [dateFilter, setDateFilter]     = useState(todayStr())
   const [statusFilter, setStatusFilter] = useState('')
+  const [doctorFilter, setDoctorFilter] = useState('')
   const [view, setView]                 = useState<'table' | 'week'>('week')
   const [weekStart, setWeekStart]       = useState<Date>(() => getWeekStart(new Date()))
+  const [doctorList, setDoctorList]     = useState<{ id: string; name: string }[]>([])
 
   // Detail dialog
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -86,9 +88,14 @@ export default function AppointmentsPage() {
     patient_id: '', patient_name: '', patient_phone: '',
   })
 
+  useEffect(() => {
+    fetch('/api/doctors').then(r => r.json()).then(d => setDoctorList((d ?? []).map((x: any) => ({ id: x.id, name: x.name }))))
+  }, [])
+
   async function load() {
     setLoading(true)
     const p = new URLSearchParams()
+    if (doctorFilter) p.set('doctor_id', doctorFilter)
     if (view === 'table') {
       if (dateFilter)   p.set('date', dateFilter)
       if (statusFilter) p.set('status', statusFilter)
@@ -101,7 +108,7 @@ export default function AppointmentsPage() {
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [dateFilter, statusFilter, view, weekStart])
+  useEffect(() => { load() }, [dateFilter, statusFilter, doctorFilter, view, weekStart])
 
   async function updateStatus(id: string, status: string) {
     await fetch('/api/appointments', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status }) })
@@ -279,6 +286,28 @@ export default function AppointmentsPage() {
         </div>
       </div>
 
+      {/* Doctor filter — shown in both views */}
+      {doctorList.length > 1 && (
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <button onClick={() => setDoctorFilter('')}
+              style={{ padding: '5px 14px', fontSize: 12, fontWeight: 600, border: '1.5px solid', borderRadius: 99, cursor: 'pointer', transition: 'all .12s',
+                borderColor: doctorFilter === '' ? '#2563eb' : 'var(--border)',
+                background: doctorFilter === '' ? '#2563eb' : '#fff',
+                color: doctorFilter === '' ? '#fff' : 'var(--text)',
+              }}>Todos</button>
+            {doctorList.map(d => (
+              <button key={d.id} onClick={() => setDoctorFilter(doctorFilter === d.id ? '' : d.id)}
+                style={{ padding: '5px 14px', fontSize: 12, fontWeight: 600, border: '1.5px solid', borderRadius: 99, cursor: 'pointer', transition: 'all .12s',
+                  borderColor: doctorFilter === d.id ? '#2563eb' : 'var(--border)',
+                  background: doctorFilter === d.id ? '#2563eb' : '#fff',
+                  color: doctorFilter === d.id ? '#fff' : 'var(--text)',
+                }}>{d.name}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {view === 'table' ? (
         <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
           <input type="date" value={dateFilter} onChange={e => setDateFilter(e.target.value)}
@@ -288,7 +317,7 @@ export default function AppointmentsPage() {
             <option value="">Todos los estados</option>
             {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
-          <button className="btn btn-ghost btn-sm" onClick={() => { setDateFilter(''); setStatusFilter('') }}>Ver todas</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => { setDateFilter(''); setStatusFilter(''); setDoctorFilter('') }}>Ver todas</button>
         </div>
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
