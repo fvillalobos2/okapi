@@ -4,7 +4,12 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 
 type Service  = { id: string; name: string; description: string | null; duration_minutes: number; price: number | null }
-type Doctor   = { id: string; name: string; specialty: string | null; bio: string | null; photo_url: string | null; med_services: Service[] }
+type Doctor   = {
+  id: string; name: string; specialty: string | null; bio: string | null; photo_url: string | null
+  license_number: string | null; experience_years: number | null; education: string | null
+  languages: string[] | null; certifications: string | null; consultation_fee: number | null
+  med_services: Service[]
+}
 type Business = { id: string; name: string }
 type Step     = 'service' | 'date' | 'slots' | 'form' | 'done'
 
@@ -246,39 +251,85 @@ export default function BookingPage() {
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '24px 16px 80px' }}>
 
         {/* ── Doctor card ── */}
-        <div className="book-section" style={{ background: '#fff', borderRadius: 16, padding: '20px 20px 16px', marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,.06)' }}>
+        <div className="book-section" style={{ background: '#fff', borderRadius: 16, padding: '20px', marginBottom: 16, boxShadow: '0 1px 4px rgba(0,0,0,.06)' }}>
           <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
             {doctor.photo_url ? (
-              <img src={doctor.photo_url} alt={doctor.name} style={{ width: 56, height: 56, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }} />
+              <img src={doctor.photo_url} alt={doctor.name} style={{ width: 64, height: 64, borderRadius: 12, objectFit: 'cover', flexShrink: 0, border: '1px solid #e5e7eb' }} />
             ) : (
-              <div style={{ width: 56, height: 56, borderRadius: 12, background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: '#2563eb', flexShrink: 0 }}>
+              <div style={{ width: 64, height: 64, borderRadius: 12, background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: '#2563eb', flexShrink: 0 }}>
                 {initials(doctor.name)}
               </div>
             )}
             <div style={{ flex: 1, minWidth: 0 }}>
               <h1 style={{ fontSize: 17, fontWeight: 700, color: '#111827', lineHeight: 1.3, margin: 0 }}>{doctor.name}</h1>
-              {doctor.specialty && (
-                <span style={{ display: 'inline-block', marginTop: 5, padding: '2px 10px', background: '#eff6ff', color: '#2563eb', borderRadius: 99, fontSize: 12, fontWeight: 600 }}>
-                  {doctor.specialty}
-                </span>
-              )}
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                {doctor.specialty && (
+                  <span style={{ padding: '2px 10px', background: '#eff6ff', color: '#2563eb', borderRadius: 99, fontSize: 12, fontWeight: 600 }}>
+                    {doctor.specialty}
+                  </span>
+                )}
+                {doctor.experience_years && (
+                  <span style={{ padding: '2px 10px', background: '#f1f5f9', color: '#475569', borderRadius: 99, fontSize: 12 }}>
+                    {doctor.experience_years} años exp.
+                  </span>
+                )}
+                {doctor.license_number && (
+                  <span style={{ padding: '2px 10px', background: '#f1f5f9', color: '#475569', borderRadius: 99, fontSize: 12 }}>
+                    Lic. {doctor.license_number}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
+
+          {/* Bio */}
           {doctor.bio && (
-            <div style={{ marginTop: 12 }}>
-              <p style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.55, margin: 0,
+            <div style={{ marginTop: 14 }}>
+              <p style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.6, margin: 0,
                 display: bioExpanded ? 'block' : '-webkit-box',
-                WebkitLineClamp: bioExpanded ? undefined : 2,
+                WebkitLineClamp: bioExpanded ? undefined : 3,
                 WebkitBoxOrient: 'vertical' as any,
                 overflow: bioExpanded ? 'visible' : 'hidden',
               }}>
                 {doctor.bio}
               </p>
-              {doctor.bio.length > 80 && (
+              {doctor.bio.length > 120 && (
                 <button onClick={() => setBioExpanded(x => !x)} style={{ fontSize: 12, color: '#2563eb', background: 'none', border: 'none', padding: '4px 0 0', cursor: 'pointer', fontWeight: 600 }}>
                   {bioExpanded ? 'Ver menos' : 'Ver más'}
                 </button>
               )}
+            </div>
+          )}
+
+          {/* Extra info rows */}
+          {(doctor.education || doctor.certifications || doctor.languages?.length) && (
+            <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {doctor.education && (
+                <div style={{ display: 'flex', gap: 8, fontSize: 12 }}>
+                  <span style={{ color: '#9ca3af', flexShrink: 0 }}>🎓</span>
+                  <span style={{ color: '#374151' }}>{doctor.education}</span>
+                </div>
+              )}
+              {doctor.certifications && (
+                <div style={{ display: 'flex', gap: 8, fontSize: 12 }}>
+                  <span style={{ color: '#9ca3af', flexShrink: 0 }}>🏅</span>
+                  <span style={{ color: '#374151' }}>{doctor.certifications}</span>
+                </div>
+              )}
+              {doctor.languages && doctor.languages.length > 0 && (
+                <div style={{ display: 'flex', gap: 8, fontSize: 12, alignItems: 'center' }}>
+                  <span style={{ color: '#9ca3af', flexShrink: 0 }}>🌐</span>
+                  <span style={{ color: '#374151' }}>{doctor.languages.join(' · ')}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Consultation fee */}
+          {doctor.consultation_fee && (
+            <div style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '6px 12px', fontSize: 13 }}>
+              <span style={{ color: '#15803d', fontWeight: 700 }}>${Number(doctor.consultation_fee).toLocaleString()}</span>
+              <span style={{ color: '#6b7280' }}>por consulta</span>
             </div>
           )}
         </div>

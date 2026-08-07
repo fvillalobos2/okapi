@@ -10,7 +10,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ slug: stri
 
   const { data: doc } = await supabaseAdmin()
     .from('doctors')
-    .select('id,name,specialty,bio,photo_url,med_services(id,name,description,duration_minutes,price,active)')
+    .select('id,name,specialty,bio,photo_url,license_number,experience_years,education,languages,certifications,consultation_fee,med_services(id,name,description,duration_minutes,price,active)')
     .eq('id', doctorId).eq('business_id', biz.id).eq('active', true).single()
   if (!doc) return NextResponse.json({ error: 'Doctor not found' }, { status: 404 })
 
