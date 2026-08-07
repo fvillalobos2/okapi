@@ -110,6 +110,7 @@ AGENT_BASE_URL   = os.getenv('AGENT_BASE_URL',
 
 ADMIN_PASSWORD       = os.getenv('ADMIN_PASSWORD', '')
 ADMIN_WA             = os.getenv('ADMIN_WA', '')       # Admin WhatsApp for system alerts
+PANEL_BASE_URL       = os.getenv('PANEL_BASE_URL', '') # Fallback panel URL for businesses without panel_url
 RESEND_API_KEY       = os.getenv('RESEND_API_KEY', '')
 CRON_SECRET          = os.getenv('CRON_SECRET', '')
 PENDING_TTL_H        = int(os.getenv('PENDING_TTL_H', '48'))
@@ -1630,12 +1631,10 @@ def _handle_medical_reply(reply: str, phone: str, business: dict) -> str:
     if link_params:
         doctor_id  = link_params.get('doctor_id', '')
         marker_str = re.search(r'\[BOOKING_LINK:[^\]]+\]', reply).group(0)
-        panel_url  = (business.get('panel_url') or '').rstrip('/')
+        panel_url  = (business.get('panel_url') or PANEL_BASE_URL or '').rstrip('/')
         slug       = business.get('slug', '')
         if panel_url and slug and doctor_id:
             booking_url = f'{panel_url}/book/{slug}/{doctor_id}'
-        elif slug and doctor_id:
-            booking_url = f'https://panel.projectokapi.com/book/{slug}/{doctor_id}'
         else:
             booking_url = ''
         reply = reply.replace(marker_str, booking_url)
