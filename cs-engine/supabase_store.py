@@ -1238,6 +1238,55 @@ def mark_reminder_sent(appointment_id: str, reminder_type: str) -> bool:
         print(f'  ⚠ mark_reminder_sent: {e}')
         return False
 
+def get_upcoming_appointments(patient_id: str, limit: int = 3) -> list:
+    """Return upcoming confirmed/requested appointments for a patient."""
+    try:
+        today = datetime.utcnow().date().isoformat()
+        r = _sb().table('appointments') \
+            .select('id,date,start_time,end_time,status,doctors(name),med_services(name,duration_minutes),doctor_locations(name,address)') \
+            .eq('patient_id', patient_id) \
+            .in_('status', ['requested', 'confirmed']) \
+            .gte('date', today) \
+            .order('date').order('start_time').limit(limit).execute()
+        return r.data or []
+    except Exception as e:
+        print(f'  ⚠ get_upcoming_appointments: {e}')
+        return []
+
+def cancel_appointment(appointment_id: str, business_id: str) -> bool:
+    """Cancel an appointment by ID, scoped to business."""
+    try:
+        r = _sb().table('appointments').update({
+            'status': 'cancelled',
+            'cancelled_at': datetime.utcnow().isoformat(),
+        }).eq('id', appointment_id).eq('business_id', business_id).execute()
+        return bool(r.data)
+    except Exception as e:
+        print(f'  ⚠ cancel_appointment: {e}')
+        return False
+
+def reschedule_appointment(appointment_id: str, new_date: str, new_time: str, business_id: str) -> bool:
+    """Reschedule an appointment to a new date/time, resets reminder flags."""
+    try:
+        appt = _sb().table('appointments') \
+            .select('id,med_services(duration_minutes)') \
+            .eq('id', appointment_id).eq('business_id', business_id).single().execute()
+        if not appt.data:
+            return False
+        duration = (appt.data.get('med_services') or {}).get('duration_minutes', 30)
+        h, m = map(int, new_time.split(':')[:2])
+        end_min = h * 60 + m + duration
+        end_time = f"{end_min // 60:02d}:{end_min % 60:02d}"
+        r = _sb().table('appointments').update({
+            'date': new_date, 'start_time': new_time, 'end_time': end_time,
+            'status': 'confirmed',
+            'reminder_24h_sent_at': None, 'reminder_2h_sent_at': None, 'patient_confirmed_at': None,
+        }).eq('id', appointment_id).eq('business_id', business_id).execute()
+        return bool(r.data)
+    except Exception as e:
+        print(f'  ⚠ reschedule_appointment: {e}')
+        return False
+
 def get_next_pending_appointment_for_patient(phone: str, business_id: str) -> Optional[dict]:
     """Return the next confirmed/requested appointment for this patient (by phone), if any."""
     norm = _normalize_phone(phone)

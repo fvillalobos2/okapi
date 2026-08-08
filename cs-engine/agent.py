@@ -1590,6 +1590,14 @@ def _build_medical_context(phone: str, business: dict) -> str:
             lines.append(f"Paciente nuevo — teléfono: {clean}. Necesitás pedir su nombre.")
         if patient.get('notes'):
             lines.append(f"Notas internas: {patient['notes']}")
+        upcoming = store.get_upcoming_appointments(patient['id'])
+        if upcoming:
+            up_lines = []
+            for a in upcoming:
+                loc = (a.get('doctor_locations') or {}).get('name', '')
+                loc_str = f' en {loc}' if loc else ''
+                up_lines.append(f"  - {a['date']} {a['start_time'][:5]} con {(a.get('doctors') or {}).get('name','?')}{loc_str} (ID: {a['id']}, estado: {a['status']})")
+            lines.append("Próximas citas:\n" + '\n'.join(up_lines))
         past = store.get_patient_appointments(patient['id'])
         if past:
             appt_lines = [f"  - {a['date']} {a['start_time'][:5]} con {(a.get('doctors') or {}).get('name','?')} ({a['status']})" for a in past]
@@ -1612,7 +1620,10 @@ def _build_medical_context(phone: str, business: dict) -> str:
     lines.append('\nPara consultar slots disponibles en una fecha: el sistema te los provee si los pedís con [CHECK_SLOTS: doctor_id=xxx|date=YYYY-MM-DD|duration=30]')
     lines.append('Para confirmar una cita: usá [BOOK_APPOINTMENT: doctor_id=xxx|service_id=xxx|date=YYYY-MM-DD|time=HH:MM|name=Nombre Paciente|note=motivo]')
     lines.append('Para compartir el link de reserva online de un doctor: usá [BOOKING_LINK: doctor_id=xxx] — el sistema lo reemplaza con la URL real.')
+    lines.append('Para cancelar la próxima cita del paciente (solo con su confirmación explícita): usá [CANCEL_APPOINTMENT: appointment_id=xxx]')
+    lines.append('Para reagendar: primero verificá disponibilidad con [CHECK_SLOTS], confirmá el nuevo horario con el paciente, luego usá [RESCHEDULE_APPOINTMENT: appointment_id=xxx|date=YYYY-MM-DD|time=HH:MM]')
     lines.append('Nunca inventes un horario disponible — siempre verificá con [CHECK_SLOTS] antes de ofrecer un slot.')
+    lines.append('Nunca canceles ni reagendes sin confirmación explícita del paciente.')
 
     return '\n'.join(lines)
 
@@ -1711,6 +1722,28 @@ def _handle_medical_reply(reply: str, phone: str, business: dict) -> str:
             return reply.replace(marker_str, '')
         else:
             return reply.replace(marker_str, '')
+
+    # CANCEL_APPOINTMENT
+    cancel_params = _parse_medical_marker(reply, 'CANCEL_APPOINTMENT')
+    if cancel_params:
+        appointment_id = cancel_params.get('appointment_id', '')
+        marker_str = re.search(r'\[CANCEL_APPOINTMENT:[^\]]+\]', reply).group(0)
+        if appointment_id and store.cancel_appointment(appointment_id, bid):
+            print(f'  ❌ Appointment cancelled: {appointment_id[:8]}…')
+            return reply.replace(marker_str, '')
+        return reply.replace(marker_str, '')
+
+    # RESCHEDULE_APPOINTMENT
+    reschedule_params = _parse_medical_marker(reply, 'RESCHEDULE_APPOINTMENT')
+    if reschedule_params:
+        appointment_id = reschedule_params.get('appointment_id', '')
+        new_date       = reschedule_params.get('date', '')
+        new_time       = reschedule_params.get('time', '')
+        marker_str     = re.search(r'\[RESCHEDULE_APPOINTMENT:[^\]]+\]', reply).group(0)
+        if appointment_id and new_date and new_time and store.reschedule_appointment(appointment_id, new_date, new_time, bid):
+            print(f'  🔄 Appointment rescheduled: {appointment_id[:8]}… → {new_date} {new_time}')
+            return reply.replace(marker_str, '')
+        return reply.replace(marker_str, '')
 
     return reply
 
@@ -2680,6 +2713,9 @@ def _send_appointment_reminder(appt: dict, reminder_type: str, business: dict, c
             loc_line = f'\n📍 {loc_display}'
         else:
             loc_line = ''
+        panel_url = (business.get('panel_url') or PANEL_BASE_URL or '').rstrip('/')
+        slug = business.get('slug', '')
+        manage_link = f'\n🔗 Gestionar cita: {panel_url}/book/{slug}/manage/{appt["id"]}' if panel_url and slug else ''
         msg = (
             f'📅 *Recordatorio de cita — {biz_name}*\n\n'
             f'Hola {name}, te recordamos que tenés cita {intro}:\n\n'
@@ -2689,6 +2725,7 @@ def _send_appointment_reminder(appt: dict, reminder_type: str, business: dict, c
             f'{svc_line}'
             f'{loc_line}\n\n'
             f'Respondé *SÍ* para confirmar tu asistencia o *NO* si no podés asistir.'
+            f'{manage_link}'
         )
     wa_phone = f'whatsapp:{phone}' if not phone.startswith('whatsapp:') else phone
     send_whatsapp(wa_phone, msg, business.get('twilio_sender'), business)

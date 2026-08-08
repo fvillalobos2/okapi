@@ -6,6 +6,7 @@ interface ModuleConfig {
   key: string
   label: string
   description: string
+  type?: 'reminders'
   fields?: { key: string; label: string; placeholder: string }[]
 }
 
@@ -73,6 +74,12 @@ const MODULE_CATALOG: ModuleConfig[] = [
     description: 'Sincroniza el catálogo de productos desde una tienda WooCommerce. Los productos importados quedan disponibles para el agente de IA automáticamente.',
   },
   {
+    key: 'reminders',
+    label: 'Recordatorios automáticos',
+    description: 'Envía recordatorios por WhatsApp antes de cada cita. Los pacientes pueden confirmar o cancelar respondiendo al mensaje.',
+    type: 'reminders',
+  },
+  {
     key: 'calendar',
     label: 'Agenda — General',
     description: 'Sistema de reservas para cualquier tipo de negocio de servicios. Profesionales con horarios, servicios, booking público por WhatsApp o link, y recordatorios automáticos. Para spas, salones, consultoras, abogados, coaches y más.',
@@ -90,6 +97,104 @@ const MODULE_CATALOG: ModuleConfig[] = [
 ]
 
 type ModuleState = Record<string, { enabled: boolean; [key: string]: unknown }>
+
+function RemindersConfig({ state, setField }: {
+  state: Record<string, unknown>
+  setField: (field: string, value: unknown) => void
+}) {
+  const hours: number[] = Array.isArray(state.hours_before) ? (state.hours_before as number[]) : [24, 2]
+  const sendFrom: number = (state as any).send_window?.from ?? 8
+  const sendTo: number   = (state as any).send_window?.to   ?? 20
+
+  function toggleHour(h: number) {
+    const next = hours.includes(h) ? hours.filter(x => x !== h) : [...hours, h].sort((a, b) => b - a)
+    setField('hours_before', next)
+  }
+  function setSendWindow(from: number, to: number) {
+    setField('send_window', { from, to })
+  }
+
+  const st: React.CSSProperties = {
+    border: '1px solid var(--border)', borderRadius: 6, padding: '6px 10px',
+    fontSize: 13, color: 'var(--text)', background: 'var(--surface2)', outline: 'none', width: 60,
+  }
+  const checkRow = (label: string, checked: boolean, onChange: () => void) => (
+    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--text)' }}>
+      <input type="checkbox" checked={checked} onChange={onChange} style={{ width: 15, height: 15, accentColor: 'var(--accent)', cursor: 'pointer' }} />
+      {label}
+    </label>
+  )
+
+  return (
+    <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Hours before */}
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
+          Cuándo enviar
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {checkRow('Recordatorio 24 horas antes', hours.includes(24), () => toggleHour(24))}
+          {checkRow('Recordatorio 2 horas antes', hours.includes(2), () => toggleHour(2))}
+        </div>
+      </div>
+
+      {/* Send window */}
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
+          Ventana horaria de envío
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text)' }}>
+          <span>Entre las</span>
+          <input type="number" min={0} max={23} value={sendFrom} onChange={e => setSendWindow(Number(e.target.value), sendTo)} style={st} />
+          <span>y las</span>
+          <input type="number" min={0} max={23} value={sendTo} onChange={e => setSendWindow(sendFrom, Number(e.target.value))} style={st} />
+          <span style={{ color: 'var(--muted)', fontSize: 12 }}>(hora local del negocio)</span>
+        </div>
+      </div>
+
+      {/* Behavior toggles */}
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
+          Comportamiento
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {checkRow(
+            'Solo enviar a citas confirmadas (omitir "solicitadas")',
+            !!(state as any).only_confirmed,
+            () => setField('only_confirmed', !(state as any).only_confirmed),
+          )}
+          {checkRow(
+            'Omitir recordatorio de 2h si el paciente ya confirmó',
+            (state as any).skip_2h_if_patient_confirmed !== false,
+            () => setField('skip_2h_if_patient_confirmed', !((state as any).skip_2h_if_patient_confirmed !== false)),
+          )}
+        </div>
+      </div>
+
+      {/* Custom message */}
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>
+          Mensaje personalizado (opcional)
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>
+          Variables disponibles: {'{name}'}, {'{doctor}'}, {'{service}'}, {'{date}'}, {'{time}'}, {'{clinic}'}, {'{location}'}
+        </div>
+        <textarea
+          rows={4}
+          value={((state as any).message_es as string) ?? ''}
+          onChange={e => setField('message_es', e.target.value || null)}
+          placeholder={'Hola {name}, te recordamos tu cita el {date} a las {time} con {doctor} en {location}.'}
+          style={{
+            width: '100%', border: '1px solid var(--border)', borderRadius: 6,
+            padding: '8px 10px', fontSize: 13, color: 'var(--text)',
+            background: 'var(--surface2)', outline: 'none', resize: 'vertical',
+            lineHeight: 1.5, fontFamily: 'inherit', boxSizing: 'border-box',
+          }}
+        />
+      </div>
+    </div>
+  )
+}
 
 export default function AddonsPage() {
   const [modules, setModules] = useState<ModuleState>({})
@@ -113,7 +218,7 @@ export default function AddonsPage() {
     setSaved(false)
   }
 
-  function setField(moduleKey: string, field: string, value: string) {
+  function setField(moduleKey: string, field: string, value: unknown) {
     setModules(prev => ({
       ...prev,
       [moduleKey]: { ...(prev[moduleKey] ?? { enabled: false }), [field]: value },
@@ -204,6 +309,11 @@ export default function AddonsPage() {
                   </div>
                   <p style={{ fontSize: 12.5, color: 'var(--muted)', lineHeight: 1.5 }}>{mod.description}</p>
 
+                  {/* Reminders config */}
+                  {enabled && mod.type === 'reminders' && (
+                    <RemindersConfig state={state} setField={(f: string, v: unknown) => setField('reminders', f, v)} />
+                  )}
+
                   {enabled && mod.fields && (
                     <div style={{ display: 'flex', gap: 12, marginTop: 14, flexWrap: 'wrap' }}>
                       {mod.fields.map(f => (
@@ -213,7 +323,7 @@ export default function AddonsPage() {
                             {f.label}
                           </label>
                           <input
-                            value={(state[f.key] as string) ?? ''}
+                            value={(state[f.key] as string | undefined) ?? ''}
                             onChange={e => setField(mod.key, f.key, e.target.value)}
                             placeholder={f.placeholder}
                             style={{
