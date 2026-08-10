@@ -72,6 +72,7 @@ export default function DoctorsPage() {
   const [loading, setLoading]       = useState(true)
   const [slug, setSlug]             = useState('')
   const [copiedId, setCopiedId]     = useState<string | null>(null)
+  const [search, setSearch]         = useState('')
 
   // Profile drawer
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -254,6 +255,12 @@ export default function DoctorsPage() {
 
   const currentPhoto = photoPreview || editing?.photo_url || null
 
+  const filtered = doctors.filter(d => {
+    if (!search.trim()) return true
+    const q = search.toLowerCase()
+    return d.name.toLowerCase().includes(q) || (d.specialty ?? '').toLowerCase().includes(q)
+  })
+
   return (
     <div>
       <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -261,17 +268,31 @@ export default function DoctorsPage() {
           <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-.3px', margin: 0 }}>Doctores</h1>
           <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 3 }}>{doctors.filter(d => d.active).length} activos</p>
         </div>
-        <button className="btn btn-primary" onClick={openCreate}>+ Nuevo doctor</button>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div style={{ position: 'relative' }}>
+            <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', fontSize: 14, pointerEvents: 'none' }}>🔍</span>
+            <input
+              type="search"
+              placeholder="Buscar por nombre o especialidad…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ paddingLeft: 32, paddingRight: 12, height: 36, fontSize: 13, border: '1px solid var(--border)', borderRadius: 8, background: '#fff', color: 'var(--text)', outline: 'none', width: 260 }}
+            />
+          </div>
+          <button className="btn btn-primary" onClick={openCreate}>+ Nuevo doctor</button>
+        </div>
       </div>
 
       {loading ? (
         <div style={{ color: 'var(--muted)', padding: 40, textAlign: 'center' }}>Cargando...</div>
       ) : (
         <div style={{ display: 'grid', gap: 12 }}>
-          {doctors.length === 0 && (
-            <div style={{ color: 'var(--muted)', textAlign: 'center', padding: 48, fontSize: 14 }}>Sin doctores registrados</div>
+          {filtered.length === 0 && (
+            <div style={{ color: 'var(--muted)', textAlign: 'center', padding: 48, fontSize: 14 }}>
+              {search ? `Sin resultados para "${search}"` : 'Sin doctores registrados'}
+            </div>
           )}
-          {doctors.map(d => (
+          {filtered.map(d => (
             <div key={d.id} style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px', display: 'flex', gap: 16, alignItems: 'flex-start', boxShadow: '0 1px 3px rgba(0,0,0,.04)' }}>
               {/* Avatar */}
               <div style={{ flexShrink: 0 }}>
