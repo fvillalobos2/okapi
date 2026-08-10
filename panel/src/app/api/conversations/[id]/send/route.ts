@@ -1,4 +1,5 @@
 import { getBusinessId } from '@/lib/getBusinessId'
+import { decryptField } from '@/lib/encryption'
 import { supabaseAdmin } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
@@ -26,7 +27,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (convRes.error) return NextResponse.json({ error: convRes.error.message }, { status: 500 })
 
   const biz = bizRes.data
-  const accessToken  = biz?.meta_access_token  || process.env.META_ACCESS_TOKEN
+  const rawToken = biz?.meta_access_token || process.env.META_ACCESS_TOKEN || ''
+  const accessToken   = await decryptField(rawToken)
   const phoneNumberId = biz?.meta_phone_number_id || process.env.META_PHONE_NUMBER_ID
 
   if (!accessToken || !phoneNumberId) {
