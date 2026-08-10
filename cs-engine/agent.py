@@ -2842,6 +2842,59 @@ def cron_reminders():
     return jsonify({'ok': True, 'sent': total_sent}), 200
 
 
+@app.route('/api/cron/seguimientos', methods=['POST'])
+def cron_seguimientos():
+    """Hourly cron — send follow-up messages to inactive leads for all businesses with seguimientos enabled.
+
+    Config in modules.seguimientos:
+      enabled              true/false
+      days_without_response  3       days of inactivity before sending follow-up
+      max_followups          1       max follow-ups per lead
+      target_statuses        ['new','active']
+      message_es             template ({name}, {business})
+    """
+    err = _require_api_key()
+    if err:
+        return err
+
+    businesses = store.get_all_businesses()
+    total_sent = 0
+
+    for biz in businesses:
+        modules = biz.get('modules') or {}
+        seg_cfg = modules.get('seguimientos') or {}
+        if not seg_cfg.get('enabled'):
+            continue
+
+        bid      = biz['id']
+        biz_name = biz.get('name', '')
+        days     = int(seg_cfg.get('days_without_response', 3))
+        max_fu   = int(seg_cfg.get('max_followups', 1))
+        statuses = seg_cfg.get('target_statuses') or ['new', 'active']
+        msg_tmpl = (seg_cfg.get('message_es') or '').strip()
+
+        leads = store.get_leads_needing_followup(bid, days=days, target_statuses=statuses, max_followups=max_fu)
+        for lead in leads:
+            phone = lead.get('phone', '')
+            name  = lead.get('name') or 'cliente'
+            if not phone:
+                continue
+            try:
+                msg = (msg_tmpl or 'Hola {name}, queríamos saber si pudiste revisar la información. Quedamos atentos a cualquier consulta.').format(
+                    name=name, business=biz_name,
+                )
+            except (KeyError, ValueError):
+                msg = msg_tmpl or f'Hola {name}, queríamos saber si pudiste revisar la información.'
+            wa_phone = f'whatsapp:{phone}' if not phone.startswith('whatsapp:') else phone
+            send_whatsapp(wa_phone, msg, biz.get('twilio_sender'), biz)
+            store.mark_follow_up_sent(phone, bid)
+            total_sent += 1
+            print(f'  📲 Seguimiento sent → {phone} (lead {lead.get("id","")[:8]}…)', flush=True)
+
+    print(f'  ✅ cron_seguimientos: {total_sent} seguimientos sent', flush=True)
+    return jsonify({'ok': True, 'sent': total_sent}), 200
+
+
 # ─── HEALTH ──────────────────────────────────────────────────────────────────
 
 @app.route('/health', methods=['GET'])

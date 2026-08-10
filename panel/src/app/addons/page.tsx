@@ -74,12 +74,6 @@ const MODULE_CATALOG: ModuleConfig[] = [
     description: 'Sincroniza el catálogo de productos desde una tienda WooCommerce. Los productos importados quedan disponibles para el agente de IA automáticamente.',
   },
   {
-    key: 'reminders',
-    label: 'Recordatorios automáticos',
-    description: 'Envía recordatorios por WhatsApp antes de cada cita. Los pacientes pueden confirmar o cancelar respondiendo al mensaje.',
-    type: 'reminders',
-  },
-  {
     key: 'calendar',
     label: 'Agenda — General',
     description: 'Sistema de reservas para cualquier tipo de negocio de servicios. Profesionales con horarios, servicios, booking público por WhatsApp o link, y recordatorios automáticos. Para spas, salones, consultoras, abogados, coaches y más.',

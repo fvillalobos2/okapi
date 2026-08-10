@@ -213,6 +213,25 @@ def get_leads(business_id: Optional[str] = None, status: Optional[str] = None,
         return []
 
 
+def get_leads_needing_followup(business_id: str, days: int = 3, target_statuses: list = None, max_followups: int = 1) -> list:
+    """Return leads inactive for >= days days, followup not yet sent (or sent fewer than max_followups times)."""
+    b = _bid(business_id)
+    if not b:
+        return []
+    try:
+        statuses = target_statuses or ['new', 'active']
+        cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        q = _sb().table('leads').select('id,phone,name,follow_up_sent_at,last_active_at,status') \
+            .eq('business_id', b) \
+            .in_('status', statuses) \
+            .lt('last_active_at', cutoff) \
+            .is_('follow_up_sent_at', 'null')  # only send once by default
+        r = q.execute()
+        return r.data or []
+    except Exception as e:
+        print(f'  ⚠ get_leads_needing_followup: {e}')
+        return []
+
 def get_lead_by_phone(phone: str, business_id: Optional[str] = None) -> Optional[dict]:
     phone = _normalize_phone(phone)
     b = _bid(business_id)

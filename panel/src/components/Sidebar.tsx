@@ -70,6 +70,11 @@ const CORE_NAV: NavGroup[] = [
         icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M6 2h4v3H6zM2 7h4v3H2zM10 7h4v3h-4zM6 12h4v2H6z"/><path d="M8 5v2M4 10v2M12 10v2"/></svg>,
       },
       {
+        href: '/automatizaciones',
+        label: 'Automatizaciones',
+        icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 8a6 6 0 1112 0"/><path d="M8 2v3M8 11v3M2 8H5M11 8h3"/><circle cx="8" cy="8" r="1.5"/></svg>,
+      },
+      {
         href: '/settings',
         label: 'Configuración',
         icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>,
