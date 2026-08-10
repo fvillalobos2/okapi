@@ -1,9 +1,12 @@
 import { getBusinessId } from '@/lib/getBusinessId'
 import { supabaseAdmin } from '@/lib/supabase'
-import { decryptField } from '@/lib/encryption'
 import { NextResponse } from 'next/server'
 
+const META_API_VERSION = 'v19.0'
 
+function normalizeToMeta(phone: string): string {
+  return phone.replace('whatsapp:', '').replace('+', '').trim()
+}
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const BUSINESS_ID = await getBusinessId()
@@ -11,12 +14,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { message } = await req.json()
   if (!message?.trim()) return NextResponse.json({ error: 'Message required' }, { status: 400 })
 
-  // Load conversation + business in parallel
   const [convRes, bizRes] = await Promise.all([
     supabaseAdmin().from('conversations').select('phone, messages').eq('id', id).single(),
     supabaseAdmin()
       .from('businesses')
-      .select('twilio_account_sid, twilio_auth_token, twilio_sender')
+      .select('meta_access_token, meta_phone_number_id')
       .eq('id', BUSINESS_ID)
       .single(),
   ])
@@ -24,38 +26,39 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (convRes.error) return NextResponse.json({ error: convRes.error.message }, { status: 500 })
 
   const biz = bizRes.data
-  const sid = biz?.twilio_account_sid || process.env.TWILIO_ACCOUNT_SID
-  const rawToken = biz?.twilio_auth_token || process.env.TWILIO_AUTH_TOKEN
-  const token = rawToken ? await decryptField(rawToken) : undefined
-  const from = biz?.twilio_sender || process.env.TWILIO_SENDER
+  const accessToken  = biz?.meta_access_token  || process.env.META_ACCESS_TOKEN
+  const phoneNumberId = biz?.meta_phone_number_id || process.env.META_PHONE_NUMBER_ID
 
-  if (!sid || !token || !from) {
-    return NextResponse.json({ error: 'Twilio credentials not configured' }, { status: 500 })
+  if (!accessToken || !phoneNumberId) {
+    return NextResponse.json({ error: 'Meta credentials not configured' }, { status: 500 })
   }
 
-  const to = convRes.data.phone.startsWith('whatsapp:')
-    ? convRes.data.phone
-    : `whatsapp:${convRes.data.phone}`
+  const to = normalizeToMeta(convRes.data.phone)
 
-  // Send via Twilio REST API
-  const body = new URLSearchParams({ From: from, To: to, Body: message })
-  const twilioRes = await fetch(
-    `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,
+  const metaRes = await fetch(
+    `https://graph.facebook.com/${META_API_VERSION}/${phoneNumberId}/messages`,
     {
       method: 'POST',
       headers: {
-        Authorization: `Basic ${Buffer.from(`${sid}:${token}`).toString('base64')}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
       },
-      body: body.toString(),
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to,
+        type: 'text',
+        text: { body: message },
+      }),
     }
   )
 
-  if (!twilioRes.ok) {
-    const err = await twilioRes.json()
-    return NextResponse.json({ error: err.message ?? 'Twilio error' }, { status: 502 })
+  if (!metaRes.ok) {
+    const err = await metaRes.json()
+    const msg = err?.error?.message ?? 'Error al enviar mensaje'
+    return NextResponse.json({ error: msg }, { status: 502 })
   }
 
+  // Append to conversation history
   const messages = Array.isArray(convRes.data.messages) ? convRes.data.messages : []
   messages.push({ role: 'assistant', content: message, ts: new Date().toISOString() })
 
