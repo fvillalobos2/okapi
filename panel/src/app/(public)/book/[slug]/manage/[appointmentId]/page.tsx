@@ -55,16 +55,21 @@ function Calendar({ selected, onSelect, enabledDays }: {
           const ds  = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`
           const dow = new Date(ds + 'T12:00:00').getDay()
           const disabled = ds <= todayStr || (enabledDays !== undefined && !enabledDays.has(dow))
+          const available = !disabled
           const sel = ds === selected
           return (
             <button key={ds} disabled={disabled} onClick={() => onSelect(ds)} style={{
               border: sel ? '2px solid #2563eb' : '1px solid transparent',
               width: '100%', aspectRatio: '1', borderRadius: 8, fontSize: 14,
-              background: sel ? '#2563eb' : 'transparent',
+              background: sel ? '#2563eb' : available ? '#f0fdf4' : 'transparent',
               color: disabled ? '#d1d5db' : sel ? '#fff' : '#111827',
-              cursor: disabled ? 'not-allowed' : 'pointer', fontWeight: sel ? 700 : 400,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>{day}</button>
+              cursor: disabled ? 'not-allowed' : 'pointer',
+              fontWeight: sel ? 700 : available ? 600 : 400,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+            }}>
+              {day}
+              {available && !sel && <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#16a34a', flexShrink: 0 }} />}
+            </button>
           )
         })}
       </div>

@@ -106,20 +106,25 @@ function Calendar({ selected, onSelect, enabledDays }: {
           const past = ds < todayStr
           const unavailable = enabledDays !== undefined && !enabledDays.has(dow)
           const disabled = past || unavailable
+          const available = !disabled
           const sel  = ds === selected
           const isToday = ds === todayStr
           return (
             <button key={ds} disabled={disabled} onClick={() => onSelect(ds)} style={{
               border: sel ? '2px solid #2563eb' : isToday ? '1px solid #bfdbfe' : '1px solid transparent',
               width: '100%', aspectRatio: '1', borderRadius: 8, fontSize: 14,
-              background: sel ? '#2563eb' : isToday && !disabled ? '#eff6ff' : 'transparent',
+              background: sel ? '#2563eb' : available && !sel ? '#f0fdf4' : isToday && !disabled ? '#eff6ff' : 'transparent',
               color: disabled ? '#d1d5db' : sel ? '#fff' : isToday ? '#2563eb' : '#111827',
               cursor: disabled ? 'not-allowed' : 'pointer',
-              fontWeight: sel || isToday ? 700 : 400,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: sel || isToday ? 700 : available ? 600 : 400,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
               transition: 'all .12s',
+              position: 'relative',
             }}>
               {day}
+              {available && !sel && (
+                <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#16a34a', flexShrink: 0 }} />
+              )}
             </button>
           )
         })}
