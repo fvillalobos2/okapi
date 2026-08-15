@@ -12,23 +12,30 @@ jobs:
     steps:
       - name: Trigger ibkr-ingest edge function
         run: |
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-            "https://dovkpwqmhmweqhkpstdg.supabase.co/functions/v1/ibkr-ingest" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-            -H "Content-Type: application/json")
-          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-          BODY=$(echo "$RESPONSE" | head -n-1)
-          echo "Response: $BODY"
-          echo "HTTP status: $HTTP_CODE"
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "ERROR: ibkr-ingest returned $HTTP_CODE"
-            exit 1
-          fi
-          echo "$BODY" | python3 -c "
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt..."
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+              "https://dovkpwqmhmweqhkpstdg.supabase.co/functions/v1/ibkr-ingest" \
+              -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+              -H "Content-Type: application/json")
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+            BODY=$(echo "$RESPONSE" | head -n-1)
+            echo "Response: $BODY"
+            echo "HTTP status: $HTTP_CODE"
+            if [ "$HTTP_CODE" = "200" ] && echo "$BODY" | python3 -c "
           import json, sys
           d = json.load(sys.stdin)
           if not d.get('ok'):
             print('ERROR:', d.get('error'))
             sys.exit(1)
           print(f\"OK — as_of: {d['as_of']}, total: \${d['total_value_usd']:,.0f}, positions: {d['line_items']}\")
-          "
+          "; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "Retrying in 30s..."
+              sleep 30
+            fi
+          done
+          echo "ERROR: all 3 attempts failed"
+          exit 1
